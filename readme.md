@@ -17,7 +17,7 @@ La documentación se organiza en tres documentos complementarios:
 | Documento | Ruta | Propósito |
 | --- | --- | --- |
 | README | `README.md` | Introducción general al proyecto, estado, equipo y guía de inicio |
-| Visión y Alcance | `docs/vision-y-alcance.md` | Justificación del proyecto: problema de negocio, objetivos, características, alcance por releases, involucrados y entorno de operación |
+| Visión y Alcance | `docs/vision-alcance.md` | Justificación del proyecto: problema de negocio, objetivos, características, alcance por releases, involucrados y entorno de operación |
 | Diseño Arquitectónico | `docs/diseno-arquitectonico.md` | Planificación estructurada del desarrollo: estilo arquitectónico, decisiones tecnológicas, modelo de datos, permisos, contratos, requisitos no funcionales, pruebas y plan de iteraciones con compuertas de revisión |
 
 Documentación de apoyo generada durante el proyecto:
@@ -35,7 +35,8 @@ Documentación de apoyo generada durante el proyecto:
 | --- | --- |
 | Documento de Visión y Alcance | Aprobado (v1.0) |
 | Documento de Diseño Arquitectónico | Aprobado (v1.0) |
-| Iteración 0 — Cierre de especificación | Pendiente de inicio |
+| Iteración 0 — Cierre de especificación | En revisión de Compuerta 0 (Rol B entregó paquete completo; Rol A y Rol C deben aplicar cambios bloqueantes y el equipo ratificar R-018…R-031) |
+| Iteración 1 — Esqueleto caminante | Planificado; bloqueado por el acta de C0. Plan en `docs/tasks/rol-b/rol-b-it1-plan.md` |
 | Release 1.0 | Planificado |
 | Release 2.0 | Planificado |
 | Release 3.0 | Planificado |

@@ -21,7 +21,7 @@ Reorganizar la documentación del repositorio para alinearla con la estructura d
   - `docs/open-questions.md` (registro inicial de preguntas abiertas, incluyendo ubicación de `reviews/`, decisiones de permisos/contratos y `.gitignore`).
   - `docs/assumptions.md` (supuestos explícitos extraídos de visión/diseño y supuestos provisionales de trabajo).
   - `.gitignore` con exclusión de artefactos/instrucciones locales de herramientas de agentes (propuesta aplicada) y sin excluir entregables documentales del proyecto.
-  - `docs/tasks/rol-a-it0-reorganizacion.md` (este registro).
+  - `docs/tasks/rol-a/rol-a-it0-reorganizacion.md` (este registro).
 
 ## Por qué
 - Cumplir la instrucción de reorganización documental previa a la Iteración 0, centralizando la documentación en `docs/` y preparando carpetas requeridas (`requirements`, `contratos`, `tasks`, `adr`, `reviews`) y registros (`open-questions.md`, `assumptions.md`).
@@ -37,7 +37,7 @@ Reorganizar la documentación del repositorio para alinearla con la estructura d
 ## Pendiente / seguimiento
 - Confirmación del equipo sobre ubicación definitiva de paquetes de revisión (`docs/reviews/` vs `reviews/` raíz).
 - Confirmación/ajuste de patrones de `.gitignore` para archivos de agentes (PA-008).
-- Completar entregables de Iteración 0 (Rol A): `docs/diccionario-datos.md` y `docs/tasks/rol-a-it0-revision-modelo.md`.
+- Completar entregables de Iteración 0 (Rol A): `docs/diccionario-datos.md` y `docs/tasks/rol-a/rol-a-it0-revision-modelo.md`.
 - Registrar y formalizar propuestas de gramática/catálogo de permisos y contratos API v1 en `docs/contratos/` como pendientes de aprobación (Compuerta 0).
 
 ## Evidencia

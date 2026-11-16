@@ -2,7 +2,7 @@
 
 - **Estado:** Propuesta de resolución **aprobada para documentar** por el equipo; pendiente de formalización/aprobación en **Compuerta 0** y de solicitud de cambio cuando afecte artefactos congelados.
 - **Fecha:** 2026-11-15
-- **Fuentes:** `docs/diseno-arquitectonico.md` (caps. 4, 6–11, 18), `docs/vision-alcance.md`, propuestas de gramática/catálogo y API v1, `docs/tasks/rol-a-it0-revision-modelo.md` (INC-001..INC-014), `docs/open-questions.md` (PA-001..PA-008).
+- **Fuentes:** `docs/diseno-arquitectonico.md` (caps. 4, 6–11, 18), `docs/vision-alcance.md`, propuestas de gramática/catálogo y API v1, `docs/tasks/rol-a/rol-a-it0-revision-modelo.md` (INC-001..INC-014), `docs/open-questions.md` (PA-001..PA-008).
 - **Regla:** no se modifican artefactos congelados (`docs/diseno-arquitectonico.md`, `docs/vision-alcance.md`) sin solicitud de cambio aprobada. Las correcciones se materializan en artefactos de propuesta/reconciliación.
 
 ## 1. Principios de resolución
@@ -34,10 +34,11 @@
 
 ## 3. Cambios aplicados en artefactos de propuesta (esta iteración)
 - Creada esta reconciliación.
-- Actualizados: `docs/contratos/gramatica-y-catalogo-permisos-v1.md`, `docs/contratos/api-v1.openapi.yaml`, `docs/diccionario-datos.md`, `docs/open-questions.md`, `docs/assumptions.md`, `docs/tasks/rol-a-it0-revision-modelo.md` para reflejar las resoluciones propuestas y aclaraciones (sin modificar diseño/visión).
+- Actualizados: `docs/contratos/gramatica-y-catalogo-permisos-v1.md`, `docs/contratos/api-v1.openapi.yaml`, `docs/diccionario-datos.md`, `docs/open-questions.md`, `docs/assumptions.md`, `docs/tasks/rol-a/rol-a-it0-revision-modelo.md` para reflejar las resoluciones propuestas y aclaraciones (sin modificar diseño/visión).
 - Creado esqueleto completo del proyecto (estructura planificada) con archivos placeholder/comentarios de propósito.
 
 ## 4. Pendientes que siguen bloqueando o requieren decisión formal
+- **Adenda Rol B (2026-11-16):** `docs/contratos/reconciliacion-c0-rol-b.md` (R-018…R-031) propone correcciones de catálogo, rutas de lectura académica, contrato de autenticación, modelo de auditoría y adiciones al modelo de identidad; requiere ratificación en C0.
 - **PA-004 / R-007:** definición de negocio/privacidad para acceso de acudiente (bloqueante antes de C2 para ese alcance).
 - **Formalización C0:** aprobación explícita del equipo de esta reconciliación, cierre de PA-006 y solicitud de cambio si se decide enmendar el cap. 8 del diseño.
 - **Detalle de esquemas OpenAPI** (payloads, validaciones, filtros/sort por recurso) — PA-007.
