@@ -1,0 +1,4 @@
+# Propósito: orquestación de desarrollo (PostgreSQL 16, Redis, API) — placeholder Iteración 1.
+# TODO(Iteración 1): definir servicios, redes, volúmenes, healthchecks, roles de BD y comando único de arranque.
+
+services: {}

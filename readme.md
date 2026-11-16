@@ -25,8 +25,9 @@ Documentación de apoyo generada durante el proyecto:
 - `docs/requirements/` — catálogo de requisitos con criterios de aceptación.
 - `docs/adr/` — registros de decisión arquitectónica.
 - `docs/tasks/` — registro de tareas por iteración.
+- `docs/contratos/` — propuestas y contratos (gramática de permisos, catálogo, OpenAPI), con estado de aprobación.
 - `docs/open-questions.md` y `docs/assumptions.md` — preguntas abiertas y supuestos registrados.
-- `reviews/` — paquetes de revisión entregados en cada compuerta.
+- `docs/reviews/` — paquetes de revisión entregados en cada compuerta.
 
 ## Estado del proyecto
 
@@ -75,8 +76,11 @@ Los detalles, las justificaciones y las reglas de dependencia están en el Docum
     requirements/   # Catálogo de requisitos
     adr/            # Decisiones arquitectónicas
     tasks/          # Registro de tareas
-  reviews/          # Paquetes de revisión por compuerta
+    contratos/      # Propuestas y contratos (permisos, OpenAPI)
+    reviews/        # Paquetes de revisión por compuerta
 ```
+
+> Nota: el capítulo 6.1 del diseño arquitectónico ubica `reviews/` en la raíz; en esta reorganización se adopta `docs/reviews/` para mantener la documentación junta. La decisión queda registrada como pregunta abierta para confirmación del equipo.
 
 ## Puesta en marcha (desarrollo)
 

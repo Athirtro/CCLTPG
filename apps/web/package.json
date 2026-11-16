@@ -1,0 +1,9 @@
+{
+  "name": "@ccltpg/web",
+  "version": "0.1.0-backend",
+  "private": true,
+  "description": "Frontend SPA de CCLTPG (placeholder, sin implementación).",
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {}
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@ccltpg/api",
+  "version": "0.1.0-backend",
+  "private": true,
+  "description": "Backend NestJS de CCLTPG (esqueleto Iteración 1).",
+  "scripts": {
+    "build": "echo \"TODO(Iteración 1): build\"",
+    "start": "echo \"TODO(Iteración 1): start\"",
+    "start:dev": "echo \"TODO(Iteración 1): start:dev\"",
+    "lint": "echo \"TODO(Iteración 1): lint\"",
+    "format": "echo \"TODO(Iteración 1): format\"",
+    "typecheck": "echo \"TODO(Iteración 1): typecheck\"",
+    "test": "echo \"TODO(Iteración 1): test\"",
+    "test:integration": "echo \"TODO(Iteración 1): test:integration\"",
+    "test:architecture": "echo \"TODO(Iteración 1): test:architecture\"",
+    "migrate:up": "echo \"TODO(Iteración 1): migrate:up\"",
+    "migrate:down": "echo \"TODO(Iteración 1): migrate:down\""
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

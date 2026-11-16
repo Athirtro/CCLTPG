@@ -1,0 +1,17 @@
+# Supuestos registrados
+
+Supuestos explícitos identificados en la documentación vigente y en las propuestas recibidas. No sustituyen decisiones aprobadas; si un supuesto resulta incorrecto, debe registrarse como pregunta abierta/cambio y resolverse según el proceso de compuertas.
+
+| ID | Supuesto | Fuente | Impacto si cambia | Reversibilidad estimada | Estado |
+| --- | --- | --- | --- | --- | --- |
+| SUP-001 | La plataforma es **exclusivamente web**; no hay aplicaciones móviles nativas. | `docs/vision-alcance.md` (4.2), `docs/diseno-arquitectonico.md` (2.2) | Alto (alcance, arquitectura cliente) | Costosa | Vigente |
+| SUP-002 | Están **fuera de alcance** contabilidad, pagos en línea, nómina, inventario y gestión de espacios. | `docs/vision-alcance.md` (4.2), `docs/diseno-arquitectonico.md` (2.2, 3.8, 19.2) | Alto (modelo y módulos) | Costosa | Vigente |
+| SUP-003 | No hay **integración automática** con la plataforma de la Alcaldía de Pereira; migración/sincronización futura sería proyecto aparte. | `docs/vision-alcance.md` (4.2), `docs/diseno-arquitectonico.md` (2.2) | Medio (integraciones) | Media | Vigente |
+| SUP-004 | Los objetivos de disponibilidad (99.9%), respaldo y recuperación (RPO/RTO) dependen de la **infraestructura y servicios de alojamiento**; la arquitectura los habilita/mide pero no los garantiza por sí sola. | `docs/vision-alcance.md` (4.2), `docs/diseno-arquitectonico.md` (2.2, 14, 16, 20) | Alto (operación, SLA) | Costosa | Vigente |
+| SUP-005 | Metas operativas de referencia: **RPO ≤ 15 min, RTO ≤ 4 h**, sujetas a infraestructura disponible y verificables en preproducción/simulacros. | `docs/diseno-arquitectonico.md` (14) | Alto (DRP) | Media/Costosa | Vigente |
+| SUP-006 | El sistema **no reemplaza decisiones académicas o administrativas**; provee información y herramientas. | `docs/vision-alcance.md` (4.2), `docs/diseno-arquitectonico.md` (2.2) | Medio (expectativas/alcance) | Barata | Vigente |
+| SUP-007 | Entorno de operación soporta navegadores modernos (Chrome, Firefox, Edge, últimas versiones estables), HTTPS con TLS válido y entorno de preproducción (staging). | `docs/vision-alcance.md` (5.3), `docs/diseno-arquitectonico.md` (12, 14, 16) | Medio (compatibilidad/despliegue) | Media | Vigente |
+| SUP-008 | El análisis antimalware de archivos cuenta con una **interfaz/gancho** y una implementación inicial documentada como **stub** hasta definir proveedor/integración. | `docs/diseno-arquitectonico.md` (10.2) | Medio (seguridad de cargas) | Barata/Media | Vigente |
+| SUP-009 | La gramática de permisos, el catálogo de permisos v1 y los contratos de API v1 recibidos en conversación son **propuestas pendientes de aprobación en Compuerta 0**; se documentó una reconciliación (R-001..R-017) aprobada para documentar, sin carácter vinculante definitivo. | Instrucción de trabajo; propuesta de equipo; `docs/contratos/reconciliacion-c0.md` | Alto (seguridad/contratos) | Media | Vigente (hasta C0) |
+| SUP-010 | Los paquetes de revisión se centralizan en `docs/reviews/` para mantener la documentación junta, sujeto a confirmación frente a `reviews/` raíz del cap. 6.1. | Reorganización acordada; PA-001 | Bajo | Barata | Provisional |
+| SUP-011 | Los artefactos locales de herramientas de agentes no deben comitearse, pero los entregables documentales del proyecto (`docs/tasks/`, `docs/reviews/`, `docs/contratos/`, `docs/open-questions.md`, `docs/assumptions.md`, etc.) sí se versionan. | Propuesta aplicada en `.gitignore`; PA-008 | Bajo | Barata | Provisional |

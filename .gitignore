@@ -1,0 +1,22 @@
+# Dependencias y artefactos (reservado para iteraciones posteriores)
+node_modules/
+dist/
+build/
+coverage/
+.env
+.env.*
+!.env.example
+
+# Archivos e instrucciones locales de herramientas/agentes (no entregables del proyecto)
+AGENTS.md
+CLAUDE.md
+.cursorrules
+.cursor/
+.aider*
+.github/copilot-instructions.md
+.opencode/
+*.agent.local.md
+*_scratch.md
+
+# Nota: docs/tasks/, docs/reviews/, docs/open-questions.md, docs/assumptions.md y docs/contratos/
+# son documentación/entregables del proyecto y NO se ignoran.
