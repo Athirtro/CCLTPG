@@ -17,6 +17,7 @@ CLAUDE.md
 .opencode/
 *.agent.local.md
 *_scratch.md
+Planes de trabajo por rol.md
 
 # Nota: docs/tasks/, docs/reviews/, docs/open-questions.md, docs/assumptions.md y docs/contratos/
 # son documentación/entregables del proyecto y NO se ignoran.
