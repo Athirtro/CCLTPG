@@ -1,13 +1,5 @@
 ﻿import { useState } from 'react';
-import {
-  Box,
-  Button,
-  CssBaseline,
-  Paper,
-  TextField,
-  Typography,
-  Alert,
-} from '@mui/material';
+import { Box, Button, CssBaseline, Paper, TextField, Typography, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -23,19 +15,24 @@ export default function MfaVerify() {
     try {
       const partialSessionId = localStorage.getItem('ccltpg_partial_session') ?? '';
       await verifyMfa(partialSessionId, code);
-      navigate('/');
+      void navigate('/');
     } catch {
       setError('Código MFA inválido');
     }
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5' }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: '#f5f5f5',
+      }}
+    >
       <CssBaseline />
-      <Paper
-        elevation={3}
-        sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}
-      >
+      <Paper elevation={3} sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}>
         <Typography component="h1" variant="h5" align="center" gutterBottom sx={{ mb: 3 }}>
           Verificación MFA
         </Typography>
@@ -60,13 +57,7 @@ export default function MfaVerify() {
             onChange={(e) => setCode(e.target.value)}
             sx={{ mb: 3 }}
           />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            size="large"
-            disabled={isLoading}
-          >
+          <Button type="submit" fullWidth variant="contained" size="large" disabled={isLoading}>
             {isLoading ? 'Verificando…' : 'Verificar'}
           </Button>
         </form>

@@ -1,7 +1,75 @@
 # packages/contracts
 
-**Propósito:** tipos y esquemas compartidos generados desde la especificación OpenAPI canónica (cuando se defina el flujo en C0/C1).
+**Propósito:** artefactos machine-readable del contrato API v1 y del catálogo de eventos de auditoría, con verificación automática en CI.
 
-- Fuente documental/propuesta actual: `docs/contratos/api-v1.openapi.yaml` (pendiente de aprobación en C0).
-- La fuente de verdad canónica y el proceso de generación/verificación en CI deben quedar definidos y aprobados (ver `docs/contratos/reconciliacion-c0.md`, INC-013/PA-007).
-- **Estado:** placeholder.
+## Contenido
+
+| Archivo | Origen | ¿Se versiona? |
+| --- | --- | --- |
+| `openapi.json` | Generado desde los controladores/DTOs de `apps/api` (`@nestjs/swagger`) | Sí, como artefacto generado |
+| `events.json` | Generado desde `docs/contratos/modelo-auditoria-v1.md` §3 | Sí, como artefacto generado |
+| `public-routes.json` | Lista blanca **manual** de rutas con `x-access=public` | Sí, revisión obligatoria |
+| `spectral.yaml` | Reglas de lint del contrato | Sí, manual |
+| `scripts/` | Generadores, validador y pruebas | Sí, manual |
+
+La fuente canónica es el **código** de la API (D28 aplicado como A, pendiente de ratificación formal). Los JSON son artefactos derivados: no se editan a mano.
+
+## Comandos
+
+Desde la raíz:
+
+```bash
+pnpm contracts:generate   # regenera openapi.json y events.json
+pnpm contracts:validate   # R-028, R-031 y allowlist pública
+pnpm contracts:lint       # reglas Spectral
+pnpm test:contracts       # pruebas del validador
+```
+
+## Reglas del contrato
+
+Toda operación debe declarar:
+
+| Extensión | Valores | Regla |
+| --- | --- | --- |
+| `x-access` | `public`, `partial`, `partial_or_session`, `authenticated`, `permission` | Obligatoria |
+| `x-permission` | Arreglo de permisos | Obligatorio; vacío salvo `x-access=permission` |
+| `x-scope` | `global`, `own`, `group`, `mixed` | Obligatoria |
+| `x-audit-event` | Evento del catálogo o `-` | Obligatoria |
+| `x-partial-scope` | `mfa_verify`, `mfa_enroll`, `pwd_change` | Obligatoria si el acceso es parcial |
+| `x-error-codes` | Arreglo de códigos propios | Obligatorio, aunque esté vacío |
+| `x-audit-exempt` | Justificación | Obligatoria en operaciones mutantes con `x-audit-event: "-"` |
+
+El validador comprueba además:
+
+1. `operationId` único.
+2. Que `x-audit-event` exista en el catálogo (R-031).
+3. Que toda operación pública esté en `public-routes.json` y viceversa (C-14).
+4. Que `events.json` no derive del catálogo documental, en ambos sentidos.
+5. Que una operación no pública declare esquema de seguridad.
+
+## Flujo en CI
+
+```text
+código (controladores + ApiContract)
+  -> contracts:generate
+  -> git diff --exit-code -- packages/contracts   (detecta deriva)
+  -> contracts:validate
+  -> contracts:lint
+  -> test:contracts
+```
+
+Si un cambio añade una ruta pública, CI falla hasta que se revise y actualice `public-routes.json`. Es intencional: la lista blanca no se amplía por accidente.
+
+## Estado C1
+
+- 2 operaciones (ambas de salud), 2 rutas públicas y 59 eventos de catálogo.
+- Las rutas de negocio llegan en C2, cuando se ratifiquen RC-A-01…04 y RC-C-01…04.
+- `/metrics` no forma parte del contrato ni de la allowlist pública.
+
+## Referencias
+
+- `docs/contratos/api-v1.openapi.yaml` (propuesta documental de C0, no vinculante)
+- `docs/contratos/modelo-auditoria-v1.md` (catálogo de eventos)
+- `docs/contratos/matriz-autorizacion-v1.md` (R-028/R-031)
+- `docs/contratos/controles-seguridad-v1.md` (C-14, C-27, C-41)
+- `docs/runbook/operacion.md`

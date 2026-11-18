@@ -11,6 +11,7 @@ import Programas from './pages/Programas';
 import Grupos from './pages/Grupos';
 import Matriculas from './pages/Matriculas';
 import Admin from './pages/Admin';
+import Health from './pages/Health';
 import NotFound from './pages/NotFound';
 
 const theme = createTheme({
@@ -36,6 +37,7 @@ export default function App() {
               <Route path="/grupos" element={<Grupos />} />
               <Route path="/matriculas" element={<Matriculas />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/estado" element={<Health />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

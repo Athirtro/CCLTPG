@@ -1,0 +1,21 @@
+# Artefactos generados
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.pnpm-store/
+
+# Lockfile (lo administra pnpm)
+pnpm-lock.yaml
+
+# Documentación congelada y artefactos de revisión:
+# se editan solo mediante solicitud de cambio, no por formateo automático.
+docs/
+
+# Markdown: cada documento conserva el formato de su autor/revisor.
+**/*.md
+
+# SQL e infraestructura: sin parser de Prettier
+infra/compose/postgres/
+infra/compose/.env.example
+infra/compose/.env

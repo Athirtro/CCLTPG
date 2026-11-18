@@ -1,9 +1,37 @@
-﻿import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+﻿import {
+  Box,
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from '@mui/material';
 
 const estudiantes = [
-  { id: 'E-001', nombre: 'Ana García', email: 'ana@email.com', programa: 'Música', estado: 'Activo' },
-  { id: 'E-002', nombre: 'Luis Pérez', email: 'luis@email.com', programa: 'Pintura', estado: 'Activo' },
-  { id: 'E-003', nombre: 'María López', email: 'maria@email.com', programa: 'Danza', estado: 'Inactivo' },
+  {
+    id: 'E-001',
+    nombre: 'Ana García',
+    email: 'ana@email.com',
+    programa: 'Música',
+    estado: 'Activo',
+  },
+  {
+    id: 'E-002',
+    nombre: 'Luis Pérez',
+    email: 'luis@email.com',
+    programa: 'Pintura',
+    estado: 'Activo',
+  },
+  {
+    id: 'E-003',
+    nombre: 'María López',
+    email: 'maria@email.com',
+    programa: 'Danza',
+    estado: 'Inactivo',
+  },
 ];
 
 export default function Estudiantes() {

@@ -1,8 +1,11 @@
-# Dependencias y artefactos (reservado para iteraciones posteriores)
+# Dependencias y artefactos
 node_modules/
 dist/
 build/
 coverage/
+*.tsbuildinfo
+.vite/
+.pnpm-store/
 .env
 .env.*
 !.env.example

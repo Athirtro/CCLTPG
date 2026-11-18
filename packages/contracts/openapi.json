@@ -1,0 +1,165 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/health/live": {
+      "get": {
+        "description": "Confirma que el proceso de la API está vivo. No consulta dependencias.",
+        "operationId": "healthLive",
+        "parameters": [
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "description": "UUIDv7 de correlación; si falta o es inválido, la API genera uno.",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proceso vivo.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LivenessResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Liveness del proceso",
+        "tags": ["salud"],
+        "x-access": "public",
+        "x-audit-event": "-",
+        "x-error-codes": [],
+        "x-permission": [],
+        "x-scope": "global"
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "description": "Comprueba PostgreSQL y Redis con un tiempo límite configurable.",
+        "operationId": "healthReady",
+        "parameters": [
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "description": "UUIDv7 de correlación; si falta o es inválido, la API genera uno.",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dependencias disponibles.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadinessResponseDto" }
+              }
+            }
+          },
+          "503": {
+            "description": "Alguna dependencia no está disponible.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "summary": "Readiness de dependencias",
+        "tags": ["salud"],
+        "x-access": "public",
+        "x-audit-event": "-",
+        "x-error-codes": ["SERVICE_UNAVAILABLE"],
+        "x-permission": [],
+        "x-scope": "global"
+      }
+    }
+  },
+  "info": {
+    "title": "CCLTPG API v1",
+    "description": "Contrato generado desde el código de la API (NestJS + @nestjs/swagger).\n\nErrores en Problem Details (RFC 9457) con `code`, `requestId` e `instance`.\n\nToda operación declara `x-access`, `x-permission`, `x-scope` y `x-audit-event` (R-028).",
+    "version": "1.0.0-c1",
+    "contact": {}
+  },
+  "tags": [{ "name": "salud", "description": "Liveness y readiness operativas" }],
+  "servers": [{ "url": "/api/v1", "description": "Prefijo de versión v1" }],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "scheme": "bearer", "bearerFormat": "JWT", "type": "http" },
+      "cookieAuth": { "type": "apiKey", "in": "cookie", "name": "__Host-ccltpg_rt" }
+    },
+    "schemas": {
+      "LivenessResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["ok"], "example": "ok" },
+          "uptimeSeconds": { "type": "number", "example": 42 },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-17T12:00:00.000Z"
+          },
+          "requestId": {
+            "type": "string",
+            "nullable": true,
+            "example": "01a1ec52-3f1b-7c4d-8e5f-6a7b8c9d0e1f"
+          }
+        },
+        "required": ["status", "uptimeSeconds", "timestamp", "requestId"]
+      },
+      "DependencyCheckDto": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["up", "down"], "example": "up" },
+          "latencyMs": { "type": "number", "example": 3 }
+        },
+        "required": ["status", "latencyMs"]
+      },
+      "ReadinessChecksDto": {
+        "type": "object",
+        "properties": {
+          "database": { "$ref": "#/components/schemas/DependencyCheckDto" },
+          "redis": { "$ref": "#/components/schemas/DependencyCheckDto" }
+        },
+        "required": ["database", "redis"]
+      },
+      "ReadinessResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["ok", "unavailable"], "example": "ok" },
+          "checks": { "$ref": "#/components/schemas/ReadinessChecksDto" },
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-17T12:00:00.000Z"
+          },
+          "requestId": { "type": "string", "example": "01a1ec52-3f1b-7c4d-8e5f-6a7b8c9d0e1f" }
+        },
+        "required": ["status", "checks", "checkedAt", "requestId"]
+      },
+      "ProblemFieldErrorDto": {
+        "type": "object",
+        "properties": {
+          "field": { "type": "string", "example": "email" },
+          "code": { "type": "string", "example": "INVALID_FORMAT" },
+          "detail": { "type": "string", "example": "El correo no tiene un formato válido." }
+        },
+        "required": ["field", "code", "detail"]
+      },
+      "ProblemDetailsDto": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "example": "about:blank" },
+          "title": { "type": "string", "example": "Service Unavailable" },
+          "status": { "type": "number", "example": 503 },
+          "detail": { "type": "string", "example": "Dependencias no disponibles: redis." },
+          "instance": { "type": "string", "example": "/api/v1/health/ready" },
+          "code": { "type": "string", "example": "SERVICE_UNAVAILABLE" },
+          "errors": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProblemFieldErrorDto" }
+          },
+          "requestId": { "type": "string", "example": "01a1ec52-3f1b-7c4d-8e5f-6a7b8c9d0e1f" }
+        },
+        "required": ["type", "title", "status", "detail", "instance", "code", "requestId"]
+      }
+    }
+  }
+}

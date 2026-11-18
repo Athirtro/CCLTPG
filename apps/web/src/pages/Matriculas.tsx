@@ -1,9 +1,37 @@
-﻿import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+﻿import {
+  Box,
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from '@mui/material';
 
 const matriculas = [
-  { id: 'M-001', estudiante: 'Ana García', programa: 'Música', grupo: 'G-001', estado: 'Confirmada' },
-  { id: 'M-002', estudiante: 'Luis Pérez', programa: 'Pintura', grupo: 'G-002', estado: 'Pendiente' },
-  { id: 'M-003', estudiante: 'María López', programa: 'Danza', grupo: 'G-003', estado: 'Cancelada' },
+  {
+    id: 'M-001',
+    estudiante: 'Ana García',
+    programa: 'Música',
+    grupo: 'G-001',
+    estado: 'Confirmada',
+  },
+  {
+    id: 'M-002',
+    estudiante: 'Luis Pérez',
+    programa: 'Pintura',
+    grupo: 'G-002',
+    estado: 'Pendiente',
+  },
+  {
+    id: 'M-003',
+    estudiante: 'María López',
+    programa: 'Danza',
+    grupo: 'G-003',
+    estado: 'Cancelada',
+  },
 ];
 
 export default function Matriculas() {

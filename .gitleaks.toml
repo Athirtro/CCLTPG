@@ -1,0 +1,23 @@
+title = "CCLTPG — escaneo de secretos"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Valores de ejemplo, documentación congelada y artefactos generados"
+paths = [
+  '''pnpm-lock\.yaml''',
+  '''(^|/)\.env\.example$''',
+  '''(^|/)node_modules/''',
+  '''(^|/)dist/''',
+  '''^docs/''',
+  '''^packages/contracts/(openapi|events)\.json$''',
+  '''^apps/api/test/fixtures/''',
+  '''^scripts/secret-scan\.test\.mjs$''',
+]
+regexes = [
+  '''change[_-]?me''',
+  '''local_only''',
+  '''placeholder''',
+  '''<[^>]+>''',
+]

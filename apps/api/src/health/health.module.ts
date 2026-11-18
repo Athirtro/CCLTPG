@@ -1,4 +1,10 @@
-// Propósito: módulo de salud del servicio (placeholder Iteración 1).
-// TODO(Iteración 1): declarar HealthController y exponer GET /api/v1/health.
+import { Module } from '@nestjs/common';
 
-export {};
+import { HealthController } from './health.controller.js';
+import { HealthService } from './health.service.js';
+
+@Module({
+  controllers: [HealthController],
+  providers: [HealthService],
+})
+export class HealthModule {}

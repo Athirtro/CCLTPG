@@ -1,4 +1,12 @@
-// Propósito: módulo raíz de la aplicación NestJS (placeholder Iteración 1).
-// TODO(Iteración 1): importar módulos de contextos y módulo de salud; configurar proveedores transversales.
+import { Module } from '@nestjs/common';
+import { LoggerModule } from 'nestjs-pino';
 
-export {};
+import { DatabaseModule } from './database/database.module.js';
+import { HealthModule } from './health/health.module.js';
+import { MetricsModule } from './metrics/metrics.module.js';
+import { loggerModuleOptions } from './shared/observability/logger.config.js';
+
+@Module({
+  imports: [LoggerModule.forRoot(loggerModuleOptions), DatabaseModule, HealthModule, MetricsModule],
+})
+export class AppModule {}

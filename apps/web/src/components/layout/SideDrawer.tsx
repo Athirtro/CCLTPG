@@ -16,19 +16,45 @@ import {
   Shield as ShieldIcon,
   Notifications as NotificationsIcon,
   Folder as FolderIcon,
+  MonitorHeart as MonitorHeartIcon,
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const MENU_ITEMS = [
   { path: '/', label: 'Inicio', icon: <HomeIcon /> },
-  { path: '/estudiantes', label: 'Estudiantes', icon: <PeopleIcon />, requires: 'academic:student:manage' },
-  { path: '/programas', label: 'Programas', icon: <SchoolIcon />, requires: 'academic:program:manage' },
+  {
+    path: '/estudiantes',
+    label: 'Estudiantes',
+    icon: <PeopleIcon />,
+    requires: 'academic:student:manage',
+  },
+  {
+    path: '/programas',
+    label: 'Programas',
+    icon: <SchoolIcon />,
+    requires: 'academic:program:manage',
+  },
   { path: '/grupos', label: 'Grupos', icon: <GroupIcon />, requires: 'academic:group:manage' },
-  { path: '/matriculas', label: 'Matrículas', icon: <AssignmentIcon />, requires: 'academic:enrollment:manage' },
-  { path: '/admin', label: 'Administración', icon: <ShieldIcon />, requires: 'identity:user:manage' },
+  {
+    path: '/matriculas',
+    label: 'Matrículas',
+    icon: <AssignmentIcon />,
+    requires: 'academic:enrollment:manage',
+  },
+  {
+    path: '/admin',
+    label: 'Administración',
+    icon: <ShieldIcon />,
+    requires: 'identity:user:manage',
+  },
   { path: '/archivos', label: 'Archivos', icon: <FolderIcon />, requires: 'files:document:manage' },
-  { path: '/notificaciones', label: 'Notificaciones', icon: <NotificationsIcon />, requires: 'notifications:notification:manage' },
+  {
+    path: '/notificaciones',
+    label: 'Notificaciones',
+    icon: <NotificationsIcon />,
+    requires: 'notifications:notification:manage',
+  },
 ];
 
 type Props = {
@@ -48,9 +74,7 @@ export default function SideDrawer({ user, onLogout }: Props) {
 
   return (
     <>
-      <Typography sx={{ px: 3, py: 2, fontWeight: 'bold' }}>
-        CCLTPG
-      </Typography>
+      <Typography sx={{ px: 3, py: 2, fontWeight: 'bold' }}>CCLTPG</Typography>
       <Divider sx={{ my: 1 }} />
       {activeProfile && (
         <Typography sx={{ px: 3, py: 1, color: 'text.secondary', fontSize: '0.85rem' }}>
@@ -66,6 +90,17 @@ export default function SideDrawer({ user, onLogout }: Props) {
             </ListItemButton>
           </ListItem>
         ))}
+      </List>
+      <Divider sx={{ my: 1 }} />
+      <List>
+        <ListItem disablePadding>
+          <ListItemButton component={Link} to="/estado">
+            <ListItemIcon>
+              <MonitorHeartIcon />
+            </ListItemIcon>
+            <ListItemText primary="Estado del sistema" />
+          </ListItemButton>
+        </ListItem>
       </List>
       <Divider sx={{ my: 1 }} />
       <List>

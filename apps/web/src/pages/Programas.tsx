@@ -1,4 +1,14 @@
-﻿import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+﻿import {
+  Box,
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from '@mui/material';
 
 const programas = [
   { id: 'P-001', nombre: 'Música', cupo: 30, inscritos: 12 },

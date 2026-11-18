@@ -1,0 +1,75 @@
+extends:
+  - spectral:oas
+
+rules:
+  ccltpg-operation-summary:
+    description: Toda operación debe tener summary en español.
+    severity: error
+    given: '$.paths[*][get,post,put,patch,delete,options,head]'
+    then:
+      field: summary
+      function: truthy
+
+  ccltpg-operation-x-access:
+    description: Toda operación declara x-access (R-028, C-14).
+    severity: error
+    given: '$.paths[*][get,post,put,patch,delete,options,head]'
+    then:
+      field: x-access
+      function: truthy
+
+  ccltpg-operation-x-scope:
+    description: Toda operación declara x-scope (R-028).
+    severity: error
+    given: '$.paths[*][get,post,put,patch,delete,options,head]'
+    then:
+      field: x-scope
+      function: truthy
+
+  ccltpg-operation-x-audit-event:
+    description: Toda operación declara x-audit-event, incluso con "-" (R-028, C-27).
+    severity: error
+    given: '$.paths[*][get,post,put,patch,delete,options,head]'
+    then:
+      field: x-audit-event
+      function: truthy
+
+  ccltpg-operation-x-permission:
+    description: Toda operación declara x-permission como arreglo, aunque esté vacío.
+    severity: error
+    given: '$.paths[*][get,post,put,patch,delete,options,head]'
+    then:
+      field: x-permission
+      function: defined
+
+  ccltpg-operation-x-error-codes:
+    description: Toda operación declara sus códigos de error propios (R-028).
+    severity: error
+    given: '$.paths[*][get,post,put,patch,delete,options,head]'
+    then:
+      field: x-error-codes
+      function: defined
+
+  ccltpg-operation-tags:
+    description: Toda operación debe estar clasificada por contexto.
+    severity: warn
+    given: '$.paths[*][get,post,put,patch,delete,options,head]'
+    then:
+      field: tags
+      function: truthy
+
+  ccltpg-info-contact:
+    description: El contrato debe identificar al equipo responsable.
+    severity: warn
+    given: '$.info'
+    then:
+      field: contact
+      function: truthy
+
+  oas3-api-servers:
+    description: Debe declararse el servidor con el prefijo /api/v1.
+    severity: error
+    given: '$'
+    then:
+      field: servers
+      function: truthy

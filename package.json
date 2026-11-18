@@ -1,0 +1,43 @@
+{
+  "name": "ccltpg",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma de gestión del Centro Cultural Lucy Tejada (monorepo).",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=22.12.0 <23",
+    "pnpm": ">=9.15.4 <10"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @ccltpg/api --filter @ccltpg/web dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "lint:fix": "pnpm -r lint:fix",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:integration": "pnpm --filter @ccltpg/api test:integration",
+    "test:architecture": "pnpm --filter @ccltpg/api test:architecture",
+    "test:security": "node --test scripts/*.test.mjs",
+    "test:contracts": "node --test packages/contracts/scripts/contract.test.mjs",
+    "security:secrets": "node scripts/secret-scan.mjs",
+    "arch:check": "pnpm --filter @ccltpg/api exec depcruise src --config ../../.dependency-cruiser.mjs",
+    "contracts:generate": "pnpm --filter @ccltpg/api openapi:generate && node packages/contracts/scripts/generate-events.mjs",
+    "contracts:validate": "node packages/contracts/scripts/validate-contract.mjs",
+    "contracts:lint": "spectral lint packages/contracts/openapi.json --ruleset packages/contracts/spectral.yaml",
+    "format": "prettier --write . --ignore-unknown",
+    "format:check": "prettier --check . --ignore-unknown",
+    "migrate:up": "pnpm --filter @ccltpg/api migrate:up",
+    "migrate:down": "pnpm --filter @ccltpg/api migrate:down",
+    "migrate:status": "pnpm --filter @ccltpg/api migrate:status",
+    "infra:up": "docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml up -d",
+    "infra:down": "docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml down",
+    "infra:logs": "docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml logs -f",
+    "infra:reset": "docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml down -v"
+  },
+  "devDependencies": {
+    "@ccltpg/config": "workspace:*",
+    "@stoplight/spectral-cli": "6.17.1",
+    "prettier": "3.10.1",
+    "typescript": "5.9.3"
+  }
+}

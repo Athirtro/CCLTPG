@@ -1,0 +1,198 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'rol/*', 'c1/*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '9.15.4'
+  CI: 'true'
+
+jobs:
+  quality:
+    name: Calidad, pruebas y arquitectura
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Instalar dependencias (lockfile congelado)
+        run: pnpm install --frozen-lockfile
+
+      - name: Formato
+        run: pnpm format:check
+
+      - name: Tipos
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Pruebas unitarias y de API
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Reglas de dependencia (C-34)
+        run: pnpm arch:check
+
+      - name: Prueba de arquitectura con violación deliberada
+        run: pnpm test:architecture
+
+      - name: Pruebas del escáner de secretos
+        run: pnpm test:security
+
+  contracts:
+    name: Contrato OpenAPI y catálogo de eventos
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Instalar dependencias (lockfile congelado)
+        run: pnpm install --frozen-lockfile
+
+      - name: Regenerar OpenAPI y catálogo
+        run: pnpm contracts:generate
+
+      - name: Verificar que los artefactos generados están comiteados
+        run: git diff --exit-code -- packages/contracts
+
+      - name: Validar R-028, R-031 y allowlist pública
+        run: pnpm contracts:validate
+
+      - name: Reglas Spectral del contrato
+        run: pnpm contracts:lint
+
+      - name: Pruebas del validador de contrato
+        run: pnpm test:contracts
+
+  integration:
+    name: Integración con PostgreSQL y Redis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: ccltpg
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ccltpg_ci_postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ccltpg"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: ccltpg
+      PGUSER: postgres
+      PGPASSWORD: ccltpg_ci_postgres
+      POSTGRES_DB: ccltpg
+      CCLTPG_MIGRATOR_PASSWORD: ccltpg_ci_migrator
+      CCLTPG_APP_PASSWORD: ccltpg_ci_app
+      CCLTPG_READONLY_PASSWORD: ccltpg_ci_readonly
+      DATABASE_MIGRATOR_URL: postgresql://ccltpg_migrator:ccltpg_ci_migrator@localhost:5432/ccltpg
+      DATABASE_URL: postgresql://ccltpg_app:ccltpg_ci_app@localhost:5432/ccltpg
+      DATABASE_READONLY_URL: postgresql://ccltpg_readonly:ccltpg_ci_readonly@localhost:5432/ccltpg
+      REDIS_URL: redis://localhost:6379
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Instalar cliente PostgreSQL
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Instalar dependencias (lockfile congelado)
+        run: pnpm install --frozen-lockfile
+
+      # El mismo script que usa Compose al inicializar el volumen: roles,
+      # esquemas y privilegios mínimos (C-41). \getenv lee las variables del job.
+      - name: Crear roles y esquemas (C-41)
+        run: psql -v ON_ERROR_STOP=1 -f infra/compose/postgres/init/00-roles.sql
+
+      - name: Pruebas de integración contra PostgreSQL real
+        run: pnpm test:integration
+
+  security:
+    name: Secretos y análisis de dependencias
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Instalar dependencias (lockfile congelado)
+        run: pnpm install --frozen-lockfile
+
+      - name: Escaneo de secretos propio
+        run: pnpm security:secrets
+
+      - name: Gitleaks sobre el historial de Git
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo" \
+            zricethezav/gitleaks:latest \
+            detect --source=/repo --config=/repo/.gitleaks.toml --redact --verbose
+
+      - name: Análisis de dependencias (falla en vulnerabilidades críticas)
+        run: pnpm audit --prod --audit-level critical

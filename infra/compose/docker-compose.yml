@@ -1,4 +1,117 @@
-# Propósito: orquestación de desarrollo (PostgreSQL 16, Redis, API) — placeholder Iteración 1.
-# TODO(Iteración 1): definir servicios, redes, volúmenes, healthchecks, roles de BD y comando único de arranque.
+# Entorno de desarrollo de CCLTPG.
+# Uso:
+#   cp infra/compose/.env.example infra/compose/.env
+#   pnpm infra:up
+#
+# El archivo .env NO se versiona. Los valores de este ejemplo son locales y
+# deben cambiarse en cualquier entorno compartido.
 
-services: {}
+name: ccltpg-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ccltpg-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ccltpg}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD en infra/compose/.env}
+      CCLTPG_MIGRATOR_PASSWORD: ${CCLTPG_MIGRATOR_PASSWORD:?Defina CCLTPG_MIGRATOR_PASSWORD}
+      CCLTPG_APP_PASSWORD: ${CCLTPG_APP_PASSWORD:?Defina CCLTPG_APP_PASSWORD}
+      CCLTPG_READONLY_PASSWORD: ${CCLTPG_READONLY_PASSWORD:?Defina CCLTPG_READONLY_PASSWORD}
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks:
+      - backend
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: ccltpg-redis
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - 'yes'
+      - --save
+      - ''
+      - --maxmemory-policy
+      - noeviction
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+      - backend
+
+  minio:
+    # La etiqueta se fijará por digest cuando exista un registro verificado (C5/C8).
+    image: quay.io/minio/minio:latest
+    container_name: ccltpg-minio
+    restart: unless-stopped
+    command: ['server', '/data', '--console-address', ':9001']
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Defina MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Defina MINIO_ROOT_PASSWORD}
+    ports:
+      - '${MINIO_PORT:-9000}:9000'
+      - '${MINIO_CONSOLE_PORT:-9001}:9001'
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks:
+      - backend
+
+  minio-init:
+    image: quay.io/minio/mc:latest
+    container_name: ccltpg-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET:-ccltpg}
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" &&
+        mc mb --ignore-existing "local/$$MINIO_BUCKET" &&
+        mc anonymous set none "local/$$MINIO_BUCKET"
+    restart: 'no'
+    networks:
+      - backend
+
+volumes:
+  pgdata:
+    name: ccltpg-pgdata
+  redisdata:
+    name: ccltpg-redisdata
+  miniodata:
+    name: ccltpg-miniodata
+
+networks:
+  backend:
+    name: ccltpg-dev

@@ -25,18 +25,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(
-    () => localStorage.getItem('ccltpg_access_token')
+  const [token, setToken] = useState<string | null>(() =>
+    localStorage.getItem('ccltpg_access_token'),
   );
   const [isLoading, setIsLoading] = useState(false);
 
-  const hasPermission = useCallback((permission: string) => {
-    return user?.permissions.includes(permission) ?? false;
-  }, [user]);
+  const hasPermission = useCallback(
+    (permission: string) => {
+      return user?.permissions.includes(permission) ?? false;
+    },
+    [user],
+  );
 
-  const hasProfile = useCallback((profile: string) => {
-    return user?.profiles.includes(profile) ?? false;
-  }, [user]);
+  const hasProfile = useCallback(
+    (profile: string) => {
+      return user?.profiles.includes(profile) ?? false;
+    },
+    [user],
+  );
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -93,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!error && data) {
-        setUser(data as unknown as User);
+        setUser(data);
       }
     } catch {
       logout();

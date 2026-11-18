@@ -1,4 +1,14 @@
-﻿import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+﻿import {
+  Box,
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from '@mui/material';
 
 const grupos = [
   { id: 'G-001', nombre: 'Guitarra Básica', programa: 'Música', horario: 'Lun 18:00', cupo: 15 },

@@ -1,0 +1,5 @@
+{
+  "version": "1.0",
+  "description": "Lista blanca exacta de operaciones con x-access=public. Cualquier ruta nueva debe revisarse y añadirse aquí; el validador falla si el OpenAPI y esta lista divergen (C-14).",
+  "routes": ["GET /api/v1/health/live", "GET /api/v1/health/ready"]
+}

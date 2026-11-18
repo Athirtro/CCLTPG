@@ -1,4 +1,14 @@
-﻿import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+﻿import {
+  Box,
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 
 const usuarios = [
@@ -12,7 +22,17 @@ export default function Admin() {
 
   if (!hasPermission('identity:user:manage')) {
     return (
-      <Box sx={{ p: 4, textAlign: 'center', minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          p: 4,
+          textAlign: 'center',
+          minHeight: '60vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Typography variant="h6">No tienes permiso para ver esta sección.</Typography>
       </Box>
     );

@@ -3,7 +3,15 @@ import { Link } from 'react-router-dom';
 
 export default function NotFound() {
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5' }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: '#f5f5f5',
+      }}
+    >
       <Paper sx={{ p: 6, textAlign: 'center' }}>
         <Typography variant="h4">404</Typography>
         <Typography variant="body1" sx={{ mb: 3 }}>
