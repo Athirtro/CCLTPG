@@ -10,6 +10,17 @@ const PARTIAL_SCOPES = new Set(['mfa_verify', 'mfa_enroll', 'pwd_change']);
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'options', 'head']);
 const MUTATING_METHODS = new Set(['post', 'put', 'patch', 'delete']);
 const AUDIT_DISABLED = '-';
+const PARTIAL_ACCESS = new Set(['partial', 'partial_or_session']);
+
+/**
+ * Plantillas de evento admitidas en `x-audit-event` (R-028/R-031).
+ * La operación de transición emite un evento distinto por estado destino; el
+ * contrato conserva la notación de la matriz y el validador exige que todas
+ * las expansiones existan en el catálogo.
+ */
+const AUDIT_EVENT_TEMPLATES = {
+  'usuario.<estado>': ['usuario.activado', 'usuario.desactivado', 'usuario.bloqueado'],
+};
 
 /**
  * Valida el contrato OpenAPI contra R-028/C-14/C-27/R-031.
@@ -138,8 +149,13 @@ export function validateContract({ document, catalog, allowlist, documentedEvent
     if (typeof auditEvent !== 'string' || auditEvent.length === 0) {
       errors.push(`${where}: x-audit-event es obligatorio ("-" si no se audita).`);
     } else if (auditEvent !== AUDIT_DISABLED) {
-      if (!catalogEvents.has(auditEvent)) {
-        errors.push(`${where}: x-audit-event "${auditEvent}" no existe en el catálogo (R-031).`);
+      if (!isKnownAuditEvent(auditEvent)) {
+        const expansion = AUDIT_EVENT_TEMPLATES[auditEvent];
+        errors.push(
+          expansion
+            ? `${where}: x-audit-event "${auditEvent}" tiene expansiones fuera del catálogo (R-031): ${expansion.join(', ')}.`
+            : `${where}: x-audit-event "${auditEvent}" no existe en el catálogo (R-031).`,
+        );
       }
     } else if (MUTATING_METHODS.has(method) && !operation['x-audit-exempt']) {
       errors.push(
@@ -152,9 +168,28 @@ export function validateContract({ document, catalog, allowlist, documentedEvent
     }
 
     const operationSecurity = Array.isArray(operation.security) && operation.security.length > 0;
-    if (access !== 'public' && !operationSecurity && !globalSecurity) {
-      errors.push(`${where}: una operación no pública debe declarar un esquema de seguridad.`);
+    // Un token parcial viaja en el cuerpo (`sessionToken`) y se declara con
+    // x-partial-scope; OpenAPI 3.0 no admite esquemas de seguridad en el cuerpo,
+    // así que estas operaciones no exigen `security`.
+    if (
+      access !== 'public' &&
+      !PARTIAL_ACCESS.has(access) &&
+      !operationSecurity &&
+      !globalSecurity
+    ) {
+      errors.push(
+        `${where}: una operación autenticada o con permiso debe declarar un esquema de seguridad.`,
+      );
     }
+  }
+
+  function isKnownAuditEvent(event) {
+    if (catalogEvents.has(event)) {
+      return true;
+    }
+
+    const expansion = AUDIT_EVENT_TEMPLATES[event];
+    return Boolean(expansion) && expansion.every((candidate) => catalogEvents.has(candidate));
   }
 
   function validateAllowlist() {

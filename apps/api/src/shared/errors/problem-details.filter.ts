@@ -23,6 +23,7 @@ interface NormalizedProblem {
   code: string;
   detail: string;
   errors?: ProblemFieldError[];
+  retryAfterSeconds?: number;
 }
 
 /**
@@ -76,6 +77,11 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       body.errors = problem.errors;
     }
 
+    // AC-SEC-14: límites de tasa informan cuándo reintentar (429 Too Many Requests).
+    if (problem.status === 429 && problem.retryAfterSeconds) {
+      response.setHeader('Retry-After', String(Math.max(1, Math.ceil(problem.retryAfterSeconds))));
+    }
+
     response
       .status(problem.status)
       .type(PROBLEM_DETAILS_CONTENT_TYPE)
@@ -95,24 +101,43 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     const payload = exception.getResponse();
     const fallbackCode = codeForStatus(status);
     const fallbackDetail = titleForStatus(status);
+    const retryAfterSeconds = this.retryAfterOf(exception);
 
     if (typeof payload === 'string') {
       return {
         status,
         code: fallbackCode,
         detail: payload,
+        ...(retryAfterSeconds === undefined ? {} : { retryAfterSeconds }),
       };
     }
 
     const record = asRecord(payload);
     if (!record) {
-      return { status, code: fallbackCode, detail: fallbackDetail };
+      return {
+        status,
+        code: fallbackCode,
+        detail: fallbackDetail,
+        ...(retryAfterSeconds === undefined ? {} : { retryAfterSeconds }),
+      };
     }
 
     const code = typeof record.code === 'string' ? record.code : fallbackCode;
     const detail = firstMessage(record.detail) ?? firstMessage(record.message) ?? fallbackDetail;
     const errors = extractFieldErrors(record.errors);
 
-    return errors ? { status, code, detail, errors } : { status, code, detail };
+    return {
+      status,
+      code,
+      detail,
+      ...(errors === undefined ? {} : { errors }),
+      ...(retryAfterSeconds === undefined ? {} : { retryAfterSeconds }),
+    };
+  }
+
+  /** El error de dominio declara cuántos segundos esperar antes de reintentar. */
+  private retryAfterOf(exception: unknown): number | undefined {
+    const value = (exception as { retryAfterSeconds?: unknown }).retryAfterSeconds;
+    return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined;
   }
 }

@@ -111,6 +111,6 @@ describe('arquitectura del monolito modular (C-34)', () => {
 
   it('detecta una violación deliberada: un contexto importando otro', async () => {
     const result = await violationsFor([`${FIXTURE}src`], { prefix: FIXTURE_PREFIX });
-    expect(result.rules).toContain('contextos-aislados');
+    expect(result.rules).toContain('contexto-academic-no-importa-identity');
   }, 120_000);
 });

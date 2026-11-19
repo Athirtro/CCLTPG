@@ -2,6 +2,44 @@
  * Reglas de dependencia del monolito modular (diseño §6.1, control C-34).
  * Se ejecutan desde `apps/api`: `depcruise src --config ../../.dependency-cruiser.mjs`.
  */
+import { readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+/**
+ * dependency-cruiser no comparte grupos de captura entre `from` y `to`, así que
+ * la aislamiento entre contextos se materializa como un par de reglas explícito
+ * por cada par de contextos. La lista se descubre del sistema de archivos para
+ * que un contexto nuevo quede cubierto sin tocar la configuración.
+ */
+const CONTEXTS = new Set(['academic']);
+try {
+  for (const entry of readdirSync(resolve(import.meta.dirname, 'apps/api/src/modules'), {
+    withFileTypes: true,
+  })) {
+    if (entry.isDirectory()) {
+      CONTEXTS.add(entry.name);
+    }
+  }
+} catch {
+  // Si aún no existe el directorio, quedan las reglas de capas.
+}
+
+const isolationRules = [];
+for (const from of CONTEXTS) {
+  for (const to of CONTEXTS) {
+    if (from === to) {
+      continue;
+    }
+    isolationRules.push({
+      name: `contexto-${from}-no-importa-${to}`,
+      severity: 'error',
+      comment: `Un contexto no importa archivos internos de otro contexto: ${from} → ${to} (C-34).`,
+      from: { path: `^src/modules/${from}/` },
+      to: { path: `^src/modules/${to}/` },
+    });
+  }
+}
+
 export default {
   forbidden: [
     {
@@ -31,14 +69,7 @@ export default {
       from: { path: '^src/modules/[^/]+/application/' },
       to: { path: '^src/modules/[^/]+/(api|infrastructure)/' },
     },
-    {
-      name: 'contextos-aislados',
-      severity: 'error',
-      comment:
-        'Un contexto no importa archivos internos de otro contexto; la colaboración pasa por contratos explícitos (C2).',
-      from: { path: '^src/modules/([^/]+)/' },
-      to: { path: '^src/modules/(?!\\1/)[^/]+/' },
-    },
+    ...isolationRules,
     {
       name: 'shared-no-depende-de-contextos',
       severity: 'error',

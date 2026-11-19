@@ -11,7 +11,7 @@
 3. Los esquemas y roles los crea `infra/compose/postgres/init/00-roles.sql`, no una migración.
 4. Solo el rol `ccltpg_migrator` puede ejecutar DDL. La API usa `ccltpg_app`.
 5. Todo cambio se valida con `up → down → up` sobre base vacía antes de considerarse entregado.
-6. En C1 las carpetas de negocio están vacías a propósito: las tablas llegan con RC-A-01…04 en C2/C4.
+6. En C1 las carpetas de negocio estaban vacías; C2 añadió el núcleo de identidad y auditoría en `public`. Las tablas académicas llegan con RC-A en C4.
 
 ## 2. Variables necesarias
 

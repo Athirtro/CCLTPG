@@ -1,6 +1,485 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/audit/events": {
+      "get": {
+        "description": "Solo `audit:event:read`. La propia consulta genera `auditoria.consultada` con los filtros y el número de resultados.",
+        "operationId": "listAuditEvents",
+        "parameters": [],
+        "responses": {
+          "200": { "description": "Página de eventos." },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Consulta de eventos de auditoría",
+        "tags": ["auditoría"],
+        "x-access": "permission",
+        "x-audit-event": "auditoria.consultada",
+        "x-error-codes": ["PERMISSION_DENIED", "VALIDATION_FAILED"],
+        "x-permission": ["audit:event:read"],
+        "x-scope": "global"
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "description": "Credenciales correctas pueden terminar en sesión completa o en un estado parcial (cambio de contraseña, inscripción o verificación MFA).",
+        "operationId": "login",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/LoginResponseDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "summary": "Inicio de sesión",
+        "tags": ["autenticación"],
+        "x-access": "public",
+        "x-audit-event": "sesion.iniciada",
+        "x-error-codes": ["AUTH_INVALID_CREDENTIALS", "AUTH_RATE_LIMITED", "SERVICE_UNAVAILABLE"],
+        "x-permission": [],
+        "x-scope": "global"
+      }
+    },
+    "/auth/mfa/verify": {
+      "post": {
+        "description": "Acepta TOTP o un código de recuperación. Al quinto intento invalida el token parcial y responde 429 `AUTH_MFA_ATTEMPTS_EXCEEDED`.",
+        "operationId": "verifyMfa",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/LoginResponseDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "summary": "Verificación MFA con token parcial",
+        "tags": ["autenticación"],
+        "x-access": "partial",
+        "x-audit-event": "sesion.mfa_verificada",
+        "x-error-codes": [
+          "AUTH_MFA_SESSION_INVALID",
+          "AUTH_MFA_INVALID_CODE",
+          "AUTH_MFA_ATTEMPTS_EXCEEDED",
+          "SERVICE_UNAVAILABLE"
+        ],
+        "x-partial-scope": ["mfa_verify"],
+        "x-permission": [],
+        "x-scope": "global"
+      }
+    },
+    "/auth/mfa/enroll": {
+      "post": {
+        "description": "Devuelve el secreto TOTP y el `otpauthUri` una sola vez, con `Cache-Control: no-store`. La inscripción se audita al confirmar.",
+        "operationId": "enrollMfa",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MfaEnrollResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Inscripción MFA (token parcial o sesión)",
+        "tags": ["autenticación"],
+        "x-access": "partial_or_session",
+        "x-audit-event": "-",
+        "x-audit-exempt": "La inscripción solo se audita al confirmar (usuario.mfa_inscrita).",
+        "x-error-codes": ["AUTH_MFA_SESSION_INVALID", "AUTH_MFA_ALREADY_ENABLED"],
+        "x-partial-scope": ["mfa_enroll"],
+        "x-permission": [],
+        "x-scope": "own"
+      }
+    },
+    "/auth/mfa/enroll/confirm": {
+      "post": {
+        "description": "Valida el primer código TOTP, habilita MFA y entrega los 10 códigos de recuperación una sola vez.",
+        "operationId": "confirmMfaEnrollment",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/LoginResponseDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Confirmar inscripción MFA",
+        "tags": ["autenticación"],
+        "x-access": "partial_or_session",
+        "x-audit-event": "usuario.mfa_inscrita",
+        "x-error-codes": [
+          "AUTH_MFA_INVALID_CODE",
+          "AUTH_MFA_ALREADY_ENABLED",
+          "AUTH_MFA_SESSION_INVALID"
+        ],
+        "x-partial-scope": ["mfa_enroll"],
+        "x-permission": [],
+        "x-scope": "own"
+      }
+    },
+    "/auth/mfa/recovery-codes": {
+      "post": {
+        "description": "Exige un TOTP válido y reemplaza los 10 códigos anteriores, que dejan de ser aceptados. Responde `Cache-Control: no-store`.",
+        "operationId": "regenerateRecoveryCodes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RecoveryCodesResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Regenerar códigos de recuperación",
+        "tags": ["autenticación"],
+        "x-access": "authenticated",
+        "x-audit-event": "usuario.mfa_recovery_regenerada",
+        "x-error-codes": ["AUTH_MFA_INVALID_CODE", "AUTH_MFA_NOT_ENABLED"],
+        "x-permission": [],
+        "x-scope": "own"
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "description": "Toma el refresh de la cookie `__Host-ccltpg_rt`, exige CSRF y rota el token. La reutilización de un token rotado revoca la familia completa.",
+        "operationId": "refresh",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/LoginResponseDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "summary": "Rotación del refresh token",
+        "tags": ["autenticación"],
+        "x-access": "public",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Solo se audita la reutilización (sesion.refresh_reutilizado).",
+        "x-error-codes": [
+          "AUTH_TOKEN_INVALID",
+          "AUTH_TOKEN_EXPIRED",
+          "AUTH_TOKEN_REUSED",
+          "AUTH_CSRF_INVALID",
+          "SERVICE_UNAVAILABLE"
+        ],
+        "x-permission": [],
+        "x-scope": "global"
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "description": "Revoca la familia y borra ambas cookies. Responde 204 aunque falte el token o se repita la llamada.",
+        "operationId": "logout",
+        "parameters": [],
+        "responses": { "204": { "description": "" } },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Cierre de sesión idempotente",
+        "tags": ["autenticación"],
+        "x-access": "authenticated",
+        "x-allow-anonymous": true,
+        "x-audit-event": "sesion.cerrada",
+        "x-error-codes": ["AUTH_CSRF_INVALID"],
+        "x-permission": [],
+        "x-scope": "global"
+      }
+    },
+    "/auth/password": {
+      "post": {
+        "description": "Con sesión completa responde 204 y conserva la familia actual; con token parcial `pwd_change` responde el siguiente estado.",
+        "operationId": "changePassword",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/LoginResponseDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Cambio de contraseña",
+        "tags": ["autenticación"],
+        "x-access": "partial_or_session",
+        "x-audit-event": "usuario.password_cambiada",
+        "x-error-codes": [
+          "AUTH_CURRENT_PASSWORD_INVALID",
+          "AUTH_PASSWORD_POLICY_VIOLATION",
+          "AUTH_MFA_SESSION_INVALID"
+        ],
+        "x-partial-scope": ["pwd_change"],
+        "x-permission": [],
+        "x-scope": "own"
+      }
+    },
+    "/me": {
+      "get": {
+        "description": "Devuelve la identidad, los perfiles vigentes y los permisos expandidos. No concede permisos: solo informa lo calculado en el servidor.",
+        "operationId": "getMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/MeResponseDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Perfil efectivo del usuario autenticado",
+        "tags": ["identidad"],
+        "x-access": "authenticated",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Consulta de solo lectura sobre la propia identidad; no muta estado.",
+        "x-error-codes": ["AUTH_TOKEN_INVALID", "AUTH_TOKEN_EXPIRED", "AUTH_TOKEN_REVOKED"],
+        "x-permission": [],
+        "x-scope": "own"
+      }
+    },
+    "/identity/users": {
+      "get": {
+        "description": "Solo `identity:user:manage`. La consulta de PII genera `usuario.listado` con filtros y número de resultados, sin copiar filas.",
+        "operationId": "listUsers",
+        "parameters": [],
+        "responses": {
+          "200": { "description": "Página de usuarios." },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Listado de usuarios",
+        "tags": ["identidad"],
+        "x-access": "permission",
+        "x-audit-event": "usuario.listado",
+        "x-error-codes": ["PERMISSION_DENIED", "VALIDATION_FAILED"],
+        "x-permission": ["identity:user:manage"],
+        "x-scope": "global"
+      },
+      "post": {
+        "description": "El usuario nace con `debe_cambiar_password` y sin MFA.",
+        "operationId": "createUser",
+        "parameters": [],
+        "responses": {
+          "201": { "description": "Usuario creado." },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Alta de usuario",
+        "tags": ["identidad"],
+        "x-access": "permission",
+        "x-audit-event": "usuario.creado",
+        "x-error-codes": ["PERMISSION_DENIED", "VALIDATION_FAILED", "CONFLICT"],
+        "x-permission": ["identity:user:manage"],
+        "x-scope": "global"
+      }
+    },
+    "/identity/users/{id}": {
+      "patch": {
+        "description": "Permite renombrar, resetear la contraseña (write-only, fuerza cambio) y resetear MFA.",
+        "operationId": "updateUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Usuario actualizado." },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Actualización administrativa",
+        "tags": ["identidad"],
+        "x-access": "permission",
+        "x-audit-event": "usuario.actualizado",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "AUTH_PASSWORD_POLICY_VIOLATION"
+        ],
+        "x-permission": ["identity:user:manage"],
+        "x-scope": "global"
+      }
+    },
+    "/identity/users/{id}/transitions": {
+      "post": {
+        "description": "Activa, desactiva o bloquea. Cualquier estado distinto de `activo` revoca sesiones.",
+        "operationId": "transitionUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Usuario con el nuevo estado." },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Transición de estado",
+        "tags": ["identidad"],
+        "x-access": "permission",
+        "x-audit-event": "usuario.<estado>",
+        "x-error-codes": ["PERMISSION_DENIED", "RESOURCE_NOT_FOUND", "VALIDATION_FAILED"],
+        "x-permission": ["identity:user:manage"],
+        "x-scope": "global"
+      }
+    },
+    "/identity/users/{id}/profiles": {
+      "post": {
+        "description": "Con `validUntil` crea una identidad temporal; el usuario queda obligado a MFA mientras esté vigente.",
+        "operationId": "assignProfile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "201": { "description": "Perfil asignado." },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Asignación de perfil",
+        "tags": ["identidad"],
+        "x-access": "permission",
+        "x-audit-event": "usuario.perfil_asignado",
+        "x-error-codes": ["PERMISSION_DENIED", "RESOURCE_NOT_FOUND", "VALIDATION_FAILED"],
+        "x-permission": ["identity:user:manage"],
+        "x-scope": "global"
+      }
+    },
     "/health/live": {
       "get": {
         "description": "Confirma que el proceso de la API está vivo. No consulta dependencias.",
@@ -78,7 +557,18 @@
     "version": "1.0.0-c1",
     "contact": {}
   },
-  "tags": [{ "name": "salud", "description": "Liveness y readiness operativas" }],
+  "tags": [
+    { "name": "salud", "description": "Liveness y readiness operativas" },
+    {
+      "name": "autenticación",
+      "description": "Login, MFA, refresh, logout y cambio de contraseña"
+    },
+    {
+      "name": "identidad",
+      "description": "Perfil efectivo, permisos y administración de identidades"
+    },
+    { "name": "auditoría", "description": "Consulta de eventos y meta-auditoría" }
+  ],
   "servers": [{ "url": "/api/v1", "description": "Prefijo de versión v1" }],
   "components": {
     "securitySchemes": {
@@ -86,6 +576,102 @@
       "cookieAuth": { "type": "apiKey", "in": "cookie", "name": "__Host-ccltpg_rt" }
     },
     "schemas": {
+      "ProblemFieldErrorDto": {
+        "type": "object",
+        "properties": {
+          "field": { "type": "string", "example": "email" },
+          "code": { "type": "string", "example": "INVALID_FORMAT" },
+          "detail": { "type": "string", "example": "El correo no tiene un formato válido." }
+        },
+        "required": ["field", "code", "detail"]
+      },
+      "ProblemDetailsDto": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "example": "about:blank" },
+          "title": { "type": "string", "example": "Service Unavailable" },
+          "status": { "type": "number", "example": 503 },
+          "detail": { "type": "string", "example": "Dependencias no disponibles: redis." },
+          "instance": { "type": "string", "example": "/api/v1/health/ready" },
+          "code": { "type": "string", "example": "SERVICE_UNAVAILABLE" },
+          "errors": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProblemFieldErrorDto" }
+          },
+          "requestId": { "type": "string", "example": "01a1ec52-3f1b-7c4d-8e5f-6a7b8c9d0e1f" }
+        },
+        "required": ["type", "title", "status", "detail", "instance", "code", "requestId"]
+      },
+      "ProfileSummaryDto": {
+        "type": "object",
+        "properties": {
+          "codigo": { "type": "string", "example": "educador" },
+          "validUntil": { "type": "string", "format": "date-time", "nullable": true }
+        },
+        "required": ["codigo"]
+      },
+      "LoginResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "authenticated",
+              "password_change_required",
+              "mfa_required",
+              "mfa_enrollment_required"
+            ]
+          },
+          "sessionToken": { "type": "string" },
+          "accessToken": { "type": "string" },
+          "tokenType": { "type": "string", "example": "Bearer" },
+          "expiresIn": { "type": "number", "example": 900 },
+          "csrfToken": { "type": "string" },
+          "mustChangePassword": { "type": "boolean" },
+          "profiles": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProfileSummaryDto" }
+          }
+        },
+        "required": ["status", "mustChangePassword", "profiles"]
+      },
+      "MfaEnrollResponseDto": {
+        "type": "object",
+        "properties": { "secret": { "type": "string" }, "otpauthUri": { "type": "string" } },
+        "required": ["secret", "otpauthUri"]
+      },
+      "RecoveryCodesResponseDto": {
+        "type": "object",
+        "properties": { "recoveryCodes": { "type": "array", "items": { "type": "string" } } },
+        "required": ["recoveryCodes"]
+      },
+      "MeResponseDto": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "email": { "type": "string" },
+          "nombre": { "type": "string" },
+          "estado": { "type": "string" },
+          "mfaEnabled": { "type": "boolean" },
+          "mustChangePassword": { "type": "boolean" },
+          "profiles": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProfileSummaryDto" }
+          },
+          "activeProfile": { "type": "string", "nullable": true },
+          "permissions": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": [
+          "userId",
+          "email",
+          "nombre",
+          "estado",
+          "mfaEnabled",
+          "mustChangePassword",
+          "profiles",
+          "permissions"
+        ]
+      },
       "LivenessResponseDto": {
         "type": "object",
         "properties": {
@@ -133,32 +719,6 @@
           "requestId": { "type": "string", "example": "01a1ec52-3f1b-7c4d-8e5f-6a7b8c9d0e1f" }
         },
         "required": ["status", "checks", "checkedAt", "requestId"]
-      },
-      "ProblemFieldErrorDto": {
-        "type": "object",
-        "properties": {
-          "field": { "type": "string", "example": "email" },
-          "code": { "type": "string", "example": "INVALID_FORMAT" },
-          "detail": { "type": "string", "example": "El correo no tiene un formato válido." }
-        },
-        "required": ["field", "code", "detail"]
-      },
-      "ProblemDetailsDto": {
-        "type": "object",
-        "properties": {
-          "type": { "type": "string", "example": "about:blank" },
-          "title": { "type": "string", "example": "Service Unavailable" },
-          "status": { "type": "number", "example": 503 },
-          "detail": { "type": "string", "example": "Dependencias no disponibles: redis." },
-          "instance": { "type": "string", "example": "/api/v1/health/ready" },
-          "code": { "type": "string", "example": "SERVICE_UNAVAILABLE" },
-          "errors": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/ProblemFieldErrorDto" }
-          },
-          "requestId": { "type": "string", "example": "01a1ec52-3f1b-7c4d-8e5f-6a7b8c9d0e1f" }
-        },
-        "required": ["type", "title", "status", "detail", "instance", "code", "requestId"]
       }
     }
   }

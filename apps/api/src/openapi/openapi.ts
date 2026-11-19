@@ -24,6 +24,9 @@ export function buildOpenApiDocument(
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'bearerAuth')
     .addCookieAuth('__Host-ccltpg_rt', { type: 'apiKey', in: 'cookie' }, 'cookieAuth')
     .addTag('salud', 'Liveness y readiness operativas')
+    .addTag('autenticación', 'Login, MFA, refresh, logout y cambio de contraseña')
+    .addTag('identidad', 'Perfil efectivo, permisos y administración de identidades')
+    .addTag('auditoría', 'Consulta de eventos y meta-auditoría')
     .build();
 
   return SwaggerModule.createDocument(app, config, {

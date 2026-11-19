@@ -53,6 +53,7 @@
     "usuario.creado",
     "usuario.desactivado",
     "usuario.desbloqueado",
+    "usuario.listado",
     "usuario.mfa_inscrita",
     "usuario.mfa_recovery_regenerada",
     "usuario.mfa_recovery_usada",

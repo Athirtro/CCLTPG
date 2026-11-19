@@ -74,6 +74,11 @@ export function scanText(text, file = '<texto>') {
           continue;
         }
 
+        // `PASSWORD :'app_password'` es una variable de psql, no un secreto.
+        if (rule.name === 'assigned-secret' && /:\s*'/u.test(match[0])) {
+          continue;
+        }
+
         findings.push({ file, line: index + 1, rule: rule.name });
       }
     }

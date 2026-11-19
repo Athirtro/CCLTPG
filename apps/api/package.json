@@ -20,6 +20,7 @@
     "migrate:up": "tsx src/database/migrator/migrate.ts up",
     "migrate:down": "tsx src/database/migrator/migrate.ts down",
     "migrate:status": "tsx src/database/migrator/migrate.ts status",
+    "db:seed": "tsx src/database/seeds/run.ts",
     "openapi:generate": "tsx src/openapi/generate.ts"
   },
   "dependencies": {
@@ -34,11 +35,13 @@
     "@opentelemetry/instrumentation-ioredis": "0.73.0",
     "@opentelemetry/instrumentation-pg": "0.78.0",
     "@opentelemetry/sdk-node": "0.301.2",
+    "argon2": "0.45.2",
     "class-transformer": "0.5.1",
     "class-validator": "0.15.1",
     "dotenv": "18.0.10",
     "helmet": "8.3.0",
     "ioredis": "5.11.1",
+    "jose": "6.2.18",
     "kysely": "0.29.9",
     "nestjs-pino": "5.3.2",
     "pg": "8.23.1",

@@ -81,6 +81,7 @@ Convención: `recurso.accion`, en español, participio para acciones consumadas 
 | Evento | Cuándo | `recurso` / `recurso_id` | `datos_antes` | `datos_despues` |
 | --- | --- | --- | --- | --- |
 | `usuario.creado` | Alta de usuario | `usuario` / id | — | `{email_hmac, estado, perfiles}` |
+| `usuario.listado` | Consulta de PII (listado administrativo) | `usuario` / nulo | — | `{filtros, resultados}` |
 | `usuario.actualizado` | Cambio de datos no sensibles | `usuario` / id | diff | diff |
 | `usuario.activado` | Transición a activo | `usuario` / id | `{estado}` | `{estado}` |
 | `usuario.desactivado` | Transición a inactivo | `usuario` / id | `{estado}` | `{estado, motivo}` |

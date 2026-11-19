@@ -35,6 +35,16 @@ test('no marca valores de ejemplo ni placeholders', () => {
   assert.deepEqual(scanText(text, '.env.example'), []);
 });
 
+test('no marca variables de psql ni credenciales de CI efímeras', () => {
+  const text = [
+    "CREATE ROLE ccltpg_app LOGIN PASSWORD :'app_password';",
+    'DATABASE_URL=postgresql://ccltpg_app:ccltpg_test_app@localhost:5432/ccltpg',
+    'password: "ccltpg_test_readonly"',
+  ].join('\n');
+
+  assert.deepEqual(scanText(text, 'fixture.sql'), []);
+});
+
 test('excluye artefactos generados y documentación congelada', () => {
   assert.equal(isExcluded('pnpm-lock.yaml'), true);
   assert.equal(isExcluded('docs/contratos/api-v1.openapi.yaml'), true);

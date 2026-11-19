@@ -26,6 +26,8 @@ export interface ContractMetadata {
   errorCodes?: readonly string[];
   /** Justificación obligatoria cuando una operación mutante no se audita. */
   auditExempt?: string;
+  /** La operación es idempotente sin sesión (p. ej. `logout`). */
+  allowAnonymous?: boolean;
 }
 
 /**
@@ -50,6 +52,10 @@ export function ApiContract(metadata: ContractMetadata): MethodDecorator & Class
 
   if (metadata.auditExempt) {
     decorators.push(ApiExtension('x-audit-exempt', metadata.auditExempt));
+  }
+
+  if (metadata.allowAnonymous) {
+    decorators.push(ApiExtension('x-allow-anonymous', true));
   }
 
   return applyDecorators(...decorators);
