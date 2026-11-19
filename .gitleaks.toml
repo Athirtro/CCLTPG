@@ -21,3 +21,11 @@ regexes = [
   '''placeholder''',
   '''<[^>]+>''',
 ]
+
+[[allowlists]]
+description = "Token CSRF sintético del test en el commit anterior"
+commits = ["9e667375b86b754af9591f050de4a628f139ce94"]
+paths = ['''^apps/api/src/modules/identity/api/csrf\.service\.spec\.ts$''']
+regexTarget = "secret"
+regexes = ['''^0123456789abcdef0123456789abcdef$''']
+condition = "AND"
