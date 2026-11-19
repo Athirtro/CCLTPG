@@ -5,7 +5,7 @@ import { CSRF_COOKIE } from './auth-cookies.js';
 import { CsrfService } from './csrf.service.js';
 
 const csrf = new CsrfService();
-const TOKEN = '0123456789abcdef0123456789abcdef';
+const CSRF_TEST_VALUE = '0123456789abcdef0123456789abcdef';
 
 function request(headers: Record<string, string>): Request {
   return { headers } as unknown as Request;
@@ -14,15 +14,17 @@ function request(headers: Record<string, string>): Request {
 describe('CSRF de doble envío (AC-SEC-13)', () => {
   it('acepta cookie y cabecera iguales', () => {
     expect(() =>
-      csrf.assert(request({ cookie: `${CSRF_COOKIE}=${TOKEN}`, 'x-csrf-token': TOKEN })),
+      csrf.assert(
+        request({ cookie: `${CSRF_COOKIE}=${CSRF_TEST_VALUE}`, 'x-csrf-token': CSRF_TEST_VALUE }),
+      ),
     ).not.toThrow();
   });
 
   it('rechaza cabecera ausente, cookie ausente o valores distintos', () => {
     const cases: Array<Record<string, string>> = [
-      { cookie: `${CSRF_COOKIE}=${TOKEN}` },
-      { 'x-csrf-token': TOKEN },
-      { cookie: `${CSRF_COOKIE}=${TOKEN}`, 'x-csrf-token': `${TOKEN}x` },
+      { cookie: `${CSRF_COOKIE}=${CSRF_TEST_VALUE}` },
+      { 'x-csrf-token': CSRF_TEST_VALUE },
+      { cookie: `${CSRF_COOKIE}=${CSRF_TEST_VALUE}`, 'x-csrf-token': `${CSRF_TEST_VALUE}x` },
     ];
 
     for (const headers of cases) {

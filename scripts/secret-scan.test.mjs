@@ -29,6 +29,7 @@ test('no marca valores de ejemplo ni placeholders', () => {
     'DATABASE_URL=postgresql://ccltpg_app:change_me_local_only@localhost:5432/ccltpg',
     'JWT_ACCESS_SECRET=change_me',
     'password: "example-placeholder"',
+    'password: "SemillaInicial#2026-test"',
     'token = "<tu-token>"',
   ].join('\n');
 

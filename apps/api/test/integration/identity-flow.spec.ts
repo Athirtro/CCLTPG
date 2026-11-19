@@ -34,10 +34,10 @@ import { InMemoryRateLimiter, InMemorySessionCache } from './support/in-memory-a
 
 const hasDatabase = Boolean(process.env.DATABASE_MIGRATOR_URL);
 
-const SEED_PASSWORD = 'SemillaInicial#2026';
-const NEW_PASSWORD = 'NuevaClaveSegura#2026';
-const INITIAL_USER_PASSWORD = 'ClaveInicialDePrueba#2026';
-const RENEWED_USER_PASSWORD = 'ClaveRenovadaSegura#2026';
+const SEED_PASSWORD = 'SemillaInicial#2026-test';
+const NEW_PASSWORD = 'NuevaClaveSegura#2026-test';
+const INITIAL_USER_PASSWORD = 'ClaveInicialDePrueba#2026-test';
+const RENEWED_USER_PASSWORD = 'ClaveRenovadaSegura#2026-test';
 
 function context(): RequestContext {
   return { ip: '127.0.0.1', userAgent: 'vitest-integration', requestId: uuidv7() };
