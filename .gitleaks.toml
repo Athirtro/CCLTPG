@@ -3,7 +3,7 @@ title = "CCLTPG — escaneo de secretos"
 [extend]
 useDefault = true
 
-[allowlist]
+[[allowlists]]
 description = "Valores de ejemplo, documentación congelada y artefactos generados"
 paths = [
   '''pnpm-lock\.yaml''',
@@ -23,8 +23,13 @@ regexes = [
 ]
 
 [[allowlists]]
-description = "Token CSRF sintético del test en el commit anterior"
-commits = ["9e667375b86b754af9591f050de4a628f139ce94"]
+description = "Token CSRF sintético del test en commits históricos"
+commits = [
+  "9e667375b86b754af9591f050de4a628f139ce94",
+  "931e795d5633279d018198156b29938aa2961f13",
+  "737df2ba77f77a01ceddd34723d93ae235d803d6",
+  "0af303515395d45b53577cc2dff8638c7d85779d",
+]
 paths = ['''^apps/api/src/modules/identity/api/csrf\.service\.spec\.ts$''']
 regexTarget = "secret"
 regexes = ['''^0123456789abcdef0123456789abcdef$''']
