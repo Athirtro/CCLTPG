@@ -14,6 +14,10 @@ import Programas from './pages/Programas';
 import Grupos from './pages/Grupos';
 import Matriculas from './pages/Matriculas';
 import Admin from './pages/Admin';
+import Archivos from './pages/Archivos';
+import Notificaciones from './pages/Notificaciones';
+import Preferencias from './pages/Preferencias';
+import Exportaciones from './pages/Exportaciones';
 import NotFound from './pages/NotFound';
 
 const theme = createTheme({
@@ -46,6 +50,10 @@ export default function App() {
               <Route path="/grupos" element={<Grupos />} />
               <Route path="/matriculas" element={<Matriculas />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/archivos" element={<Archivos />} />
+              <Route path="/notificaciones" element={<Notificaciones />} />
+              <Route path="/preferencias" element={<Preferencias />} />
+              <Route path="/exportaciones" element={<Exportaciones />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

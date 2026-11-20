@@ -53,6 +53,67 @@ export type ProblemDetailsDto = {
   requestId: string;
 };
 
+// ===== Tipos Iteración 3 — Archivos, Notificaciones, Exportaciones (plan C3) =====
+
+export type ArchivoDto = {
+  id: string;
+  nombreOriginal: string;
+  mime: string;
+  tamano: number;
+  hashSha256: string;
+  rutaObjeto: string;
+  subidoPor: string;
+  estadoEscaneo: 'pendiente' | 'limpio' | 'infectado' | 'cuarentena';
+  creadoEn: string;
+};
+
+export type SubirArchivoResponseDto = {
+  archivo: ArchivoDto;
+  advertencia?: string;
+};
+
+export type NotificacionDto = {
+  id: string;
+  evento: string;
+  canal: 'app' | 'email';
+  plantillaId?: string;
+  payload: Record<string, unknown>;
+  estado: 'pendiente' | 'enviada' | 'leida' | 'fallida';
+  leidaEn: string | null;
+  enviadaEn: string | null;
+  creadoEn: string;
+};
+
+export type PreferenciaNotificacionDto = {
+  evento: string;
+  canal: 'app' | 'email';
+  habilitado: boolean;
+};
+
+export type ActualizarPreferenciaDto = {
+  evento: string;
+  canal: 'app' | 'email';
+  habilitado: boolean;
+};
+
+export type ExportacionDto = {
+  id: string;
+  plantilla: string;
+  formato: 'pdf' | 'xlsx' | 'csv';
+  estado: 'pendiente' | 'generada' | 'fallida';
+  archivoId?: string;
+  filas: number;
+  tamanoBytes: number;
+  creadoEn: string;
+  expiraEn: string;
+};
+
+export type CrearExportacionDto = {
+  plantilla: string;
+  formato: 'pdf' | 'xlsx' | 'csv';
+  entrada: Record<string, unknown>;
+};
+
 // Tipos para health (traídos del pull, endpoint /health/ready)
 export type ReadinessReport = {
   status: 'ok' | 'unavailable';
@@ -256,6 +317,185 @@ export type Paths = {
         200: {
           content: {
             'application/json': ReadinessReport;
+          };
+        };
+      };
+    };
+  };
+  // --- Archivos (Iteración 3) ---
+  '/files': {
+    post: {
+      requestBody: {
+        content: {
+          'multipart/form-data': {
+            archivo: File;
+            'Idempotency-Key'?: string;
+          };
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': SubirArchivoResponseDto;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        413: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        415: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/files/{id}/download': {
+    get: {
+      parameters: [
+        {
+          in: 'path';
+          name: 'id';
+          required: true;
+          schema: { type: 'string' };
+        },
+      ];
+      responses: {
+        200: {
+          content: {
+            'application/octet-stream': Blob;
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  // --- Notificaciones (Iteración 3) ---
+  '/notifications': {
+    get: {
+      responses: {
+        200: {
+          content: {
+            'application/json': NotificacionDto[];
+          };
+        };
+      };
+    };
+  };
+  '/notifications/{id}': {
+    patch: {
+      parameters: [
+        {
+          in: 'path';
+          name: 'id';
+          required: true;
+          schema: { type: 'string' };
+        },
+      ];
+      requestBody: {
+        content: {
+          'application/json': {
+            leida: boolean;
+          };
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': NotificacionDto;
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/notifications/preferences': {
+    get: {
+      responses: {
+        200: {
+          content: {
+            'application/json': PreferenciaNotificacionDto[];
+          };
+        };
+      };
+    };
+    put: {
+      requestBody: {
+        content: {
+          'application/json': ActualizarPreferenciaDto[];
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': PreferenciaNotificacionDto[];
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  // --- Exportaciones (Iteración 3) ---
+  '/exports': {
+    post: {
+      requestBody: {
+        content: {
+          'application/json': CrearExportacionDto;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': ExportacionDto;
+          };
+        };
+        202: {
+          content: {
+            'application/json': ExportacionDto;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
           };
         };
       };

@@ -17,6 +17,8 @@ import {
   Notifications as NotificationsIcon,
   Folder as FolderIcon,
   MonitorHeart as MonitorHeartIcon,
+  Settings as SettingsIcon,
+  FileCopy as FileCopyIcon,
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -48,12 +50,24 @@ const MENU_ITEMS = [
     icon: <ShieldIcon />,
     requires: 'identity:user:manage',
   },
-  { path: '/archivos', label: 'Archivos', icon: <FolderIcon />, requires: 'files:document:manage' },
+  { path: '/archivos', label: 'Archivos', icon: <FolderIcon />, requires: 'files:document:create' },
   {
     path: '/notificaciones',
     label: 'Notificaciones',
     icon: <NotificationsIcon />,
-    requires: 'notifications:notification:manage',
+    requires: 'notifications:notification:read_own',
+  },
+  {
+    path: '/preferencias',
+    label: 'Preferencias',
+    icon: <SettingsIcon />,
+    requires: 'notifications:preference:read_own',
+  },
+  {
+    path: '/exportaciones',
+    label: 'Exportaciones',
+    icon: <FileCopyIcon />,
+    requires: 'exports:report:export',
   },
 ];
 
