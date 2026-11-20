@@ -1,38 +1,43 @@
 ﻿import { useState } from 'react';
-import { Box, Button, CssBaseline, Paper, TextField, Typography, Alert } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  CssBaseline,
+  Paper,
+  TextField,
+  Typography,
+  Alert,
+} from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function MfaVerify() {
-  const navigate = useNavigate();
-  const { verifyMfa, isLoading } = useAuth();
+  const { verifyMfa, sessionToken, isLoading } = useAuth();
   const [code, setCode] = useState('');
+  const [method, setMethod] = useState<'totp' | 'recovery'>('totp');
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!sessionToken) {
+      setError('No hay sesión de verificación activa');
+      return;
+    }
     try {
-      const partialSessionId = localStorage.getItem('ccltpg_partial_session') ?? '';
-      await verifyMfa(partialSessionId, code);
-      void navigate('/');
+      await verifyMfa(sessionToken, code, method);
+      // AuthRedirect manejará la navegación según authStatus
     } catch {
-      setError('Código MFA inválido');
+      setError('Código MFA inválido o sesión expirada');
     }
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: '#f5f5f5',
-      }}
-    >
+    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5' }}>
       <CssBaseline />
-      <Paper elevation={3} sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}>
+      <Paper
+        elevation={3}
+        sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}
+      >
         <Typography component="h1" variant="h5" align="center" gutterBottom sx={{ mb: 3 }}>
           Verificación MFA
         </Typography>
@@ -55,9 +60,36 @@ export default function MfaVerify() {
 
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            sx={{ mb: 3 }}
+            sx={{ mb: 2 }}
           />
-          <Button type="submit" fullWidth variant="contained" size="large" disabled={isLoading}>
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="caption" sx={{ mb: 1 }}>
+              Método
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant={method === 'totp' ? 'outlined' : 'text'}
+                size="small"
+                onClick={() => setMethod('totp')}
+              >
+                TOTP
+              </Button>
+              <Button
+                variant={method === 'recovery' ? 'outlined' : 'text'}
+                size="small"
+                onClick={() => setMethod('recovery')}
+              >
+                Recuperación
+              </Button>
+            </Box>
+          </Box>
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            size="large"
+            disabled={isLoading}
+          >
             {isLoading ? 'Verificando…' : 'Verificar'}
           </Button>
         </form>

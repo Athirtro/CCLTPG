@@ -28,6 +28,7 @@ function fallbackProblem(detail: string): ProblemDetails {
     instance: '/health/ready',
     code: 'NETWORK_ERROR',
     requestId: '',
+    errors: [],
   };
 }
 

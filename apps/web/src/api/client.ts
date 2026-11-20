@@ -1,36 +1,66 @@
 import createClient from 'openapi-fetch';
 
-export type ProblemDetails = {
+// Tipos derivados de packages/contracts/openapi.json (contrato aprobado en C0/C1/C2)
+export type ProfileSummaryDto = {
+  codigo: string;
+  validUntil: string | null;
+};
+
+export type MfaEnrollResponseDto = {
+  secret: string;
+  otpauthUri: string;
+};
+
+export type MfaEnrollConfirmResponseDto = LoginResponseDto & {
+  recoveryCodes: string[];
+};
+
+export type LoginResponseDto = {
+  status:
+    | 'authenticated'
+    | 'password_change_required'
+    | 'mfa_required'
+    | 'mfa_enrollment_required';
+  sessionToken?: string;
+  accessToken?: string;
+  tokenType?: string;
+  expiresIn?: number;
+  csrfToken?: string;
+  mustChangePassword: boolean;
+  profiles: ProfileSummaryDto[];
+};
+
+export type MeResponseDto = {
+  userId: string;
+  email: string;
+  nombre: string;
+  estado: string;
+  mfaEnabled: boolean;
+  mustChangePassword: boolean;
+  profiles: ProfileSummaryDto[];
+  activeProfile: string | null;
+  permissions: string[];
+};
+
+export type ProblemDetailsDto = {
   type: string;
   title: string;
   status: number;
   detail: string;
   instance: string;
   code: string;
+  errors: unknown[];
   requestId: string;
 };
 
-export type DependencyCheck = {
-  status: 'up' | 'down';
-  latencyMs: number;
-};
-
+// Tipos para health (traídos del pull, endpoint /health/ready)
 export type ReadinessReport = {
   status: 'ok' | 'unavailable';
-  checks: {
-    database: DependencyCheck;
-    redis: DependencyCheck;
-  };
+  checks: Record<string, { status: 'up' | 'down'; latencyMs: number }>;
   checkedAt: string;
-  requestId?: string | null;
 };
 
-export type LivenessReport = {
-  status: 'ok';
-  uptimeSeconds: number;
-  timestamp: string;
-  requestId?: string | null;
-};
+export type ProblemDetails = ProblemDetailsDto;
 
 export type Paths = {
   '/auth/login': {
@@ -46,16 +76,17 @@ export type Paths = {
       responses: {
         200: {
           content: {
-            'application/json': {
-              accessToken: string | null;
-              mfaRequired: boolean;
-              partialSessionId: string | null;
-            };
+            'application/json': LoginResponseDto;
           };
         };
         401: {
           content: {
-            'application/json': ProblemDetails;
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        429: {
+          content: {
+            'application/json': ProblemDetailsDto;
           };
         };
       };
@@ -66,7 +97,120 @@ export type Paths = {
       requestBody: {
         content: {
           'application/json': {
-            partialSessionId: string;
+            sessionToken: string;
+            code: string;
+            method?: 'totp' | 'recovery';
+          };
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': LoginResponseDto;
+          };
+        };
+        401: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        429: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/auth/refresh': {
+    post: {
+      responses: {
+        200: {
+          content: {
+            'application/json': LoginResponseDto;
+          };
+        };
+        401: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/auth/logout': {
+    post: {
+      responses: {
+        204: {
+          description: 'Sesión cerrada';
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/auth/password': {
+    post: {
+      requestBody: {
+        content: {
+          'application/json': {
+            currentPassword: string;
+            newPassword: string;
+          };
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': LoginResponseDto;
+          };
+        };
+        204: {
+          description: 'Contraseña cambiada';
+        };
+        401: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/auth/mfa/enroll': {
+    post: {
+      responses: {
+        200: {
+          content: {
+            'application/json': MfaEnrollResponseDto;
+          };
+        };
+        401: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/auth/mfa/enroll/confirm': {
+    post: {
+      requestBody: {
+        content: {
+          'application/json': {
+            sessionToken?: string;
             code: string;
           };
         };
@@ -74,14 +218,17 @@ export type Paths = {
       responses: {
         200: {
           content: {
-            'application/json': {
-              accessToken: string;
-            };
+            'application/json': MfaEnrollConfirmResponseDto;
           };
         };
         401: {
           content: {
-            'application/json': ProblemDetails;
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
           };
         };
       };
@@ -92,30 +239,12 @@ export type Paths = {
       responses: {
         200: {
           content: {
-            'application/json': {
-              id: string;
-              email: string;
-              fullName: string;
-              role: string;
-              profiles: string[];
-              permissions: string[];
-            };
+            'application/json': MeResponseDto;
           };
         };
         401: {
           content: {
-            'application/json': ProblemDetails;
-          };
-        };
-      };
-    };
-  };
-  '/health/live': {
-    get: {
-      responses: {
-        200: {
-          content: {
-            'application/json': LivenessReport;
+            'application/json': ProblemDetailsDto;
           };
         };
       };
@@ -129,22 +258,12 @@ export type Paths = {
             'application/json': ReadinessReport;
           };
         };
-        503: {
-          content: {
-            'application/problem+json': ProblemDetails;
-          };
-        };
       };
     };
   };
 };
 
-const configuredBaseUrl: unknown = import.meta.env.VITE_API_BASE_URL;
-
-export const API_BASE_URL =
-  typeof configuredBaseUrl === 'string' && configuredBaseUrl.length > 0
-    ? configuredBaseUrl
-    : '/api/v1';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 export const apiClient = createClient<Paths>({
   baseUrl: API_BASE_URL,

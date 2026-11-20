@@ -1,5 +1,5 @@
 ﻿import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import { apiClient } from '../api/client';
+import { apiClient, type MeResponseDto } from '../api/client';
 
 export type User = {
   id: string;
@@ -8,15 +8,24 @@ export type User = {
   role: string;
   profiles: string[];
   permissions: string[];
+  mfaEnabled: boolean;
+  mustChangePassword: boolean;
 };
 
 type AuthContextType = {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
+  authStatus:
+    | 'authenticated'
+    | 'password_change_required'
+    | 'mfa_required'
+    | 'mfa_enrollment_required'
+    | null;
+  sessionToken: string | null;
   login: (email: string, password: string) => Promise<void>;
-  verifyMfa: (partialSessionId: string, code: string) => Promise<void>;
-  logout: () => void;
+  verifyMfa: (sessionToken: string, code: string, method?: 'totp' | 'recovery') => Promise<void>;
+  logout: () => Promise<void>;
+  loadMe: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
   hasProfile: (profile: string) => boolean;
 };
@@ -25,24 +34,32 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem('ccltpg_access_token'),
-  );
   const [isLoading, setIsLoading] = useState(false);
-
-  const hasPermission = useCallback(
-    (permission: string) => {
-      return user?.permissions.includes(permission) ?? false;
-    },
-    [user],
+  const [authStatus, setAuthStatus] = useState<
+    AuthContextType['authStatus']
+  >(null);
+  const [sessionToken, setSessionToken] = useState<string | null>(
+    () => localStorage.getItem('ccltpg_session_token')
   );
 
-  const hasProfile = useCallback(
-    (profile: string) => {
-      return user?.profiles.includes(profile) ?? false;
-    },
-    [user],
-  );
+  const mapToUser = (dto: MeResponseDto): User => ({
+    id: dto.userId,
+    email: dto.email,
+    fullName: dto.nombre,
+    role: dto.activeProfile ?? '',
+    profiles: dto.profiles.map((p) => p.codigo),
+    permissions: dto.permissions,
+    mfaEnabled: dto.mfaEnabled,
+    mustChangePassword: dto.mustChangePassword,
+  });
+
+  const hasPermission = useCallback((permission: string) => {
+    return user?.permissions.includes(permission) ?? false;
+  }, [user]);
+
+  const hasProfile = useCallback((profile: string) => {
+    return user?.profiles.includes(profile) ?? false;
+  }, [user]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -52,17 +69,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error || !data || response?.status !== 200) {
-        throw new Error('Credenciales inválidas');
+        throw new Error('Credenciales inválidas o error del servidor');
       }
 
-      if (data.mfaRequired && data.partialSessionId) {
-        localStorage.setItem('ccltpg_partial_session', data.partialSessionId);
-        throw new Error('MFA_REQUIRED');
+      setAuthStatus(data.status);
+      setSessionToken(data.sessionToken ?? null);
+      if (data.sessionToken) {
+        localStorage.setItem('ccltpg_session_token', data.sessionToken);
+      } else {
+        localStorage.removeItem('ccltpg_session_token');
       }
 
-      if (data.accessToken) {
-        setToken(data.accessToken);
-        localStorage.setItem('ccltpg_access_token', data.accessToken);
+      if (data.status === 'authenticated') {
         await loadMe();
       }
     } finally {
@@ -70,21 +88,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const verifyMfa = async (partialSessionId: string, code: string) => {
+  const verifyMfa = async (
+    sessionToken: string,
+    code: string,
+    method?: 'totp' | 'recovery',
+  ) => {
     setIsLoading(true);
     try {
       const { data, error, response } = await apiClient.POST('/auth/mfa/verify', {
-        body: { partialSessionId, code },
+        body: { sessionToken, code, method },
       });
 
       if (error || !data || response?.status !== 200) {
         throw new Error('Código MFA inválido');
       }
 
-      if (data.accessToken) {
-        setToken(data.accessToken);
-        localStorage.setItem('ccltpg_access_token', data.accessToken);
-        localStorage.removeItem('ccltpg_partial_session');
+      setAuthStatus(data.status);
+      setSessionToken(data.sessionToken ?? null);
+      if (data.sessionToken) {
+        localStorage.setItem('ccltpg_session_token', data.sessionToken);
+      } else {
+        localStorage.removeItem('ccltpg_session_token');
+      }
+
+      if (data.status === 'authenticated') {
         await loadMe();
       }
     } finally {
@@ -93,33 +120,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const loadMe = async () => {
-    if (!token) return;
     try {
-      const { data, error } = await apiClient.GET('/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data, error } = await apiClient.GET('/me');
       if (!error && data) {
-        setUser(data);
+        setUser(mapToUser(data));
+        setAuthStatus('authenticated');
+      } else {
+        logout();
       }
     } catch {
       logout();
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await apiClient.POST('/auth/logout');
+    } catch {
+      // Ignorar errores de red en logout; siempre limpiamos localmente
+    }
     setUser(null);
-    setToken(null);
-    localStorage.removeItem('ccltpg_access_token');
-    localStorage.removeItem('ccltpg_partial_session');
+    setAuthStatus(null);
+    setSessionToken(null);
+    localStorage.removeItem('ccltpg_session_token');
   };
 
   const value: AuthContextType = {
     user,
-    token,
     isLoading,
+    authStatus,
+    sessionToken,
     login,
     verifyMfa,
     logout,
+    loadMe,
     hasPermission,
     hasProfile,
   };

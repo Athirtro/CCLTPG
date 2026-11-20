@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import SideDrawer from './SideDrawer';
 import TopAppBar from './TopAppBar';
+import AuthRedirect from './AuthRedirect';
 
 const drawerWidth = 260;
 
@@ -12,13 +13,13 @@ export default function MainLayout() {
 
   const handleLogout = () => {
     logout();
-    void navigate('/login');
+    navigate('/login');
   };
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       <CssBaseline />
-      <TopAppBar onMenuClick={() => {}} handleLogout={handleLogout} user={user} />
+      <TopAppBar onMenuClick={() => {}} handleLogout={handleLogout} />
       <Box
         component="main"
         sx={{
@@ -29,6 +30,7 @@ export default function MainLayout() {
           },
         }}
       >
+        <AuthRedirect />
         <Outlet />
       </Box>
       <Drawer
