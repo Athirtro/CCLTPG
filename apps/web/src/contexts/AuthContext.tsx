@@ -32,12 +32,15 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+export function AuthProvider({
+  children,
+  initialUser,
+}: { children: ReactNode; initialUser?: User }) {
+  const [user, setUser] = useState<User | null>(initialUser ?? null);
   const [isLoading, setIsLoading] = useState(false);
   const [authStatus, setAuthStatus] = useState<
     AuthContextType['authStatus']
-  >(null);
+  >(initialUser ? 'authenticated' : null);
   const [sessionToken, setSessionToken] = useState<string | null>(
     () => localStorage.getItem('ccltpg_session_token')
   );

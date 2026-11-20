@@ -182,7 +182,7 @@ export default function VistaEducador() {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4">Vista del educador</Typography>
+      <Typography variant="h1">Vista del educador</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         Gestiona la asistencia y las evaluaciones cualitativa de tus grupos.
       </Typography>
@@ -200,11 +200,11 @@ export default function VistaEducador() {
 
       {puedeTomarAsistencia && (
         <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+          <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
             Tomar asistencia
           </Typography>
           <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            <Typography variant="h3" sx={{ mb: 1 }}>
               Sesiones programadas
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
@@ -229,7 +229,7 @@ export default function VistaEducador() {
 
           {sesionSeleccionada && (
             <Box sx={{ mt: 3 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              <Typography variant="h3" sx={{ mb: 1 }}>
                 Asistencia — {sesionSeleccionada.grupoNombre}
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ mb: 2 }}>
@@ -300,7 +300,7 @@ export default function VistaEducador() {
 
       {puedeCrearEvaluacion && (
         <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+          <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
             Crear evaluación cualitativa
           </Typography>
           <Dialog

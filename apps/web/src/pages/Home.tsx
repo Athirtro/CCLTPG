@@ -62,13 +62,13 @@ export default function Home() {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
+      <Typography variant="h1" gutterBottom sx={{ mb: 3 }}>
         Bienvenido, {user?.fullName ?? 'usuario'}
       </Typography>
 
       {user && (
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+          <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
             Tu perfil
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
@@ -134,7 +134,7 @@ export default function Home() {
         </Box>
       )}
 
-      <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+      <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
         Accesos rápidos
       </Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>

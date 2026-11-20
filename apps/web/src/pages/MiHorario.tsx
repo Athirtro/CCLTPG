@@ -98,14 +98,18 @@ export default function MiHorario() {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Mi horario de clases</Typography>
+        <Typography variant="h1">Mi horario de clases</Typography>
         <Button
           startIcon={<RefreshIcon />}
           size="small"
           disabled={cargando}
           onClick={cargarHorario}
         >
-          {cargando ? <CircularProgress size={20} /> : 'Actualizar'}
+          {cargando ? (
+            <CircularProgress size={20} aria-label="Cargando horario" />
+          ) : (
+            'Actualizar'
+          )}
         </Button>
       </Box>
 

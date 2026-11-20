@@ -98,14 +98,18 @@ export default function MisEvaluaciones() {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Mis evaluaciones</Typography>
+        <Typography variant="h1">Mis evaluaciones</Typography>
         <Button
           startIcon={<RefreshIcon />}
           size="small"
           disabled={cargando}
           onClick={cargarEvaluaciones}
         >
-          {cargando ? <CircularProgress size={20} /> : 'Actualizar'}
+          {cargando ? (
+            <CircularProgress size={20} aria-label="Cargando evaluaciones" />
+          ) : (
+            'Actualizar'
+          )}
         </Button>
       </Box>
 
@@ -116,7 +120,7 @@ export default function MisEvaluaciones() {
       )}
 
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+        <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
           Resumen
         </Typography>
         <Box sx={{ display: 'flex', gap: 3 }}>

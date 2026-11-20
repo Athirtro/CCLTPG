@@ -111,7 +111,7 @@ export default function Notificaciones() {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Mis notificaciones</Typography>
+        <Typography variant="h1">Mis notificaciones</Typography>
         {noLeidasCount > 0 && (
           <Chip label={`${noLeidasCount} nuevas`} color="primary" size="small" variant="outlined" />
         )}
@@ -124,7 +124,7 @@ export default function Notificaciones() {
       )}
 
       <Box sx={{ mb: 2 }}>
-        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+        <Typography variant="h2" sx={{ mb: 1 }}>
           Estado
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -155,7 +155,11 @@ export default function Notificaciones() {
             disabled={cargando}
             onClick={cargarNotificaciones}
           >
-            {cargando ? <CircularProgress size={20} /> : 'Actualizar'}
+            {cargando ? (
+              <CircularProgress size={20} aria-label="Cargando notificaciones" />
+            ) : (
+              'Actualizar'
+            )}
           </Button>
         </Box>
       </Box>
