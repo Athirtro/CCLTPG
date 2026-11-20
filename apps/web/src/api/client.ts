@@ -501,6 +501,540 @@ export type Paths = {
       };
     };
   };
+  // --- Académico (Iteración 4) ---
+  '/academic/programs': {
+    get: {
+      responses: {
+        200: {
+          content: {
+            'application/json': ProgramaDto[];
+          };
+        };
+      };
+    };
+    post: {
+      requestBody: {
+        content: {
+          'application/json': CrearProgramaDto;
+        };
+      };
+      responses: {
+        201: {
+          content: {
+            'application/json': ProgramaDto;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/academic/programs/{id}/transitions': {
+    post: {
+      parameters: [
+        {
+          in: 'path';
+          name: 'id';
+          required: true;
+          schema: { type: 'string' };
+        },
+      ];
+      requestBody: {
+        content: {
+          'application/json': {
+            to: 'publicado' | 'cerrado';
+          };
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': ProgramaDto;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/academic/groups': {
+    get: {
+      responses: {
+        200: {
+          content: {
+            'application/json': GrupoDto[];
+          };
+        };
+      };
+    };
+    post: {
+      requestBody: {
+        content: {
+          'application/json': CrearGrupoDto;
+        };
+      };
+      responses: {
+        201: {
+          content: {
+            'application/json': GrupoDto;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/academic/groups/{id}/transitions': {
+    post: {
+      parameters: [
+        {
+          in: 'path';
+          name: 'id';
+          required: true;
+          schema: { type: 'string' };
+        },
+      ];
+      requestBody: {
+        content: {
+          'application/json': {
+            to: 'abierto' | 'cerrado';
+          };
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': GrupoDto;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/academic/students': {
+    get: {
+      responses: {
+        200: {
+          content: {
+            'application/json': EstudianteDto[];
+          };
+        };
+      };
+    };
+    post: {
+      requestBody: {
+        content: {
+          'application/json': CrearEstudianteDto;
+        };
+      };
+      responses: {
+        201: {
+          content: {
+            'application/json': EstudianteDto;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/me/student': {
+    get: {
+      responses: {
+        200: {
+          content: {
+            'application/json': EstudianteDto;
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/me/enrollments': {
+    get: {
+      responses: {
+        200: {
+          content: {
+            'application/json': MatriculaDto[];
+          };
+        };
+      };
+    };
+  };
+  '/academic/enrollments': {
+    post: {
+      requestBody: {
+        content: {
+          'application/json': CrearMatriculaDto;
+        };
+      };
+      responses: {
+        201: {
+          content: {
+            'application/json': MatriculaDto;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/academic/enrollments/{id}/transitions': {
+    post: {
+      parameters: [
+        {
+          in: 'path';
+          name: 'id';
+          required: true;
+          schema: { type: 'string' };
+        },
+      ];
+      requestBody: {
+        content: {
+          'application/json': {
+            to: 'confirmada' | 'cancelada';
+          };
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': MatriculaDto;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/me/schedule': {
+    get: {
+      responses: {
+        200: {
+          content: {
+            'application/json': SesionHorarioDto[];
+          };
+        };
+      };
+    };
+  };
+  '/academic/sessions': {
+    post: {
+      requestBody: {
+        content: {
+          'application/json': CrearSesionDto;
+        };
+      };
+      responses: {
+        201: {
+          content: {
+            'application/json': SesionDto;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/academic/sessions/{id}/transitions': {
+    post: {
+      parameters: [
+        {
+          in: 'path';
+          name: 'id';
+          required: true;
+          schema: { type: 'string' };
+        },
+      ];
+      requestBody: {
+        content: {
+          'application/json': {
+            to: 'programada' | 'realizada' | 'cancelada';
+          };
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': SesionDto;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/academic/sessions/{id}/attendance': {
+    put: {
+      parameters: [
+        {
+          in: 'path';
+          name: 'id';
+          required: true;
+          schema: { type: 'string' };
+        },
+      ];
+      requestBody: {
+        content: {
+          'application/json': {
+            registros: Array<{ matriculaId: string; presente: boolean }>;
+          };
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': { registros: number };
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/academic/evaluations': {
+    post: {
+      requestBody: {
+        content: {
+          'application/json': CrearEvaluacionDto;
+        };
+      };
+      responses: {
+        201: {
+          content: {
+            'application/json': EvaluacionDto;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/me/evaluations': {
+    get: {
+      responses: {
+        200: {
+          content: {
+            'application/json': EvaluacionDto[];
+          };
+        };
+      };
+    };
+  };
+};
+
+// ===== Tipos Académicos (Iteración 4) =====
+
+export type ProgramaDto = {
+  id: string;
+  nombre: string;
+  cupo: number;
+  inscritos: number;
+  estado: 'borrador' | 'publicado' | 'cerrado';
+};
+
+export type CrearProgramaDto = {
+  nombre: string;
+  cupo: number;
+};
+
+export type GrupoDto = {
+  id: string;
+  nombre: string;
+  programaId: string;
+  programaNombre: string;
+  horario: string;
+  cupo: number;
+  inscritos: number;
+  estado: 'abierto' | 'cerrado';
+};
+
+export type CrearGrupoDto = {
+  nombre: string;
+  programaId: string;
+  horario: string;
+  cupo: number;
+};
+
+export type EstudianteDto = {
+  id: string;
+  nombre: string;
+  email: string;
+  programaId?: string;
+  programaNombre?: string;
+  estado: 'activo' | 'inactivo' | 'bloqueado';
+};
+
+export type CrearEstudianteDto = {
+  nombre: string;
+  email: string;
+  programaId?: string;
+};
+
+export type MatriculaDto = {
+  id: string;
+  estudianteId: string;
+  estudianteNombre: string;
+  programaId: string;
+  programaNombre: string;
+  grupoId: string;
+  grupoNombre: string;
+  estado: 'pendiente' | 'confirmada' | 'cancelada';
+  creadoEn: string;
+};
+
+export type CrearMatriculaDto = {
+  estudianteId: string;
+  grupoId: string;
+};
+
+export type SesionHorarioDto = {
+  id: string;
+  grupoId: string;
+  grupoNombre: string;
+  programaNombre: string;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  salon: string;
+  estado: 'programada' | 'realizada' | 'cancelada';
+};
+
+export type SesionDto = {
+  id: string;
+  grupoId: string;
+  grupoNombre: string;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  salon: string;
+  estado: 'programada' | 'realizada' | 'cancelada';
+};
+
+export type CrearSesionDto = {
+  grupoId: string;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  salon: string;
+};
+
+export type RegistroAsistenciaDto = {
+  matriculaId: string;
+  presente: boolean;
+};
+
+export type EvaluacionDto = {
+  id: string;
+  estudianteId: string;
+  estudianteNombre: string;
+  grupoId: string;
+  grupoNombre: string;
+  indicador: string;
+  periodo: string;
+  valor: number;
+  fecha: string;
+};
+
+export type CrearEvaluacionDto = {
+  estudianteId: string;
+  grupoId: string;
+  indicador: string;
+  periodo: string;
+  valor: number;
 };
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';

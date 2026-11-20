@@ -19,6 +19,8 @@ import {
   MonitorHeart as MonitorHeartIcon,
   Settings as SettingsIcon,
   FileCopy as FileCopyIcon,
+  Schedule as ScheduleIcon,
+  BarChart as BarChartIcon,
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -68,6 +70,24 @@ const MENU_ITEMS = [
     label: 'Exportaciones',
     icon: <FileCopyIcon />,
     requires: 'exports:report:export',
+  },
+  {
+    path: '/mi-horario',
+    label: 'Mi horario',
+    icon: <ScheduleIcon />,
+    requires: 'academic:schedule:read_own',
+  },
+  {
+    path: '/mis-evaluaciones',
+    label: 'Mis evaluaciones',
+    icon: <BarChartIcon />,
+    requires: 'academic:evaluation:read_own',
+  },
+  {
+    path: '/vista-educador',
+    label: 'Vista educador',
+    icon: <ShieldIcon />,
+    requires: 'academic:attendance:create',
   },
 ];
 

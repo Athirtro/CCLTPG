@@ -1,5 +1,5 @@
 ﻿import { Box, Paper, Typography, Avatar, Divider, Chip } from '@mui/material';
-import { Dashboard, School, People, Assignment, Shield, Lock, Person } from '@mui/icons-material';
+import { Dashboard, School, People, Assignment, Shield, Lock, Person, Schedule, BarChart } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
 function IconWrapper({ icon }: { icon: React.ReactElement }) {
@@ -39,6 +39,24 @@ export default function Home() {
       icon: <Shield fontSize="large" />,
       route: '/admin',
       requires: 'identity:user:manage',
+    },
+    {
+      title: 'Mi horario',
+      icon: <Schedule fontSize="large" />,
+      route: '/mi-horario',
+      requires: 'academic:schedule:read_own',
+    },
+    {
+      title: 'Mis evaluaciones',
+      icon: <BarChart fontSize="large" />,
+      route: '/mis-evaluaciones',
+      requires: 'academic:evaluation:read_own',
+    },
+    {
+      title: 'Vista educador',
+      icon: <Shield fontSize="large" />,
+      route: '/vista-educador',
+      requires: 'academic:attendance:create',
     },
   ];
 

@@ -18,6 +18,9 @@ import Archivos from './pages/Archivos';
 import Notificaciones from './pages/Notificaciones';
 import Preferencias from './pages/Preferencias';
 import Exportaciones from './pages/Exportaciones';
+import MiHorario from './pages/MiHorario';
+import MisEvaluaciones from './pages/MisEvaluaciones';
+import VistaEducador from './pages/VistaEducador';
 import NotFound from './pages/NotFound';
 
 const theme = createTheme({
@@ -54,6 +57,9 @@ export default function App() {
               <Route path="/notificaciones" element={<Notificaciones />} />
               <Route path="/preferencias" element={<Preferencias />} />
               <Route path="/exportaciones" element={<Exportaciones />} />
+              <Route path="/mi-horario" element={<MiHorario />} />
+              <Route path="/mis-evaluaciones" element={<MisEvaluaciones />} />
+              <Route path="/vista-educador" element={<VistaEducador />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
