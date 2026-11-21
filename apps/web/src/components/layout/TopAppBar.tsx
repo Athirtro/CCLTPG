@@ -33,12 +33,7 @@ export default function TopAppBar({ onMenuClick, handleLogout }: Props) {
   return (
     <AppBar position="static" color="primary" elevation={3}>
       <Toolbar>
-        <IconButton
-          color="inherit"
-          edge="start"
-          onClick={onMenuClick}
-          sx={{ mr: 2 }}
-        >
+        <IconButton color="inherit" edge="start" onClick={onMenuClick} sx={{ mr: 2 }}>
           <MenuIcon />
         </IconButton>
         <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
@@ -47,25 +42,21 @@ export default function TopAppBar({ onMenuClick, handleLogout }: Props) {
         <Box sx={{ flexShrink: 0 }}>
           {user ? (
             <>
-              <IconButton
-                color="inherit"
-                onClick={handleMenuOpen}
-              >
+              <IconButton color="inherit" onClick={handleMenuOpen}>
                 <AccountCircle sx={{ width: 32, height: 32 }} />
               </IconButton>
-              <Menu
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleMenuClose}
-              >
+              <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
                 <MenuItem onClick={handleMenuClose}>
                   {user.fullName} ({user.email})
                 </MenuItem>
-                <MenuItem onClick={handleMenuClose}>
-                  Perfil: {user.role}
-                </MenuItem>
+                <MenuItem onClick={handleMenuClose}>Perfil: {user.role}</MenuItem>
                 <MenuItem divider />
-                <MenuItem onClick={() => { handleMenuClose(); handleLogout(); }}>
+                <MenuItem
+                  onClick={() => {
+                    handleMenuClose();
+                    handleLogout();
+                  }}
+                >
                   Cerrar sesión
                 </MenuItem>
               </Menu>

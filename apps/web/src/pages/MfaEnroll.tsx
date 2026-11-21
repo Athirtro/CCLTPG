@@ -1,16 +1,9 @@
 import { useState } from 'react';
-import {
-  Box,
-  Button,
-  CssBaseline,
-  Paper,
-  TextField,
-  Typography,
-  Alert,
-} from '@mui/material';
+import { Box, Button, CssBaseline, Paper, TextField, Typography, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, apiClient } from '../contexts/AuthContext';
-import type { MfaEnrollResponseDto, LoginResponseDto } from '../api/client';
+import { getErrorMessage } from '../api/errors';
+import type { LoginResponseDto } from '../api/client';
 
 export default function MfaEnroll() {
   const navigate = useNavigate();
@@ -26,20 +19,18 @@ export default function MfaEnroll() {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error: apiError, response } = await apiClient.POST(
-        '/auth/mfa/enroll',
-      );
+      const { data, error: apiError, response } = await apiClient.POST('/auth/mfa/enroll');
 
       if (apiError || !data || response?.status !== 200) {
         throw new Error('No se pudo iniciar la inscripción MFA');
       }
 
-      const dto = data as MfaEnrollResponseDto;
+      const dto = data;
       setSecret(dto.secret);
       setOtpauthUri(dto.otpauthUri);
       setStep('confirm');
-    } catch (err: any) {
-      setError(err.message || 'Error al inscribir MFA');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al inscribir MFA');
     } finally {
       setIsLoading(false);
     }
@@ -49,12 +40,13 @@ export default function MfaEnroll() {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error: apiError, response } = await apiClient.POST(
-        '/auth/mfa/enroll/confirm',
-        {
-          body: { code },
-        },
-      );
+      const {
+        data,
+        error: apiError,
+        response,
+      } = await apiClient.POST('/auth/mfa/enroll/confirm', {
+        body: { code },
+      });
 
       if (apiError || !data || response?.status !== 200) {
         throw new Error('Código de verificación inválido');
@@ -67,8 +59,8 @@ export default function MfaEnroll() {
       } else {
         setError('Respuesta inesperada del servidor');
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al confirmar MFA');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al confirmar MFA');
     } finally {
       setIsLoading(false);
     }
@@ -76,12 +68,17 @@ export default function MfaEnroll() {
 
   if (step === 'secret') {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5' }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: '#f5f5f5',
+        }}
+      >
         <CssBaseline />
-        <Paper
-          elevation={3}
-          sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}
-        >
+        <Paper elevation={3} sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}>
           <Typography component="h1" variant="h5" align="center" gutterBottom sx={{ mb: 3 }}>
             Inscripción MFA
           </Typography>
@@ -93,13 +90,7 @@ export default function MfaEnroll() {
               {error}
             </Alert>
           )}
-          <Button
-            fullWidth
-            variant="contained"
-            size="large"
-            disabled={isLoading}
-            onClick={enroll}
-          >
+          <Button fullWidth variant="contained" size="large" disabled={isLoading} onClick={enroll}>
             {isLoading ? 'Generando…' : 'Generar secreto TOTP'}
           </Button>
         </Paper>
@@ -109,19 +100,34 @@ export default function MfaEnroll() {
 
   if (step === 'confirm') {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5' }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: '#f5f5f5',
+        }}
+      >
         <CssBaseline />
-        <Paper
-          elevation={3}
-          sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}
-        >
+        <Paper elevation={3} sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}>
           <Typography component="h1" variant="h5" align="center" gutterBottom sx={{ mb: 3 }}>
             Confirmar MFA
           </Typography>
           <Typography variant="body2" align="center" sx={{ mb: 2 }}>
             Escanea este QR con tu app de autenticación o ingresa el secreto manualmente:
           </Typography>
-          <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: 1, textAlign: 'center' }}>
+          <Box
+            sx={{
+              mb: 3,
+              p: 2,
+              bgcolor: 'background.paper',
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 1,
+              textAlign: 'center',
+            }}
+          >
             <Typography variant="body2" sx={{ mb: 1, fontFamily: 'monospace' }}>
               {secret}
             </Typography>
@@ -142,7 +148,7 @@ export default function MfaEnroll() {
               label="Código de verificación (6 dígitos)"
               name="code"
               type="text"
-  
+
               value={code}
               onChange={(e) => setCode(e.target.value)}
               sx={{ mb: 3 }}
@@ -165,7 +171,15 @@ export default function MfaEnroll() {
 
   // done
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5' }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: '#f5f5f5',
+      }}
+    >
       <CssBaseline />
       <Paper
         elevation={3}
@@ -175,13 +189,10 @@ export default function MfaEnroll() {
           MFA activado
         </Typography>
         <Typography variant="body1" sx={{ mb: 3 }}>
-          Tu autenticación de dos factores está configurada. Guarda tus códigos de recuperación en un lugar seguro.
+          Tu autenticación de dos factores está configurada. Guarda tus códigos de recuperación en
+          un lugar seguro.
         </Typography>
-        <Button
-          fullWidth
-          variant="contained"
-          onClick={() => navigate('/')}
-        >
+        <Button fullWidth variant="contained" onClick={() => navigate('/')}>
           Volver al inicio
         </Button>
       </Paper>

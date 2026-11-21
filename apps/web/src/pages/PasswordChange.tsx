@@ -1,15 +1,8 @@
 import { useState } from 'react';
-import {
-  Box,
-  Button,
-  CssBaseline,
-  Paper,
-  TextField,
-  Typography,
-  Alert,
-} from '@mui/material';
+import { Box, Button, CssBaseline, Paper, TextField, Typography, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, apiClient } from '../contexts/AuthContext';
+import { getErrorMessage } from '../api/errors';
 import type { LoginResponseDto } from '../api/client';
 
 export default function PasswordChange() {
@@ -25,12 +18,13 @@ export default function PasswordChange() {
     setError(null);
     setSuccess(false);
     try {
-      const { data, error: apiError, response } = await apiClient.POST(
-        '/auth/password',
-        {
-          body: { currentPassword, newPassword },
-        },
-      );
+      const {
+        data,
+        error: apiError,
+        response,
+      } = await apiClient.POST('/auth/password', {
+        body: { currentPassword, newPassword },
+      });
 
       if (apiError || response?.status === 401) {
         throw new Error('Contraseña actual inválida');
@@ -40,25 +34,33 @@ export default function PasswordChange() {
         // Cambio exitoso sin sesión parcial
         setSuccess(true);
         await loadMe();
-        navigate('/');
+        void navigate('/');
         return;
       }
 
       if (data && (data as LoginResponseDto).status === 'authenticated') {
         setSuccess(true);
         await loadMe();
-        navigate('/');
+        void navigate('/');
       } else {
         setError('Respuesta inesperada del servidor');
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al cambiar la contraseña');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al cambiar la contraseña');
     }
   };
 
   if (success) {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5' }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: '#f5f5f5',
+        }}
+      >
         <CssBaseline />
         <Paper
           elevation={3}
@@ -70,11 +72,7 @@ export default function PasswordChange() {
           <Typography variant="body1" sx={{ mb: 3 }}>
             Tu contraseña se ha cambiado correctamente.
           </Typography>
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={() => navigate('/')}
-          >
+          <Button fullWidth variant="contained" onClick={() => navigate('/')}>
             Volver al inicio
           </Button>
         </Paper>
@@ -83,12 +81,17 @@ export default function PasswordChange() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5' }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: '#f5f5f5',
+      }}
+    >
       <CssBaseline />
-      <Paper
-        elevation={3}
-        sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}
-      >
+      <Paper elevation={3} sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}>
         <Typography component="h1" variant="h5" align="center" gutterBottom sx={{ mb: 3 }}>
           Cambio de contraseña
         </Typography>
@@ -127,13 +130,7 @@ export default function PasswordChange() {
             onChange={(e) => setNewPassword(e.target.value)}
             sx={{ mb: 3 }}
           />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            size="large"
-            disabled={isLoading}
-          >
+          <Button type="submit" fullWidth variant="contained" size="large" disabled={isLoading}>
             {isLoading ? 'Cambiando…' : 'Cambiar contraseña'}
           </Button>
         </form>

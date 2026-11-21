@@ -16,10 +16,9 @@ import {
   Select,
   MenuItem,
 } from '@mui/material';
-import {
-  Assignment as AssignmentIcon,
-} from '@mui/icons-material';
+import { Assignment as AssignmentIcon } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
+import { getErrorMessage } from '../api/errors';
 import type { MatriculaDto, ProblemDetailsDto, GrupoDto } from '../api/client';
 
 type MatriculaView = {
@@ -35,8 +34,26 @@ export default function Matriculas() {
   const { user, hasPermission } = useAuth();
   const [matriculas, setMatriculas] = useState<MatriculaView[]>([]);
   const [gruposDisponibles] = useState<GrupoDto[]>([
-    { id: 'G-001', nombre: 'Guitarra Básica', programaId: 'P-001', programaNombre: 'Música', horario: 'Lun 18:00', cupo: 15, inscritos: 5, estado: 'abierto' },
-    { id: 'G-002', nombre: 'Acuarela', programaId: 'P-002', programaNombre: 'Pintura', horario: 'Mar 16:00', cupo: 10, inscritos: 3, estado: 'abierto' },
+    {
+      id: 'G-001',
+      nombre: 'Guitarra Básica',
+      programaId: 'P-001',
+      programaNombre: 'Música',
+      horario: 'Lun 18:00',
+      cupo: 15,
+      inscritos: 5,
+      estado: 'abierto',
+    },
+    {
+      id: 'G-002',
+      nombre: 'Acuarela',
+      programaId: 'P-002',
+      programaNombre: 'Pintura',
+      horario: 'Mar 16:00',
+      cupo: 10,
+      inscritos: 3,
+      estado: 'abierto',
+    },
   ]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,16 +73,18 @@ export default function Matriculas() {
         setError('No se pudieron cargar las matrículas');
         return;
       }
-      setMatriculas((data as MatriculaDto[]).map((m) => ({
-        id: m.id,
-        estudianteNombre: m.estudianteNombre,
-        programaNombre: m.programaNombre,
-        grupoNombre: m.grupoNombre,
-        estado: m.estado,
-        creadoEn: m.creadoEn,
-      })));
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar matrículas');
+      setMatriculas(
+        (data as MatriculaDto[]).map((m) => ({
+          id: m.id,
+          estudianteNombre: m.estudianteNombre,
+          programaNombre: m.programaNombre,
+          grupoNombre: m.grupoNombre,
+          estado: m.estado,
+          creadoEn: m.creadoEn,
+        })),
+      );
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al cargar matrículas');
     } finally {
       setCargando(false);
     }
@@ -84,21 +103,22 @@ export default function Matriculas() {
         estudianteId: user?.id ?? '',
         grupoId: grupoSeleccionado,
       };
-      const { data, error: apiError, response } = await apiClient.POST(
-        '/academic/enrollments',
-        { body: payload }
-      );
+      const {
+        data,
+        error: apiError,
+        response,
+      } = await apiClient.POST('/academic/enrollments', { body: payload });
       if (apiError || response?.status !== 201) {
         const problema = apiError as ProblemDetailsDto;
         setError(problema?.detail || 'Error al crear la matrícula');
         return;
       }
-      const dto = data as MatriculaDto;
+      const dto = data;
       setExito(`Matrícula en "${dto.grupoNombre}" creada correctamente`);
       setGrupoSeleccionado('');
       await cargarMatriculas();
-    } catch (err: any) {
-      setError(err.message || 'Error inesperado al crear matrícula');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error inesperado al crear matrícula');
     } finally {
       setCargando(false);
     }
@@ -106,7 +126,16 @@ export default function Matriculas() {
 
   if (!puedeLeerPropia && !puedeGestionar) {
     return (
-      <Box sx={{ p: 3, minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          p: 3,
+          minHeight: '60vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <AssignmentIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
           <Typography variant="h6">Matrículas</Typography>
@@ -123,11 +152,7 @@ export default function Matriculas() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4">Gestión de Matrículas</Typography>
         {puedeGestionar && (
-          <Button
-            size="small"
-            disabled={cargando}
-            onClick={cargarMatriculas}
-          >
+          <Button size="small" disabled={cargando} onClick={cargarMatriculas}>
             Actualizar
           </Button>
         )}
@@ -156,7 +181,7 @@ export default function Matriculas() {
               </Box>
               <Select
                 value={grupoSeleccionado}
-                onChange={(e: any) => setGrupoSeleccionado(e.target.value)}
+                onChange={(e) => setGrupoSeleccionado(e.target.value)}
               >
                 <MenuItem value="">Selecciona un grupo abierto</MenuItem>
                 {gruposDisponibles.map((g: GrupoDto) => (

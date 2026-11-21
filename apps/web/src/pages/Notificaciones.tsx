@@ -23,9 +23,13 @@ import {
   Pending as PendingIcon,
 } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
+import { getErrorMessage } from '../api/errors';
 import type { NotificacionDto } from '../api/client';
 
-const ESTADO_CONFIG: Record<string, { color: 'success' | 'error' | 'warning' | 'info'; icon: React.ReactNode }> = {
+const ESTADO_CONFIG: Record<
+  string,
+  { color: 'success' | 'error' | 'warning' | 'info'; icon: React.ReactNode }
+> = {
   pendiente: { color: 'warning', icon: <PendingIcon fontSize="small" /> },
   enviada: { color: 'info', icon: <CheckCircleIcon fontSize="small" /> },
   leida: { color: 'success', icon: <MarkEmailReadIcon fontSize="small" /> },
@@ -52,9 +56,9 @@ export default function Notificaciones() {
         setError('No se pudieron cargar las notificaciones');
         return;
       }
-      setNotificaciones(data as NotificacionDto[]);
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar notificaciones');
+      setNotificaciones(data);
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al cargar notificaciones');
     } finally {
       setCargando(false);
     }
@@ -68,19 +72,21 @@ export default function Notificaciones() {
     if (!puedeMarcar) return;
     setCargando(true);
     try {
-      const { data, error: apiError } = (await apiClient.PATCH(
-        '/notifications/{id}' as any,
-        { params: { path: { id } }, body: { leida: true } }
-      )) as any;
+      const { data, error: apiError } = await apiClient.PATCH('/notifications/{id}', {
+        params: { path: { id } },
+        body: { leida: true },
+      });
       if (apiError || !data) {
         setError('No se pudo marcar como leída');
         return;
       }
       setNotificaciones((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, estado: 'leida', leidaEn: new Date().toISOString() } : n))
+        prev.map((n) =>
+          n.id === id ? { ...n, estado: 'leida', leidaEn: new Date().toISOString() } : n,
+        ),
       );
-    } catch (err: any) {
-      setError(err.message || 'Error al marcar como leída');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al marcar como leída');
     } finally {
       setCargando(false);
     }
@@ -96,7 +102,16 @@ export default function Notificaciones() {
 
   if (!puedeLeer) {
     return (
-      <Box sx={{ p: 3, minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          p: 3,
+          minHeight: '60vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <NotificationsIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
           <Typography variant="h6">Notificaciones</Typography>
@@ -165,7 +180,17 @@ export default function Notificaciones() {
       </Box>
 
       {notificacionesFiltradas.length === 0 && (
-        <Paper sx={{ p: 4, textAlign: 'center', minHeight: '40vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <Paper
+          sx={{
+            p: 4,
+            textAlign: 'center',
+            minHeight: '40vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <NotificationsIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
           <Typography variant="body1">No hay notificaciones.</Typography>
         </Paper>

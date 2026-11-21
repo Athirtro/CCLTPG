@@ -35,14 +35,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({
   children,
   initialUser,
-}: { children: ReactNode; initialUser?: User }) {
+}: {
+  children: ReactNode;
+  initialUser?: User;
+}) {
   const [user, setUser] = useState<User | null>(initialUser ?? null);
   const [isLoading, setIsLoading] = useState(false);
-  const [authStatus, setAuthStatus] = useState<
-    AuthContextType['authStatus']
-  >(initialUser ? 'authenticated' : null);
-  const [sessionToken, setSessionToken] = useState<string | null>(
-    () => localStorage.getItem('ccltpg_session_token')
+  const [authStatus, setAuthStatus] = useState<AuthContextType['authStatus']>(
+    initialUser ? 'authenticated' : null,
+  );
+  const [sessionToken, setSessionToken] = useState<string | null>(() =>
+    localStorage.getItem('ccltpg_session_token'),
   );
 
   const mapToUser = (dto: MeResponseDto): User => ({
@@ -56,13 +59,19 @@ export function AuthProvider({
     mustChangePassword: dto.mustChangePassword,
   });
 
-  const hasPermission = useCallback((permission: string) => {
-    return user?.permissions.includes(permission) ?? false;
-  }, [user]);
+  const hasPermission = useCallback(
+    (permission: string) => {
+      return user?.permissions.includes(permission) ?? false;
+    },
+    [user],
+  );
 
-  const hasProfile = useCallback((profile: string) => {
-    return user?.profiles.includes(profile) ?? false;
-  }, [user]);
+  const hasProfile = useCallback(
+    (profile: string) => {
+      return user?.profiles.includes(profile) ?? false;
+    },
+    [user],
+  );
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -91,11 +100,7 @@ export function AuthProvider({
     }
   };
 
-  const verifyMfa = async (
-    sessionToken: string,
-    code: string,
-    method?: 'totp' | 'recovery',
-  ) => {
+  const verifyMfa = async (sessionToken: string, code: string, method?: 'totp' | 'recovery') => {
     setIsLoading(true);
     try {
       const { data, error, response } = await apiClient.POST('/auth/mfa/verify', {
@@ -129,10 +134,10 @@ export function AuthProvider({
         setUser(mapToUser(data));
         setAuthStatus('authenticated');
       } else {
-        logout();
+        await logout();
       }
     } catch {
-      logout();
+      await logout();
     }
   };
 

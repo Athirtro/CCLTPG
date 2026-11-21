@@ -27,11 +27,8 @@ import {
   Add as AddIcon,
 } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
-import type {
-  ProgramaDto,
-  CrearProgramaDto,
-  ProblemDetailsDto,
-} from '../api/client';
+import { getErrorMessage } from '../api/errors';
+import type { ProgramaDto, CrearProgramaDto, ProblemDetailsDto } from '../api/client';
 
 export default function Programas() {
   const { hasPermission } = useAuth();
@@ -55,9 +52,9 @@ export default function Programas() {
         setError('No se pudieron cargar los programas');
         return;
       }
-      setProgramas(data as ProgramaDto[]);
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar programas');
+      setProgramas(data);
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al cargar programas');
     } finally {
       setCargando(false);
     }
@@ -76,23 +73,24 @@ export default function Programas() {
         nombre: nombreNuevo.trim(),
         cupo: parseInt(cupoNuevo, 10),
       };
-      const { data, error: apiError, response } = await apiClient.POST(
-        '/academic/programs',
-        { body: payload }
-      );
+      const {
+        data,
+        error: apiError,
+        response,
+      } = await apiClient.POST('/academic/programs', { body: payload });
       if (apiError || response?.status !== 201) {
         const problema = apiError as ProblemDetailsDto;
         setError(problema?.detail || 'Error al crear el programa');
         return;
       }
-      const dto = data as ProgramaDto;
+      const dto = data;
       setExito(`Programa "${dto.nombre}" creado correctamente`);
       setNombreNuevo('');
       setCupoNuevo('');
       setAbiertoDialogo(false);
       await cargarProgramas();
-    } catch (err: any) {
-      setError(err.message || 'Error inesperado al crear programa');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error inesperado al crear programa');
     } finally {
       setCargando(false);
     }
@@ -103,8 +101,8 @@ export default function Programas() {
     setError(null);
     try {
       const { error: apiError, response } = await apiClient.POST(
-        `/academic/programs/${programa.id}/transitions` as any,
-        { params: { path: { id: programa.id } }, body: { to } }
+        '/academic/programs/{id}/transitions',
+        { params: { path: { id: programa.id } }, body: { to } },
       );
       if (apiError || response?.status !== 200) {
         const problema = apiError as ProblemDetailsDto;
@@ -113,8 +111,8 @@ export default function Programas() {
       }
       setExito(`Estado del programa "${programa.nombre}" cambiado a ${to}`);
       await cargarProgramas();
-    } catch (err: any) {
-      setError(err.message || 'Error al cambiar el estado');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al cambiar el estado');
     } finally {
       setCargando(false);
     }
@@ -122,7 +120,16 @@ export default function Programas() {
 
   if (!puedeGestionar) {
     return (
-      <Box sx={{ p: 3, minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          p: 3,
+          minHeight: '60vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <SchoolIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
           <Typography variant="h6">Administración de Programas</Typography>
@@ -138,11 +145,7 @@ export default function Programas() {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4">Administración de Programas</Typography>
-        <Button
-          startIcon={<AddIcon />}
-          variant="contained"
-          onClick={() => setAbiertoDialogo(true)}
-        >
+        <Button startIcon={<AddIcon />} variant="contained" onClick={() => setAbiertoDialogo(true)}>
           Nuevo programa
         </Button>
       </Box>
@@ -228,16 +231,10 @@ export default function Programas() {
         </TableContainer>
       </Paper>
 
-      <Dialog
-        open={abiertoDialogo}
-        onClose={() => setAbiertoDialogo(false)}
-        maxWidth="sm"
-      >
+      <Dialog open={abiertoDialogo} onClose={() => setAbiertoDialogo(false)} maxWidth="sm">
         <DialogTitle>Crear programa</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Completa los datos del nuevo programa formativo.
-          </DialogContentText>
+          <DialogContentText>Completa los datos del nuevo programa formativo.</DialogContentText>
           <TextField
             autoFocus
             margin="dense"

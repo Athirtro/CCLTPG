@@ -1,13 +1,5 @@
 ﻿import { useState } from 'react';
-import {
-  Box,
-  Button,
-  CssBaseline,
-  Paper,
-  TextField,
-  Typography,
-  Alert,
-} from '@mui/material';
+import { Box, Button, CssBaseline, Paper, TextField, Typography, Alert } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function MfaVerify() {
@@ -32,12 +24,17 @@ export default function MfaVerify() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5' }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: '#f5f5f5',
+      }}
+    >
       <CssBaseline />
-      <Paper
-        elevation={3}
-        sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}
-      >
+      <Paper elevation={3} sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}>
         <Typography component="h1" variant="h5" align="center" gutterBottom sx={{ mb: 3 }}>
           Verificación MFA
         </Typography>
@@ -83,13 +80,7 @@ export default function MfaVerify() {
               </Button>
             </Box>
           </Box>
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            size="large"
-            disabled={isLoading}
-          >
+          <Button type="submit" fullWidth variant="contained" size="large" disabled={isLoading}>
             {isLoading ? 'Verificando…' : 'Verificar'}
           </Button>
         </form>

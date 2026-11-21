@@ -13,11 +13,9 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import {
-  BarChart as BarChartIcon,
-  Refresh as RefreshIcon,
-} from '@mui/icons-material';
+import { BarChart as BarChartIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
+import { getErrorMessage } from '../api/errors';
 
 type EvaluacionView = {
   id: string;
@@ -48,15 +46,17 @@ export default function MisEvaluaciones() {
         return;
       }
       setEvaluaciones(
-        (data as Array<{
-          id: string;
-          estudianteNombre: string;
-          grupoNombre: string;
-          indicador: string;
-          periodo: string;
-          valor: number;
-          fecha: string;
-        }>).map((e) => ({
+        (
+          data as Array<{
+            id: string;
+            estudianteNombre: string;
+            grupoNombre: string;
+            indicador: string;
+            periodo: string;
+            valor: number;
+            fecha: string;
+          }>
+        ).map((e) => ({
           id: e.id,
           estudianteNombre: e.estudianteNombre,
           grupoNombre: e.grupoNombre,
@@ -64,10 +64,10 @@ export default function MisEvaluaciones() {
           periodo: e.periodo,
           valor: e.valor,
           fecha: e.fecha,
-        }))
+        })),
       );
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar evaluaciones');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al cargar evaluaciones');
     } finally {
       setCargando(false);
     }
@@ -79,7 +79,16 @@ export default function MisEvaluaciones() {
 
   if (!puedeLeer) {
     return (
-      <Box sx={{ p: 3, minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          p: 3,
+          minHeight: '60vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <BarChartIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
           <Typography variant="h6">Mis evaluaciones</Typography>
@@ -91,9 +100,10 @@ export default function MisEvaluaciones() {
     );
   }
 
-  const promedio = evaluaciones.length > 0
-    ? (evaluaciones.reduce((sum, e) => sum + e.valor, 0) / evaluaciones.length).toFixed(1)
-    : '—';
+  const promedio =
+    evaluaciones.length > 0
+      ? (evaluaciones.reduce((sum, e) => sum + e.valor, 0) / evaluaciones.length).toFixed(1)
+      : '—';
 
   return (
     <Box sx={{ p: 3 }}>
@@ -144,7 +154,17 @@ export default function MisEvaluaciones() {
       </Paper>
 
       {evaluaciones.length === 0 && !cargando && (
-        <Paper sx={{ p: 4, textAlign: 'center', minHeight: '40vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <Paper
+          sx={{
+            p: 4,
+            textAlign: 'center',
+            minHeight: '40vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <BarChartIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
           <Typography variant="body1">No tienes evaluaciones registradas.</Typography>
         </Paper>

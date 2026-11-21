@@ -14,23 +14,23 @@ export default function AuthRedirect() {
 
     switch (authStatus) {
       case 'mfa_required':
-        navigate('/mfa-verify', { replace: true });
+        void navigate('/mfa-verify', { replace: true });
         break;
       case 'password_change_required':
-        navigate('/password-change', { replace: true });
+        void navigate('/password-change', { replace: true });
         break;
       case 'mfa_enrollment_required':
-        navigate('/mfa-enroll', { replace: true });
+        void navigate('/mfa-enroll', { replace: true });
         break;
       case 'authenticated':
         if (user) {
-          navigate('/', { replace: true });
+          void navigate('/', { replace: true });
         }
         break;
       default:
         // Sin estado de auth definido: si hay usuario, ir al home
         if (user) {
-          navigate('/', { replace: true });
+          void navigate('/', { replace: true });
         }
     }
   }, [authStatus, user, sessionToken, isLoading, navigate]);

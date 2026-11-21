@@ -53,7 +53,7 @@ function renderWithProviders(ui: React.ReactElement, user?: User) {
   return render(
     <AuthProvider initialUser={user ?? mockEstudiante}>
       <BrowserRouter>{ui}</BrowserRouter>
-    </AuthProvider>
+    </AuthProvider>,
   );
 }
 
@@ -66,18 +66,20 @@ async function checkAccessibility(container: HTMLElement, label: string) {
       'button-name': { enabled: true },
       'link-name': { enabled: true },
       'image-alt': { enabled: true },
-      'label': { enabled: true },
+      label: { enabled: true },
       'landmark-one-main': { enabled: true },
       'page-has-heading-one': { enabled: true },
-      'tabindex': { enabled: true },
+      tabindex: { enabled: true },
       'nested-interactive': { enabled: true },
     },
   });
 
   if (results.violations.length > 0) {
-    const details = results.violations.map(
-      (v) => `${v.id}: ${v.description} (${v.nodes.map((n) => n.target.join(', ')).join('; ')})`
-    ).join('\n');
+    const details = results.violations
+      .map(
+        (v) => `${v.id}: ${v.description} (${v.nodes.map((n) => n.target.join(', ')).join('; ')})`,
+      )
+      .join('\n');
     throw new Error(`Violaciones de accesibilidad en ${label}:\n${details}`);
   }
 }
@@ -141,7 +143,7 @@ describe('Navegación por teclado', () => {
     cleanup();
   });
 
-  it('Página Login tiene botones con nombre accesible', async () => {
+  it('Página Login tiene botones con nombre accesible', () => {
     renderWithProviders(<Login />);
 
     const buttons = screen.getAllByRole('button');
@@ -154,7 +156,7 @@ describe('Navegación por teclado', () => {
     }
   });
 
-  it('Página VistaEducador (educador) tiene botones con nombre accesible', async () => {
+  it('Página VistaEducador (educador) tiene botones con nombre accesible', () => {
     renderWithProviders(<VistaEducador />, mockEducador);
 
     const buttons = screen.getAllByRole('button');

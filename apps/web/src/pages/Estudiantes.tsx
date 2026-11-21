@@ -24,11 +24,9 @@ import {
   FormControl,
   InputLabel,
 } from '@mui/material';
-import {
-  People as PeopleIcon,
-  Add as AddIcon,
-} from '@mui/icons-material';
+import { People as PeopleIcon, Add as AddIcon } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
+import { getErrorMessage } from '../api/errors';
 import type {
   EstudianteDto,
   CrearEstudianteDto,
@@ -68,16 +66,18 @@ export default function Estudiantes() {
         setError('No se pudieron cargar los programas');
         return;
       }
-      setEstudiantes(resEstudiantes.data as EstudianteDto[]);
-      setProgramas((resProgramas.data as ProgramaDto[]).map((p) => ({
-        id: p.id,
-        nombre: p.nombre,
-        cupo: p.cupo,
-        inscritos: p.inscritos,
-        estado: p.estado,
-      })));
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar estudiantes');
+      setEstudiantes(resEstudiantes.data);
+      setProgramas(
+        (resProgramas.data as ProgramaDto[]).map((p) => ({
+          id: p.id,
+          nombre: p.nombre,
+          cupo: p.cupo,
+          inscritos: p.inscritos,
+          estado: p.estado,
+        })),
+      );
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al cargar estudiantes');
     } finally {
       setCargando(false);
     }
@@ -97,16 +97,17 @@ export default function Estudiantes() {
         email: emailNuevo.trim(),
         programaId: programaIdNuevo.trim() || undefined,
       };
-      const { data, error: apiError, response } = await apiClient.POST(
-        '/academic/students',
-        { body: payload }
-      );
+      const {
+        data,
+        error: apiError,
+        response,
+      } = await apiClient.POST('/academic/students', { body: payload });
       if (apiError || response?.status !== 201) {
         const problema = apiError as ProblemDetailsDto;
         setError(problema?.detail || 'Error al crear el estudiante');
         return;
       }
-      const dto = data as EstudianteDto;
+      const dto = data;
       setExito(`Estudiante "${dto.nombre}" creado correctamente`);
       setNombreNuevo('');
       setEmailNuevo('');
@@ -114,8 +115,8 @@ export default function Estudiantes() {
       setEstadoNuevo('activo');
       setAbiertoDialogo(false);
       await cargarEstudiantes();
-    } catch (err: any) {
-      setError(err.message || 'Error inesperado al crear estudiante');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error inesperado al crear estudiante');
     } finally {
       setCargando(false);
     }
@@ -123,7 +124,16 @@ export default function Estudiantes() {
 
   if (!puedeGestionar) {
     return (
-      <Box sx={{ p: 3, minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          p: 3,
+          minHeight: '60vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <PeopleIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
           <Typography variant="h6">Administración de Estudiantes</Typography>
@@ -139,11 +149,7 @@ export default function Estudiantes() {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4">Administración de Estudiantes</Typography>
-        <Button
-          startIcon={<AddIcon />}
-          variant="contained"
-          onClick={() => setAbiertoDialogo(true)}
-        >
+        <Button startIcon={<AddIcon />} variant="contained" onClick={() => setAbiertoDialogo(true)}>
           Nuevo estudiante
         </Button>
       </Box>
@@ -207,16 +213,10 @@ export default function Estudiantes() {
         </TableContainer>
       </Paper>
 
-      <Dialog
-        open={abiertoDialogo}
-        onClose={() => setAbiertoDialogo(false)}
-        maxWidth="sm"
-      >
+      <Dialog open={abiertoDialogo} onClose={() => setAbiertoDialogo(false)} maxWidth="sm">
         <DialogTitle>Crear estudiante</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Registra un nuevo estudiante en el sistema.
-          </DialogContentText>
+          <DialogContentText>Registra un nuevo estudiante en el sistema.</DialogContentText>
           <TextField
             autoFocus
             margin="dense"
@@ -256,7 +256,7 @@ export default function Estudiantes() {
             <Select
               label="Estado"
               value={estadoNuevo}
-              onChange={(e) => setEstadoNuevo(e.target.value as 'activo' | 'inactivo' | 'bloqueado')}
+              onChange={(e) => setEstadoNuevo(e.target.value)}
             >
               <MenuItem value="activo">Activo</MenuItem>
               <MenuItem value="inactivo">Inactivo</MenuItem>

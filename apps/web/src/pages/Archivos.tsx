@@ -1,15 +1,9 @@
 import { useState } from 'react';
-import {
-  Box,
-  Button,
-  Paper,
-  TextField,
-  Typography,
-  Alert,
-} from '@mui/material';
+import { Box, Button, Paper, TextField, Typography, Alert } from '@mui/material';
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
-import type { SubirArchivoResponseDto, ProblemDetailsDto } from '../api/client';
+import { getErrorMessage } from '../api/errors';
+import type { ProblemDetailsDto } from '../api/client';
 
 const LISTA_BLANCA_MIME = [
   'application/pdf',
@@ -69,15 +63,16 @@ export default function Archivos() {
       const formData = new FormData();
       formData.append('archivo', archivoSeleccionado);
 
-      const { data, error: apiError, response } = (await apiClient.POST(
-        '/files',
-        {
-          body: formData as any,
-          headers: {
-            'Idempotency-Key': idempotencyKey.trim(),
-          },
-        }
-      )) as any;
+      const {
+        data,
+        error: apiError,
+        response,
+      } = await apiClient.POST('/files', {
+        body: formData,
+        headers: {
+          'Idempotency-Key': idempotencyKey.trim(),
+        },
+      });
 
       if (apiError || response?.status !== 200) {
         const problema = apiError as ProblemDetailsDto;
@@ -85,13 +80,13 @@ export default function Archivos() {
         return;
       }
 
-      const dto = data as SubirArchivoResponseDto;
+      const dto = data;
       setExito(`Archivo "${dto.archivo.nombreOriginal}" subido correctamente`);
       setArchivoSeleccionado(null);
       setNombreArchivo('');
       setIdempotencyKey('');
-    } catch (err: any) {
-      setError(err.message || 'Error inesperado al subir');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error inesperado al subir');
     } finally {
       setSubiendo(false);
     }
@@ -103,8 +98,9 @@ export default function Archivos() {
     <Box sx={{ p: 3 }}>
       <Typography variant="h4">Gestión de Archivos</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Carga archivos con validación de tipo, tamaño ({MAX_TAMANO_MB} MB) e idempotencia.
-        La descarga y el listado se habilitarán cuando el Rol B implemente los endpoints correspondientes.
+        Carga archivos con validación de tipo, tamaño ({MAX_TAMANO_MB} MB) e idempotencia. La
+        descarga y el listado se habilitarán cuando el Rol B implemente los endpoints
+        correspondientes.
       </Typography>
 
       {!puedeSubir && (
@@ -140,7 +136,16 @@ export default function Archivos() {
               <Box
                 component="label"
                 htmlFor="file-input"
-                sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 1, p: 1, border: '1px dashed', borderRadius: 1, bgcolor: 'background.paper' }}
+                sx={{
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  p: 1,
+                  border: '1px dashed',
+                  borderRadius: 1,
+                  bgcolor: 'background.paper',
+                }}
               >
                 <CloudUploadIcon fontSize="medium" />
                 {nombreArchivo || 'Seleccionar archivo'}

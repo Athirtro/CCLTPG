@@ -1,9 +1,23 @@
 ﻿import { Box, Paper, Typography, Avatar, Divider, Chip } from '@mui/material';
-import { Dashboard, School, People, Assignment, Shield, Lock, Person, Schedule, BarChart } from '@mui/icons-material';
+import {
+  Dashboard,
+  School,
+  People,
+  Assignment,
+  Shield,
+  Lock,
+  Person,
+  Schedule,
+  BarChart,
+} from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
 function IconWrapper({ icon }: { icon: React.ReactElement }) {
-  return <Avatar sx={{ bgcolor: 'primary.main' }}><span>{icon}</span></Avatar>;
+  return (
+    <Avatar sx={{ bgcolor: 'primary.main' }}>
+      <span>{icon}</span>
+    </Avatar>
+  );
 }
 
 export default function Home() {
@@ -74,7 +88,11 @@ export default function Home() {
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
             <Box sx={{ xs: 12, sm: 6, md: 3, p: 1 }}>
               <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar component="div"><span><Person /></span></Avatar>
+                <Avatar component="div">
+                  <span>
+                    <Person />
+                  </span>
+                </Avatar>
                 <Box>
                   <Typography variant="body2" color="text.secondary">
                     Correo
@@ -87,7 +105,11 @@ export default function Home() {
             </Box>
             <Box sx={{ xs: 12, sm: 6, md: 3, p: 1 }}>
               <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar component="div" sx={{ bgcolor: 'secondary.main' }}><span><Shield /></span></Avatar>
+                <Avatar component="div" sx={{ bgcolor: 'secondary.main' }}>
+                  <span>
+                    <Shield />
+                  </span>
+                </Avatar>
                 <Box>
                   <Typography variant="body2" color="text.secondary">
                     Perfil activo
@@ -100,7 +122,11 @@ export default function Home() {
             </Box>
             <Box sx={{ xs: 12, sm: 6, md: 3, p: 1 }}>
               <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar component="div" sx={{ bgcolor: 'warning.main' }}><span><Lock /></span></Avatar>
+                <Avatar component="div" sx={{ bgcolor: 'warning.main' }}>
+                  <span>
+                    <Lock />
+                  </span>
+                </Avatar>
                 <Box>
                   <Typography variant="body2" color="text.secondary">
                     MFA
@@ -113,7 +139,11 @@ export default function Home() {
             </Box>
             <Box sx={{ xs: 12, sm: 6, md: 3, p: 1 }}>
               <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar component="div" sx={{ bgcolor: 'info.main' }}><span><Dashboard /></span></Avatar>
+                <Avatar component="div" sx={{ bgcolor: 'info.main' }}>
+                  <span>
+                    <Dashboard />
+                  </span>
+                </Avatar>
                 <Box>
                   <Typography variant="body2" color="text.secondary">
                     Permisos

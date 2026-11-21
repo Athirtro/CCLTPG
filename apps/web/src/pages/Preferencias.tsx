@@ -22,6 +22,7 @@ import {
   Save as SaveIcon,
 } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
+import { getErrorMessage } from '../api/errors';
 import type { PreferenciaNotificacionDto, ActualizarPreferenciaDto } from '../api/client';
 
 export default function Preferencias() {
@@ -45,9 +46,9 @@ export default function Preferencias() {
         setError('No se pudieron cargar las preferencias');
         return;
       }
-      setPreferencias(data as PreferenciaNotificacionDto[]);
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar preferencias');
+      setPreferencias(data);
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al cargar preferencias');
     } finally {
       setCargando(false);
     }
@@ -59,9 +60,7 @@ export default function Preferencias() {
 
   const manejarCambio = (evento: string, canal: string, habilitado: boolean) => {
     setPreferencias((prev) =>
-      prev.map((p) =>
-        p.evento === evento && p.canal === canal ? { ...p, habilitado } : p
-      )
+      prev.map((p) => (p.evento === evento && p.canal === canal ? { ...p, habilitado } : p)),
     );
   };
 
@@ -73,21 +72,22 @@ export default function Preferencias() {
     try {
       const payload: ActualizarPreferenciaDto[] = preferencias.map((p) => ({
         evento: p.evento,
-        canal: p.canal as 'app' | 'email',
+        canal: p.canal,
         habilitado: p.habilitado,
       }));
-      const { data, error: apiError, response } = await apiClient.PUT(
-        '/notifications/preferences',
-        { body: payload }
-      );
+      const {
+        data,
+        error: apiError,
+        response,
+      } = await apiClient.PUT('/notifications/preferences', { body: payload });
       if (apiError || response?.status !== 200) {
         setError('No se pudieron guardar las preferencias');
         return;
       }
       setExito('Preferencias guardadas correctamente');
-      setPreferencias(data as PreferenciaNotificacionDto[]);
-    } catch (err: any) {
-      setError(err.message || 'Error al guardar preferencias');
+      setPreferencias(data);
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al guardar preferencias');
     } finally {
       setGuardando(false);
     }
@@ -98,13 +98,20 @@ export default function Preferencias() {
     { id: 'email', label: 'Correo electrónico', icon: <EmailIcon fontSize="small" /> },
   ];
 
-  const eventos = [
-    ...new Set(preferencias.map((p) => p.evento)),
-  ];
+  const eventos = [...new Set(preferencias.map((p) => p.evento))];
 
   if (!puedeLeer && !puedeActualizar) {
     return (
-      <Box sx={{ p: 3, minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          p: 3,
+          minHeight: '60vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <NotificationsIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
           <Typography variant="h6">Preferencias de notificación</Typography>
@@ -120,7 +127,8 @@ export default function Preferencias() {
     <Box sx={{ p: 3 }}>
       <Typography variant="h4">Preferencias de notificación</Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        Elige qué notificaciones recibir y por qué canal. Las notificaciones críticas no se pueden silenciar.
+        Elige qué notificaciones recibir y por qué canal. Las notificaciones críticas no se pueden
+        silenciar.
       </Typography>
 
       {error && (
@@ -134,14 +142,20 @@ export default function Preferencias() {
         </Alert>
       )}
 
-      {!puedeLeer && (
-        <Alert severity="warning">
-          No tienes permiso para leer preferencias.
-        </Alert>
-      )}
+      {!puedeLeer && <Alert severity="warning">No tienes permiso para leer preferencias.</Alert>}
 
       {preferencias.length === 0 && !cargando && (
-        <Paper sx={{ p: 4, textAlign: 'center', minHeight: '40vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <Paper
+          sx={{
+            p: 4,
+            textAlign: 'center',
+            minHeight: '40vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <NotificationsIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
           <Typography variant="body1">No hay preferencias configuradas.</Typography>
         </Paper>

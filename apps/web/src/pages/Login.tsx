@@ -1,15 +1,8 @@
 ﻿import { useState } from 'react';
-import {
-  Box,
-  Button,
-  CssBaseline,
-  Paper,
-  TextField,
-  Typography,
-  Alert,
-} from '@mui/material';
+import { Box, Button, CssBaseline, Paper, TextField, Typography, Alert } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { getErrorMessage } from '../api/errors';
 
 export default function Login() {
   const { login, isLoading } = useAuth();
@@ -27,18 +20,23 @@ export default function Login() {
       // - mfa_required → /mfa-verify
       // - password_change_required → /password-change
       // - mfa_enrollment_required → /mfa-enroll
-    } catch (err: any) {
-      setError(err.message || 'Credenciales inválidas o error del servidor');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Credenciales inválidas o error del servidor');
     }
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5' }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: '#f5f5f5',
+      }}
+    >
       <CssBaseline />
-      <Paper
-        elevation={3}
-        sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}
-      >
+      <Paper elevation={3} sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}>
         <Typography component="h1" variant="h5" align="center" gutterBottom sx={{ mb: 3 }}>
           CCLTPG — Iniciar sesión
         </Typography>
@@ -72,20 +70,13 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
             sx={{ mb: 3 }}
           />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            size="large"
-            disabled={isLoading}
-          >
+          <Button type="submit" fullWidth variant="contained" size="large" disabled={isLoading}>
             {isLoading ? 'Entrando…' : 'Iniciar sesión'}
           </Button>
         </form>
         <Box sx={{ mt: 2, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">
-            ¿No tienes cuenta?{' '}
-            <Link to="/registro">Regístrate</Link>
+            ¿No tienes cuenta? <Link to="/registro">Regístrate</Link>
           </Typography>
         </Box>
       </Paper>

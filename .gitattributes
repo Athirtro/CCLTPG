@@ -1,0 +1,3 @@
+# Todos los archivos de texto se guardan con LF en el índice y en el working copy.
+# Esto mantiene el resultado de `pnpm format:check` igual en Windows, Linux y CI.
+* text=auto eol=lf

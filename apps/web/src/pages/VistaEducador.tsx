@@ -30,6 +30,7 @@ import {
   Add as AddIcon,
 } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
+import { getErrorMessage } from '../api/errors';
 
 type SesionEducadorView = {
   id: string;
@@ -104,15 +105,13 @@ export default function VistaEducador() {
         matriculaId: m.id,
         presente: m.presente,
       }));
-      const { error: apiError, response } = await (
-        await apiClient.PUT(
-          `/academic/sessions/${sesionSeleccionada.id}/attendance` as any,
-          {
-            params: { path: { id: sesionSeleccionada.id } },
-            body: { registros },
-          }
-        )
-      ) as any;
+      const { error: apiError, response } = await apiClient.PUT(
+        '/academic/sessions/{id}/attendance',
+        {
+          params: { path: { id: sesionSeleccionada.id } },
+          body: { registros },
+        },
+      );
       if (apiError || response?.status !== 200) {
         const problema = apiError as { detail?: string };
         setError(problema?.detail || 'Error al registrar asistencia');
@@ -121,8 +120,8 @@ export default function VistaEducador() {
       setExito(`Asistencia registrada: ${registros.length} estudiantes`);
       setSesionSeleccionada(null);
       setMatriculas([]);
-    } catch (err: any) {
-      setError(err.message || 'Error al registrar asistencia');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al registrar asistencia');
     } finally {
       setCargando(false);
     }
@@ -131,23 +130,26 @@ export default function VistaEducador() {
   const manejarCrearEvaluacion = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!indicadorNuevo.trim() || !periodoNuevo.trim() || !valorNuevo.trim() || !estudianteEvalNuevo.trim()) {
+    if (
+      !indicadorNuevo.trim() ||
+      !periodoNuevo.trim() ||
+      !valorNuevo.trim() ||
+      !estudianteEvalNuevo.trim()
+    ) {
       setError('Todos los campos son obligatorios');
       return;
     }
     setCargando(true);
     try {
-      const { error: apiError, response } = await (
-        await apiClient.POST('/academic/evaluations', {
-          body: {
-            estudianteId: estudianteEvalNuevo,
-            grupoId: sesionSeleccionada?.id ?? '',
-            indicador: indicadorNuevo.trim(),
-            periodo: periodoNuevo.trim(),
-            valor: parseFloat(valorNuevo),
-          },
-        })
-      ) as any;
+      const { error: apiError, response } = await apiClient.POST('/academic/evaluations', {
+        body: {
+          estudianteId: estudianteEvalNuevo,
+          grupoId: sesionSeleccionada?.id ?? '',
+          indicador: indicadorNuevo.trim(),
+          periodo: periodoNuevo.trim(),
+          valor: parseFloat(valorNuevo),
+        },
+      });
       if (apiError || response?.status !== 201) {
         const problema = apiError as { detail?: string };
         setError(problema?.detail || 'Error al crear la evaluación');
@@ -159,8 +161,8 @@ export default function VistaEducador() {
       setValorNuevo('');
       setEstudianteEvalNuevo('');
       setAbiertoDialogoEvaluacion(false);
-    } catch (err: any) {
-      setError(err.message || 'Error inesperado al crear evaluación');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error inesperado al crear evaluación');
     } finally {
       setCargando(false);
     }
@@ -168,7 +170,16 @@ export default function VistaEducador() {
 
   if (!puedeTomarAsistencia && !puedeCrearEvaluacion) {
     return (
-      <Box sx={{ p: 3, minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          p: 3,
+          minHeight: '60vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <ShieldIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
           <Typography variant="h6">Vista del educador</Typography>
@@ -233,7 +244,8 @@ export default function VistaEducador() {
                 Asistencia — {sesionSeleccionada.grupoNombre}
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ mb: 2 }}>
-                {sesionSeleccionada.fecha} · {sesionSeleccionada.horaInicio} - {sesionSeleccionada.horaFin} · {sesionSeleccionada.salon}
+                {sesionSeleccionada.fecha} · {sesionSeleccionada.horaInicio} -{' '}
+                {sesionSeleccionada.horaFin} · {sesionSeleccionada.salon}
               </Typography>
               <TableContainer>
                 <Table size="small">
@@ -256,8 +268,8 @@ export default function VistaEducador() {
                               onClick={() =>
                                 setMatriculas(
                                   matriculas.map((x) =>
-                                    x.id === m.id ? { ...x, presente: true } : x
-                                  )
+                                    x.id === m.id ? { ...x, presente: true } : x,
+                                  ),
                                 )
                               }
                             >
@@ -270,8 +282,8 @@ export default function VistaEducador() {
                               onClick={() =>
                                 setMatriculas(
                                   matriculas.map((x) =>
-                                    x.id === m.id ? { ...x, presente: false } : x
-                                  )
+                                    x.id === m.id ? { ...x, presente: false } : x,
+                                  ),
                                 )
                               }
                             >
@@ -361,9 +373,7 @@ export default function VistaEducador() {
               </form>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setAbiertoDialogoEvaluacion(false)}>
-                Cancelar
-              </Button>
+              <Button onClick={() => setAbiertoDialogoEvaluacion(false)}>Cancelar</Button>
               <Button
                 onClick={manejarCrearEvaluacion}
                 disabled={

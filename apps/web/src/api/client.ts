@@ -16,11 +16,7 @@ export type MfaEnrollConfirmResponseDto = LoginResponseDto & {
 };
 
 export type LoginResponseDto = {
-  status:
-    | 'authenticated'
-    | 'password_change_required'
-    | 'mfa_required'
-    | 'mfa_enrollment_required';
+  status: 'authenticated' | 'password_change_required' | 'mfa_required' | 'mfa_enrollment_required';
   sessionToken?: string;
   accessToken?: string;
   tokenType?: string;
@@ -327,10 +323,7 @@ export type Paths = {
     post: {
       requestBody: {
         content: {
-          'multipart/form-data': {
-            archivo: File;
-            'Idempotency-Key'?: string;
-          };
+          'multipart/form-data': FormData;
         };
       };
       responses: {
@@ -364,14 +357,9 @@ export type Paths = {
   };
   '/files/{id}/download': {
     get: {
-      parameters: [
-        {
-          in: 'path';
-          name: 'id';
-          required: true;
-          schema: { type: 'string' };
-        },
-      ];
+      parameters: {
+        path: { id: string };
+      };
       responses: {
         200: {
           content: {
@@ -400,14 +388,9 @@ export type Paths = {
   };
   '/notifications/{id}': {
     patch: {
-      parameters: [
-        {
-          in: 'path';
-          name: 'id';
-          required: true;
-          schema: { type: 'string' };
-        },
-      ];
+      parameters: {
+        path: { id: string };
+      };
       requestBody: {
         content: {
           'application/json': {
@@ -539,14 +522,9 @@ export type Paths = {
   };
   '/academic/programs/{id}/transitions': {
     post: {
-      parameters: [
-        {
-          in: 'path';
-          name: 'id';
-          required: true;
-          schema: { type: 'string' };
-        },
-      ];
+      parameters: {
+        path: { id: string };
+      };
       requestBody: {
         content: {
           'application/json': {
@@ -610,14 +588,9 @@ export type Paths = {
   };
   '/academic/groups/{id}/transitions': {
     post: {
-      parameters: [
-        {
-          in: 'path';
-          name: 'id';
-          required: true;
-          schema: { type: 'string' };
-        },
-      ];
+      parameters: {
+        path: { id: string };
+      };
       requestBody: {
         content: {
           'application/json': {
@@ -734,14 +707,9 @@ export type Paths = {
   };
   '/academic/enrollments/{id}/transitions': {
     post: {
-      parameters: [
-        {
-          in: 'path';
-          name: 'id';
-          required: true;
-          schema: { type: 'string' };
-        },
-      ];
+      parameters: {
+        path: { id: string };
+      };
       requestBody: {
         content: {
           'application/json': {
@@ -807,14 +775,9 @@ export type Paths = {
   };
   '/academic/sessions/{id}/transitions': {
     post: {
-      parameters: [
-        {
-          in: 'path';
-          name: 'id';
-          required: true;
-          schema: { type: 'string' };
-        },
-      ];
+      parameters: {
+        path: { id: string };
+      };
       requestBody: {
         content: {
           'application/json': {
@@ -843,14 +806,9 @@ export type Paths = {
   };
   '/academic/sessions/{id}/attendance': {
     put: {
-      parameters: [
-        {
-          in: 'path';
-          name: 'id';
-          required: true;
-          schema: { type: 'string' };
-        },
-      ];
+      parameters: {
+        path: { id: string };
+      };
       requestBody: {
         content: {
           'application/json': {

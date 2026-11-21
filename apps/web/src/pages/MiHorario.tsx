@@ -14,11 +14,9 @@ import {
   Chip,
   CircularProgress,
 } from '@mui/material';
-import {
-  Schedule as ScheduleIcon,
-  Refresh as RefreshIcon,
-} from '@mui/icons-material';
+import { Schedule as ScheduleIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
+import { getErrorMessage } from '../api/errors';
 
 type SesionHorarioView = {
   id: string;
@@ -50,16 +48,18 @@ export default function MiHorario() {
         return;
       }
       setSesiones(
-        (data as Array<{
-          id: string;
-          grupoNombre: string;
-          programaNombre: string;
-          fecha: string;
-          horaInicio: string;
-          horaFin: string;
-          salon: string;
-          estado: string;
-        }>).map((s) => ({
+        (
+          data as Array<{
+            id: string;
+            grupoNombre: string;
+            programaNombre: string;
+            fecha: string;
+            horaInicio: string;
+            horaFin: string;
+            salon: string;
+            estado: string;
+          }>
+        ).map((s) => ({
           id: s.id,
           grupoNombre: s.grupoNombre,
           programaNombre: s.programaNombre,
@@ -68,10 +68,10 @@ export default function MiHorario() {
           horaFin: s.horaFin,
           salon: s.salon,
           estado: s.estado as 'programada' | 'realizada' | 'cancelada',
-        }))
+        })),
       );
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar el horario');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al cargar el horario');
     } finally {
       setCargando(false);
     }
@@ -83,7 +83,16 @@ export default function MiHorario() {
 
   if (!puedeLeer) {
     return (
-      <Box sx={{ p: 3, minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          p: 3,
+          minHeight: '60vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <ScheduleIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
           <Typography variant="h6">Mi horario</Typography>
@@ -105,11 +114,7 @@ export default function MiHorario() {
           disabled={cargando}
           onClick={cargarHorario}
         >
-          {cargando ? (
-            <CircularProgress size={20} aria-label="Cargando horario" />
-          ) : (
-            'Actualizar'
-          )}
+          {cargando ? <CircularProgress size={20} aria-label="Cargando horario" /> : 'Actualizar'}
         </Button>
       </Box>
 
@@ -120,7 +125,17 @@ export default function MiHorario() {
       )}
 
       {sesiones.length === 0 && !cargando && (
-        <Paper sx={{ p: 4, textAlign: 'center', minHeight: '40vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <Paper
+          sx={{
+            p: 4,
+            textAlign: 'center',
+            minHeight: '40vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <ScheduleIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
           <Typography variant="body1">No tienes sesiones programadas.</Typography>
         </Paper>
@@ -147,7 +162,9 @@ export default function MiHorario() {
                   <TableCell>
                     {s.fecha ? new Date(s.fecha).toLocaleDateString('es-CO') : '-'}
                   </TableCell>
-                  <TableCell>{s.horaInicio} - {s.horaFin}</TableCell>
+                  <TableCell>
+                    {s.horaInicio} - {s.horaFin}
+                  </TableCell>
                   <TableCell>{s.salon}</TableCell>
                   <TableCell>
                     <Chip

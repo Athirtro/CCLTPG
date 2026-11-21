@@ -12,9 +12,14 @@ import {
   FormControl,
   InputLabel,
 } from '@mui/material';
-import { FileCopy as FileCopyIcon, Description as DescriptionIcon, BarChart as BarChartIcon } from '@mui/icons-material';
+import {
+  FileCopy as FileCopyIcon,
+  Description as DescriptionIcon,
+  BarChart as BarChartIcon,
+} from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
-import type { ExportacionDto, CrearExportacionDto, ProblemDetailsDto } from '../api/client';
+import { getErrorMessage } from '../api/errors';
+import type { CrearExportacionDto, ProblemDetailsDto } from '../api/client';
 
 const PLANTILLAS = [
   { valor: 'matriculas_por_programa', label: 'Matrículas por programa' },
@@ -55,7 +60,7 @@ export default function Exportaciones() {
 
     let entrada: Record<string, unknown>;
     try {
-      entrada = JSON.parse(entradaJson || '{}');
+      entrada = JSON.parse(entradaJson || '{}') as Record<string, unknown>;
     } catch {
       setError('El JSON de entrada no es válido');
       return;
@@ -68,7 +73,11 @@ export default function Exportaciones() {
         formato: formatoSeleccionado,
         entrada,
       };
-      const { data, error: apiError, response } = await apiClient.POST('/exports', {
+      const {
+        data,
+        error: apiError,
+        response,
+      } = await apiClient.POST('/exports', {
         body: payload,
       });
 
@@ -78,11 +87,11 @@ export default function Exportaciones() {
         return;
       }
 
-      const dto = data as ExportacionDto;
+      const dto = data;
       setExito(`Exportación "${dto.plantilla}" generada (${dto.formato.toUpperCase()})`);
       setEntradaJson('{}');
-    } catch (err: any) {
-      setError(err.message || 'Error inesperado al generar');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error inesperado al generar');
     } finally {
       setGenerando(false);
     }
@@ -90,7 +99,16 @@ export default function Exportaciones() {
 
   if (!puedeExportar) {
     return (
-      <Box sx={{ p: 3, minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          p: 3,
+          minHeight: '60vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <BarChartIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
           <Typography variant="h6">Exportaciones</Typography>
@@ -145,7 +163,7 @@ export default function Exportaciones() {
               <InputLabel>Formato</InputLabel>
               <Select
                 value={formatoSeleccionado}
-                onChange={(e) => setFormatoSeleccionado(e.target.value as 'pdf' | 'xlsx' | 'csv')}
+                onChange={(e) => setFormatoSeleccionado(e.target.value)}
                 label="Formato"
               >
                 {FORMATOS.map((f) => (
@@ -183,7 +201,8 @@ export default function Exportaciones() {
           Mis exportaciones
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Las exportaciones generadas aparecerán aquí una vez el Rol B implemente el servicio de exportaciones.
+          Las exportaciones generadas aparecerán aquí una vez el Rol B implemente el servicio de
+          exportaciones.
         </Typography>
       </Paper>
     </Box>
