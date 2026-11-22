@@ -11,6 +11,9 @@ import { Kysely, PostgresDialect } from 'kysely';
 import pg from 'pg';
 
 import { env } from '../shared/config/env.js';
+import { IDEMPOTENCY_STORE } from '../shared/idempotency/idempotency.port.js';
+import type { Database } from './schema.js';
+import { KyselyIdempotencyStore } from './idempotency/kysely-idempotency.store.js';
 
 export const DATABASE = Symbol('CCLTPG_DATABASE');
 export const REDIS = Symbol('CCLTPG_REDIS');
@@ -51,8 +54,16 @@ const redisProvider: Provider = {
 
 @Global()
 @Module({
-  providers: [databaseProvider, redisProvider],
-  exports: [DATABASE, REDIS],
+  providers: [
+    databaseProvider,
+    redisProvider,
+    {
+      provide: IDEMPOTENCY_STORE,
+      useFactory: (db: Kysely<unknown>) => new KyselyIdempotencyStore(db as Kysely<Database>),
+      inject: [DATABASE],
+    },
+  ],
+  exports: [DATABASE, REDIS, IDEMPOTENCY_STORE],
 })
 export class DatabaseModule implements OnApplicationShutdown {
   constructor(

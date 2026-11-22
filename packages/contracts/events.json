@@ -37,6 +37,7 @@
     "programa.archivado",
     "programa.creado",
     "programa.publicado",
+    "reporte.generado",
     "seguridad.acceso_denegado",
     "sesion.cerrada",
     "sesion.credenciales_verificadas",

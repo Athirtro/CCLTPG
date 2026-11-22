@@ -1,8 +1,8 @@
 # Runbooks de operación — CCLTPG
 
-- **Ámbito:** Iteraciones 1 y 2 (esqueleto caminante; identidad, RBAC y auditoría). Los procedimientos de academia y archivos se amplían en C3/C4.
+- **Ámbito:** Iteraciones 1 a 3 (esqueleto caminante; identidad, RBAC y auditoría; archivos, notificaciones y exportaciones). Los procedimientos de academia se amplían en C4.
 - **Responsable:** Rol B — seguridad, identidad y operación.
-- **Regla:** ningún procedimiento de este directorio sustituye una decisión de equipo. Las decisiones pendientes se registran en `docs/tasks/rol-b/rol-b-it2-registro.md`.
+- **Regla:** ningún procedimiento de este directorio sustituye una decisión de equipo. Las decisiones pendientes se registran en `docs/tasks/rol-b/rol-b-it3-registro.md`.
 
 | Runbook | Cuándo usarlo |
 | --- | --- |
@@ -14,13 +14,17 @@
 | [Reset de MFA](reset-mfa.md) | Una persona perdió el dispositivo TOTP o los códigos de recuperación. |
 | [Revocación de sesiones](revocacion-sesiones.md) | Hay que cortar una sesión, una familia o todas las sesiones de una cuenta. |
 | [Cambio de contraseña forzado](cambio-password-forzado.md) | Primer acceso, credencial comprometida o reset administrativo. |
+| [Archivos y almacenamiento](archivos.md) | Hay que cargar, descargar, diagnosticar o poner en cuarentena un archivo. |
+| [Notificaciones y outbox](notificaciones.md) | La bandeja no recibe eventos, hay entregas fallidas o se reprocesa la outbox. |
+| [Exportaciones](exportaciones.md) | Hay que generar, diagnosticar o descargar un reporte PDF/XLSX/CSV. |
 
 ## Estado de verificación
 
 - Los comandos de API, contrato, arquitectura, seguridad HTTP y pruebas se ejecutaron en la máquina de desarrollo con Node 22.19.0 y pnpm 9.15.4.
 - La integración con PostgreSQL se verificó contra un PostgreSQL 16 real embebido en el puerto 55432.
-- **Docker Desktop está instalado, pero el host Windows no autentica contra el contenedor Compose (`28P01`) y MinIO no es descargable (`quay.io` responde 401).** Los pasos de `docker compose` están escritos y el archivo Compose valida como YAML, pero su ejecución queda pendiente. Ver la deuda registrada en `docs/reviews/c2/rol-b.md`.
+- **Docker Desktop está instalado, pero el host Windows no autentica contra el contenedor Compose (`28P01`) y MinIO no es descargable (`quay.io` responde 401).** Los pasos de `docker compose` están escritos y el archivo Compose valida como YAML, pero su ejecución queda pendiente. Ver la deuda registrada en `docs/reviews/c3/rol-b.md`.
 - Los runbooks de identidad se apoyan en los endpoints reales de C2 y en consultas de solo lectura para verificar el estado; el break-glass solo se usa si la API no está disponible y exige ticket aprobado.
+- Los runbooks de C3 documentan el adaptador local de almacenamiento, el escáner antimalware stub y el correo stub; la evidencia de MinIO y SMTP reales sigue pendiente y no se presenta como verificada.
 
 ## Convenciones
 

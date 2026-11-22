@@ -1,6 +1,6 @@
 # Resumen de iteraciones — CCLTPG
 
-- **Fecha:** 19 de noviembre de 2026
+- **Fecha:** 21 de noviembre de 2026
 - **Responsable:** Rol B (seguridad, identidad y operación) — y en adelante el equipo en conjunto.
 - **Alcance:** visión general de las iteraciones del desarrollo, según `docs/diseno-arquitectonico.md` (§18) y `docs/requirements/seguridad.md`.
 
@@ -17,7 +17,7 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 | 0 | Cierre de especificación | — | Suposiciones sobre reglas y modelo de datos | C0 | Cerrada con 5 condiciones P0 abiertas pendientes de resolver |
 | 1 | **Esqueleto caminante** | 1.0 | Errores de herramientas y estructura | C1 | **Completada con límites de evidencia** (ver `docs/reviews/c1/rol-b.md`) |
 | 2 | **Identidad, RBAC y auditoría** | 1.0 | Fallos de seguridad | C2 | **Ejecutada con límites de evidencia** (ver `docs/reviews/c2/rol-b.md`) |
-| 3 | Archivos, notificaciones y exportaciones | 1.0 | Contratos compartidos inestables | C3 | **Plan propuesto** (ver `docs/tasks/rol-b/rol-b-it3-plan.md`) |
+| 3 | Archivos, notificaciones y exportaciones | 1.0 | Contratos compartidos inestables | C3 | **Ejecutada con límites de evidencia** (ver `docs/reviews/c3/rol-b.md`) |
 | 4 | Académico A: programas, grupos, estudiantes, matrícula | 1.0 | Patrón de módulo equivocado | C4 | No iniciada |
 | 5 | Académico B: asistencia, evaluación + endurecimiento | 1.0 | Rendimiento, respaldos, regresiones | C5 | No iniciada |
 | 6 | Reportes, dashboards y notificaciones | 2.0 | KPIs y reportes incorrectos | C6 | No iniciada |
@@ -48,10 +48,20 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 - **Evidencia:** 129 pruebas unitarias de API, 24 de integración contra PostgreSQL 16 real, 11 de contrato, 3 de arquitectura y 6 del escáner de secretos; `arch:check` sin violaciones.
 - **Límites:** Docker/MinIO no ejecutables en esta máquina, CI de GitHub pendiente, acta C0/C1 pendiente y ratificaciones de R-030, dependencias, catálogo y semántica de AC-SEC-01/22 por firmar.
 
-### Iteraciones 3 a 8
+### Iteración 3 — Archivos, notificaciones y exportaciones (ejecutada)
 
-- Se suceden por dominios: archivos/notificaciones/exportaciones, académico A, académico B + Release 1.0, reportes/dashboards, accesibilidad, endurecimiento/aceptación final.
-- **Iteración 3:** plan propuesto en `docs/tasks/rol-b/rol-b-it3-plan.md`; no iniciada.
+- Carga con lista blanca, límite de 10 MB, verificación por bytes mágicos, nombre saneado, deduplicación por hash, escaneo y cuarentena; descarga siempre por la API, con permiso global o propio y auditoría antes de responder.
+- Outbox transaccional, trabajador con `FOR UPDATE SKIP LOCKED`, plantillas versionadas, preferencias, canales `app`/`email` detrás de puertos, bandeja propia y críticas no silenciables.
+- Exportaciones con plantillas en código, entrada JSON saneada, salidas PDF/XLSX/CSV, límites de filas y tamaño, registro como archivo y auditoría `reporte.generado`.
+- Idempotencia obligatoria en `POST /files` y `POST /exports` con `Idempotency-Key`, conflicto 409 y TTL de 24 h.
+- **Decisiones aplicadas:** D49…D58 (almacenamiento por puerto, carga endurecida, antimalware stub, descarga por API, outbox, correo stub, plantillas, idempotencia y contrato), con ratificación formal pendiente.
+- **Evidencia:** 245 pruebas unitarias de API, 31 de integración contra PostgreSQL 16 real, 11 de contrato, 3 de arquitectura y 6 del escáner de secretos; contrato con 24 operaciones, 4 rutas públicas y 61 eventos; `arch:check` sin violaciones.
+- **Límites:** MinIO no ejecutable (se usa adaptador local), antimalware y correo son stubs, CI de GitHub pendiente, apertura manual de PDF/XLSX pendiente, acta C0/C1 pendiente y ratificaciones de R-009/R-020/R-029/R-032/R-033 y dependencias por firmar.
+
+### Iteraciones 4 a 8
+
+- Se suceden por dominios: académico A, académico B + Release 1.0, reportes/dashboards, accesibilidad, endurecimiento/aceptación final.
+- **Iteración 4:** académico A (programas, grupos, estudiantes y matrícula) sobre el patrón de módulo ya validado en C3.
 
 ## 4. Partes importantes por iteración
 
@@ -74,7 +84,7 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 | C0 | Requisitos con criterios; decisiones cerradas. | `docs/reviews/c0/*` | Con 5 condiciones P0 abiertas |
 | C1 | Montaje limpio, CI, arquitectura, contratos, migraciones/roles, seguridad base. | `docs/reviews/c1/rol-b.md` | **Cerrada en código; pendiente CI en GitHub y Docker** |
 | C2 | Seguridad de autenticación/RBAC/auditoría. | `docs/reviews/c2/rol-b.md` | **Ejecutada en código; pendiente firma, Docker/MinIO, CI en GitHub y acta C0/C1** |
-| C3 | Contratos de archivos/notificaciones/exportaciones. | `docs/tasks/rol-b/rol-b-it3-plan.md` | **Plan propuesto; pendiente ratificación** |
+| C3 | Contratos de archivos/notificaciones/exportaciones. | `docs/reviews/c3/rol-b.md` | **Ejecutada en código; pendiente firma, MinIO, CI en GitHub, apertura manual de PDF/XLSX y acta C0/C1** |
 | C4 | Patrón académico y caso de uso. | No iniciada | — |
 | C5 | Endurecimiento, carga, backup. | No iniciada | — |
 | C6 | Reportes/KPIs. | No iniciada | — |
@@ -93,6 +103,6 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 - `docs/diseno-arquitectonico.md` (§18, §19).
 - `docs/requirements/seguridad.md`.
 - `docs/tasks/rol-b/rol-b-it1-plan.md`, `docs/tasks/rol-b/rol-b-it2-plan.md`, `docs/tasks/rol-b/rol-b-it3-plan.md`.
-- `docs/tasks/rol-b/rol-b-it2-registro.md`.
-- `docs/reviews/c1/rol-b.md`, `docs/reviews/c2/rol-b.md`.
+- `docs/tasks/rol-b/rol-b-it2-registro.md`, `docs/tasks/rol-b/rol-b-it3-registro.md`.
+- `docs/reviews/c1/rol-b.md`, `docs/reviews/c2/rol-b.md`, `docs/reviews/c3/rol-b.md`.
 - `docs/open-questions.md`, `docs/assumptions.md`.

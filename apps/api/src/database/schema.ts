@@ -1,7 +1,7 @@
 import type { Generated } from 'kysely';
 
 /**
- * Tipos de las tablas del esquema `public` (C2).
+ * Tipos de las tablas del esquema `public` (C2–C3).
  *
  * Se declaran a mano junto a las migraciones porque Kysely no genera tipos en
  * este proyecto (D28 code-first). Cualquier cambio de migración debe reflejarse
@@ -85,6 +85,86 @@ export interface EventoAuditoriaTable {
   request_id: string | null;
 }
 
+export type ArchivoEstadoEscaneo = 'pendiente' | 'limpio' | 'infectado';
+
+export interface ArchivoTable {
+  id: string;
+  nombre_original: string;
+  mime: string;
+  tamano: number;
+  hash_sha256: string;
+  ruta_objeto: string;
+  subido_por: string;
+  estado_escaneo: Generated<ArchivoEstadoEscaneo>;
+  creado_en: Generated<Date>;
+}
+
+export type NotificacionCanal = 'app' | 'email';
+export type NotificacionEstado = 'pendiente' | 'enviada' | 'leida' | 'fallida';
+
+export interface PlantillaNotificacionTable {
+  id: string;
+  codigo: string;
+  canal: NotificacionCanal;
+  asunto: string;
+  cuerpo: string;
+  version: Generated<number>;
+  creado_en: Generated<Date>;
+}
+
+export interface NotificacionTable {
+  id: string;
+  usuario_id: string;
+  evento: string;
+  evento_id: string | null;
+  canal: NotificacionCanal;
+  plantilla_id: string | null;
+  payload: unknown;
+  estado: Generated<NotificacionEstado>;
+  leida_en: Date | null;
+  enviada_en: Date | null;
+  creado_en: Generated<Date>;
+}
+
+export interface PreferenciaNotificacionTable {
+  id: string;
+  usuario_id: string;
+  evento: string;
+  canal: NotificacionCanal;
+  habilitado: Generated<boolean>;
+  actualizado_en: Generated<Date>;
+}
+
+export type IdempotencyEstado = 'en_proceso' | 'completada';
+
+export interface IdempotencyKeyTable {
+  id: string;
+  usuario_id: string;
+  operacion: string;
+  clave: string;
+  hash_solicitud: string;
+  estado: Generated<IdempotencyEstado>;
+  respuesta_status: number | null;
+  respuesta_cuerpo: unknown;
+  creado_en: Generated<Date>;
+  expira_en: Date;
+}
+
+export type OutboxEstado = 'pendiente' | 'procesando' | 'procesada' | 'fallida';
+
+export interface EventoOutboxTable {
+  id: string;
+  agregado: string;
+  tipo: string;
+  payload: unknown;
+  estado: Generated<OutboxEstado>;
+  intentos: Generated<number>;
+  disponible_en: Generated<Date>;
+  creado_en: Generated<Date>;
+  procesado_en: Date | null;
+  ultimo_error: string | null;
+}
+
 export interface Database {
   usuario: UsuarioTable;
   perfil: PerfilTable;
@@ -94,4 +174,10 @@ export interface Database {
   refresh_token: RefreshTokenTable;
   codigo_recuperacion_mfa: CodigoRecuperacionMfaTable;
   evento_auditoria: EventoAuditoriaTable;
+  archivo: ArchivoTable;
+  plantilla_notificacion: PlantillaNotificacionTable;
+  notificacion: NotificacionTable;
+  preferencia_notificacion: PreferenciaNotificacionTable;
+  idempotency_key: IdempotencyKeyTable;
+  evento_outbox: EventoOutboxTable;
 }

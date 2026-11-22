@@ -480,6 +480,370 @@
         "x-scope": "global"
       }
     },
+    "/files": {
+      "post": {
+        "description": "10 MB máximo, lista blanca de MIME, verificación por bytes mágicos, escaneo y cuarentena. `Idempotency-Key` obligatoria.",
+        "operationId": "uploadFile",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": { "file": { "type": "string", "format": "binary" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/FileResponseDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "413": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "415": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Carga segura de un archivo",
+        "tags": ["archivos"],
+        "x-access": "permission",
+        "x-audit-event": "archivo.subido",
+        "x-error-codes": [
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "FILE_EMPTY",
+          "FILE_TOO_LARGE",
+          "FILE_MIME_NOT_ALLOWED",
+          "FILE_MIME_MISMATCH",
+          "FILE_STORAGE_UNAVAILABLE",
+          "PERMISSION_DENIED",
+          "VALIDATION_FAILED"
+        ],
+        "x-permission": ["files:document:create"],
+        "x-scope": "global"
+      }
+    },
+    "/files/{id}/download": {
+      "get": {
+        "description": "Permiso global o propio. Un archivo ajeno, cuarentenado o inexistente responde 404. La descarga se audita antes de enviar el contenido.",
+        "operationId": "downloadFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Contenido binario del archivo." },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Descarga autorizada de un archivo",
+        "tags": ["archivos"],
+        "x-access": "permission",
+        "x-audit-event": "archivo.descargado",
+        "x-error-codes": ["RESOURCE_NOT_FOUND", "PERMISSION_DENIED", "FILE_STORAGE_UNAVAILABLE"],
+        "x-permission": ["files:document:read", "files:document:read_own"],
+        "x-scope": "mixed"
+      }
+    },
+    "/notifications": {
+      "get": {
+        "description": "Solo devuelve notificaciones del usuario autenticado; nunca las de otro usuario.",
+        "operationId": "listNotifications",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NotificationListResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Bandeja de notificaciones propia",
+        "tags": ["notificaciones"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Lectura propia sin mutación de estado.",
+        "x-error-codes": ["PERMISSION_DENIED", "VALIDATION_FAILED"],
+        "x-permission": ["notifications:notification:read_own"],
+        "x-scope": "own"
+      }
+    },
+    "/notifications/{id}": {
+      "patch": {
+        "operationId": "updateNotification",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MarkReadResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Marca una notificación propia como leída",
+        "tags": ["notificaciones"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Marcar como leída no altera datos de negocio; se audita la entrega, no la lectura.",
+        "x-error-codes": ["RESOURCE_NOT_FOUND", "PERMISSION_DENIED", "VALIDATION_FAILED"],
+        "x-permission": ["notifications:notification:update_own"],
+        "x-scope": "own"
+      }
+    },
+    "/notifications/preferences": {
+      "get": {
+        "operationId": "getNotificationPreferences",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PreferencesResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Preferencias de notificación propias",
+        "tags": ["notificaciones"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Lectura propia de preferencias.",
+        "x-error-codes": ["PERMISSION_DENIED"],
+        "x-permission": ["notifications:preference:read_own"],
+        "x-scope": "own"
+      },
+      "put": {
+        "description": "Los eventos críticos no se pueden silenciar.",
+        "operationId": "updateNotificationPreferences",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PreferencesResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Actualiza preferencias de notificación propias",
+        "tags": ["notificaciones"],
+        "x-access": "permission",
+        "x-audit-event": "preferencia.actualizada",
+        "x-error-codes": [
+          "NOTIFICATION_CRITICAL_NOT_SILENCEABLE",
+          "NOTIFICATION_PREFERENCE_INVALID",
+          "PERMISSION_DENIED",
+          "VALIDATION_FAILED"
+        ],
+        "x-permission": ["notifications:preference:update_own"],
+        "x-scope": "own"
+      }
+    },
+    "/exports": {
+      "post": {
+        "description": "Plantillas cerradas en código, entrada JSON validada y salida registrada como archivo descargable por `GET /files/{id}/download`.",
+        "operationId": "createExport",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ExportResponseDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "413": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "415": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Genera un reporte exportable (PDF, XLSX o CSV)",
+        "tags": ["exportaciones"],
+        "x-access": "permission",
+        "x-audit-event": "reporte.generado",
+        "x-error-codes": [
+          "EXPORT_TEMPLATE_NOT_FOUND",
+          "EXPORT_FORMAT_NOT_SUPPORTED",
+          "EXPORT_PARAMETERS_INVALID",
+          "EXPORT_TOO_LARGE",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "FILE_STORAGE_UNAVAILABLE",
+          "PERMISSION_DENIED",
+          "VALIDATION_FAILED"
+        ],
+        "x-permission": ["exports:report:export"],
+        "x-scope": "global"
+      }
+    },
     "/health/live": {
       "get": {
         "description": "Confirma que el proceso de la API está vivo. No consulta dependencias.",
@@ -567,7 +931,13 @@
       "name": "identidad",
       "description": "Perfil efectivo, permisos y administración de identidades"
     },
-    { "name": "auditoría", "description": "Consulta de eventos y meta-auditoría" }
+    { "name": "auditoría", "description": "Consulta de eventos y meta-auditoría" },
+    { "name": "archivos", "description": "Carga, cuarentena y descarga autorizada de archivos" },
+    {
+      "name": "notificaciones",
+      "description": "Bandeja, preferencias y entrega de notificaciones"
+    },
+    { "name": "exportaciones", "description": "Generación de reportes PDF, XLSX y CSV" }
   ],
   "servers": [{ "url": "/api/v1", "description": "Prefijo de versión v1" }],
   "components": {
@@ -670,6 +1040,111 @@
           "mustChangePassword",
           "profiles",
           "permissions"
+        ]
+      },
+      "FileResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "nombreOriginal": { "type": "string" },
+          "mime": { "type": "string" },
+          "tamano": { "type": "number" },
+          "hashSha256": { "type": "string", "description": "SHA-256 del contenido." },
+          "estadoEscaneo": { "type": "string", "enum": ["pendiente", "limpio", "infectado"] },
+          "creadoEn": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "id",
+          "nombreOriginal",
+          "mime",
+          "tamano",
+          "hashSha256",
+          "estadoEscaneo",
+          "creadoEn"
+        ]
+      },
+      "NotificationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "evento": { "type": "string" },
+          "canal": { "type": "string", "enum": ["app", "email"] },
+          "asunto": { "type": "string", "nullable": true },
+          "cuerpo": { "type": "string", "nullable": true },
+          "payload": { "type": "object" },
+          "estado": { "type": "string", "enum": ["pendiente", "enviada", "leida", "fallida"] },
+          "leidaEn": { "type": "string", "format": "date-time", "nullable": true },
+          "creadoEn": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "evento", "canal", "payload", "estado", "creadoEn"]
+      },
+      "NotificationListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/NotificationResponseDto" }
+          },
+          "total": { "type": "number" },
+          "limit": { "type": "number" },
+          "offset": { "type": "number" }
+        },
+        "required": ["items", "total", "limit", "offset"]
+      },
+      "MarkReadResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "leida": { "type": "boolean" }
+        },
+        "required": ["id", "leida"]
+      },
+      "NotificationPreferenceResponseDto": {
+        "type": "object",
+        "properties": {
+          "evento": { "type": "string" },
+          "canal": { "type": "string", "enum": ["app", "email"] },
+          "habilitado": { "type": "boolean" }
+        },
+        "required": ["evento", "canal", "habilitado"]
+      },
+      "PreferencesResponseDto": {
+        "type": "object",
+        "properties": {
+          "preferencias": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/NotificationPreferenceResponseDto" }
+          },
+          "criticos": {
+            "description": "Prefijos de eventos no silenciables.",
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "required": ["preferencias", "criticos"]
+      },
+      "ExportResponseDto": {
+        "type": "object",
+        "properties": {
+          "archivoId": { "type": "string", "format": "uuid" },
+          "nombre": { "type": "string" },
+          "mime": { "type": "string" },
+          "tamano": { "type": "number" },
+          "formato": { "type": "string", "enum": ["pdf", "xlsx", "csv"] },
+          "hashSha256": { "type": "string" },
+          "descargaUrl": {
+            "type": "string",
+            "example": "/api/v1/files/00000000-0000-7000-8000-000000000000/download"
+          }
+        },
+        "required": [
+          "archivoId",
+          "nombre",
+          "mime",
+          "tamano",
+          "formato",
+          "hashSha256",
+          "descargaUrl"
         ]
       },
       "LivenessResponseDto": {

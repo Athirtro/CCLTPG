@@ -3,7 +3,7 @@
 - **Fecha:** 19 de noviembre de 2026
 - **Rol:** B — Seguridad, identidad y operación
 - **Iteración objetivo:** **C3 — Archivos, notificaciones y exportaciones** (Release 1.0)
-- **Estado:** **Propuesto; no iniciado.** Este documento sólo prepara el plan y las decisiones. No autoriza código por sí solo.
+- **Estado:** **Ejecutada con límites de evidencia.** RB1-20…RB1-27 implementados y verificados localmente; ratificación formal, MinIO y CI en GitHub pendientes. Ver `docs/reviews/c3/rol-b.md` y `docs/tasks/rol-b/rol-b-it3-registro.md`.
 - **Plan predecesor:** `docs/tasks/rol-b/rol-b-it2-plan.md` (bloques RB1-15…RB1-19).
 - **Paquete de revisión previo:** `docs/reviews/c2/rol-b.md`.
 - **Requisitos:** `docs/requirements/seguridad.md` (AC-SEC-27, AC-SEC-30, AC-AUD-04; compuerta C3 en §6).

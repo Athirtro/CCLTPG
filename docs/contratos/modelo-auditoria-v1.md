@@ -127,6 +127,7 @@ Convención: `recurso.accion`, en español, participio para acciones consumadas 
 | `notificacion.enviada` | Entrega correcta | `notificacion` / id | — | `{canal, plantilla}` |
 | `notificacion.fallida` | Error de entrega | `notificacion` / id | — | `{canal, motivo}` |
 | `preferencia.actualizada` | Cambio de preferencias | `usuario` / id | diff | diff |
+| `reporte.generado` | Exportación generada y registrada | `archivo` / id | - | `{plantilla, version, formato, filas}` |
 | `auditoria.consultada` | Consulta al endpoint de auditoría | `evento_auditoria` / nulo | — | `{filtros, resultados}` |
 | `auditoria.correccion` | Evento compensatorio | `evento_auditoria` / id del original | — | `{justificacion}` |
 
@@ -257,6 +258,7 @@ CREATE TRIGGER trg_auditoria_no_truncate
 | OP-29/30 (archivos) | `archivo.*` | `archivo` |
 | OP-31…OP-34 (notificaciones) | `preferencia.actualizada`; lectura propia no se audita | `usuario` |
 | OP-35 (auditoría) | `auditoria.consultada` | `evento_auditoria` |
+| C3-07 (exportaciones) | `reporte.generado` | `archivo` |
 
 ## 10. Criterios de aceptación
 

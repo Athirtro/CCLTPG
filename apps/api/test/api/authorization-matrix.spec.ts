@@ -62,19 +62,26 @@ const EXPECTED_OPERATIONS = [
   'assignProfile',
   'changePassword',
   'confirmMfaEnrollment',
+  'createExport',
   'createUser',
+  'downloadFile',
   'enrollMfa',
   'getMe',
+  'getNotificationPreferences',
   'healthLive',
   'healthReady',
   'listAuditEvents',
+  'listNotifications',
   'listUsers',
   'login',
   'logout',
   'refresh',
   'regenerateRecoveryCodes',
   'transitionUser',
+  'updateNotification',
+  'updateNotificationPreferences',
   'updateUser',
+  'uploadFile',
   'verifyMfa',
 ] as const;
 
@@ -252,8 +259,8 @@ async function decide(
   return guard.canActivate(contextOf(requestFor(credential)));
 }
 
-describe('matriz de autorización C2 (contrato × perfiles)', () => {
-  it('cubre exactamente las operaciones de C2 sin rutas sin declarar', () => {
+describe('matriz de autorización C2/C3 (contrato × perfiles)', () => {
+  it('cubre exactamente las operaciones del contrato sin rutas sin declarar', () => {
     expect(operations.map((operation) => operation.operationId).sort()).toEqual(
       [...EXPECTED_OPERATIONS].sort(),
     );
@@ -333,10 +340,15 @@ describe('matriz de autorización C2 (contrato × perfiles)', () => {
           });
         }
 
-        it('tiene al menos un caso permitido y uno denegado', () => {
+        it('tiene al menos un caso permitido', () => {
           expect(outcomes).toContain(true);
-          expect(outcomes).toContain(false);
         });
+
+        if (operation.scope === 'global') {
+          it('tiene al menos un caso denegado por perfil', () => {
+            expect(outcomes).toContain(false);
+          });
+        }
 
         it('exige sesión antes de evaluar el permiso', async () => {
           await expect(decide(operation, 'none', null)).rejects.toMatchObject({

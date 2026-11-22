@@ -49,6 +49,47 @@ const envSchema = z.object({
     .string()
     .default('true')
     .transform((value) => value !== 'false'),
+
+  // Archivos y almacenamiento de objetos (C3). El adaptador local permite
+  // evidencia sin MinIO; S3 se activa con OBJECT_STORAGE_DRIVER=s3.
+  OBJECT_STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
+  OBJECT_STORAGE_ENDPOINT: z.string().url().optional(),
+  OBJECT_STORAGE_BUCKET: z.string().min(1).max(63).default('ccltpg'),
+  OBJECT_STORAGE_ACCESS_KEY: z.string().min(1).optional(),
+  OBJECT_STORAGE_SECRET_KEY: z.string().min(1).optional(),
+  OBJECT_STORAGE_REGION: z.string().min(1).default('us-east-1'),
+  OBJECT_STORAGE_LOCAL_ROOT: z.string().min(1).default('.data/objects'),
+  OBJECT_STORAGE_FORCE_PATH_STYLE: z
+    .string()
+    .default('true')
+    .transform((value) => value !== 'false'),
+  MAX_FILE_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(50 * 1024 * 1024)
+    .default(10 * 1024 * 1024),
+
+  // Idempotencia, outbox y exportaciones (C3).
+  IDEMPOTENCY_TTL_SECONDS: z.coerce.number().int().min(60).max(604_800).default(86_400),
+  OUTBOX_WORKER_ENABLED: z
+    .string()
+    .default('true')
+    .transform((value) => value !== 'false'),
+  OUTBOX_BATCH_SIZE: z.coerce.number().int().min(1).max(200).default(20),
+  OUTBOX_POLL_INTERVAL_MS: z.coerce.number().int().min(100).max(60_000).default(5_000),
+  OUTBOX_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(50).default(5),
+  EXPORT_MAX_ROWS: z.coerce.number().int().min(1).max(100_000).default(10_000),
+  EXPORT_MAX_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(50 * 1024 * 1024)
+    .default(10 * 1024 * 1024),
+
+  // Canales externos: stubs explícitos hasta C5/C8 (D51, D54).
+  EMAIL_DRIVER: z.enum(['stub', 'smtp']).default('stub'),
+  ANTIVIRUS_DRIVER: z.enum(['stub', 'http']).default('stub'),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -72,6 +113,30 @@ const corsOrigins = raw.CORS_ORIGINS.split(',')
 
 if (corsOrigins.includes('*') && raw.NODE_ENV === 'production') {
   throw new Error('CORS_ORIGINS no puede ser "*" en producción.');
+}
+
+if (raw.OBJECT_STORAGE_DRIVER === 's3') {
+  const missing = [
+    ['OBJECT_STORAGE_ENDPOINT', raw.OBJECT_STORAGE_ENDPOINT],
+    ['OBJECT_STORAGE_ACCESS_KEY', raw.OBJECT_STORAGE_ACCESS_KEY],
+    ['OBJECT_STORAGE_SECRET_KEY', raw.OBJECT_STORAGE_SECRET_KEY],
+  ]
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+
+  if (missing.length > 0) {
+    throw new Error(`OBJECT_STORAGE_DRIVER=s3 exige: ${missing.join(', ')}.`);
+  }
+}
+
+// Los adaptadores externos reales llegan en C5/C8. Fallar al arrancar evita
+// creer que se está enviando correo o analizando archivos cuando no es así.
+if (raw.EMAIL_DRIVER !== 'stub') {
+  throw new Error('EMAIL_DRIVER distinto de "stub" no está implementado en C3.');
+}
+
+if (raw.ANTIVIRUS_DRIVER !== 'stub') {
+  throw new Error('ANTIVIRUS_DRIVER distinto de "stub" no está implementado en C3.');
 }
 
 /**

@@ -40,6 +40,8 @@ export const PERMISSION_CATALOG = [
   'files:document:read_own',
   'files:document:read',
   'notifications:notification:read_own',
+  'notifications:notification:update_own',
+  'notifications:preference:read_own',
   'notifications:preference:update_own',
   'exports:report:create',
   'exports:report:export',

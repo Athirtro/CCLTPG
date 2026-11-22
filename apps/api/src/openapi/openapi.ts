@@ -27,6 +27,9 @@ export function buildOpenApiDocument(
     .addTag('autenticación', 'Login, MFA, refresh, logout y cambio de contraseña')
     .addTag('identidad', 'Perfil efectivo, permisos y administración de identidades')
     .addTag('auditoría', 'Consulta de eventos y meta-auditoría')
+    .addTag('archivos', 'Carga, cuarentena y descarga autorizada de archivos')
+    .addTag('notificaciones', 'Bandeja, preferencias y entrega de notificaciones')
+    .addTag('exportaciones', 'Generación de reportes PDF, XLSX y CSV')
     .build();
 
   return SwaggerModule.createDocument(app, config, {

@@ -1,4 +1,8 @@
 import { HttpException } from '@nestjs/common';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import * as path from 'node:path';
+
 import { Kysely, PostgresDialect, sql } from 'kysely';
 import { NO_MIGRATIONS } from 'kysely/migration';
 import pg from 'pg';
@@ -6,12 +10,21 @@ import { v7 as uuidv7 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { KyselyAuditWriter } from '../../src/database/audit/kysely-audit.writer.js';
+import { KyselyOutboxWriter } from '../../src/database/events/kysely-outbox.writer.js';
+import { KyselyIdempotencyStore } from '../../src/database/idempotency/kysely-idempotency.store.js';
 import { createMigrator } from '../../src/database/migrator/migrator-setup.js';
 import type { Database } from '../../src/database/schema.js';
 import { seedIdentity } from '../../src/database/seeds/identity.seed.js';
 import { AuditService } from '../../src/modules/audit/application/audit.service.js';
 import { KyselyAuditRepository } from '../../src/modules/audit/infrastructure/kysely-audit.repository.js';
 import { KyselyAuditWriterFactory } from '../../src/modules/audit/infrastructure/kysely-audit-writer.factory.js';
+import { ExportsService } from '../../src/modules/exports/application/exports.service.js';
+import { DefaultExportRenderer } from '../../src/modules/exports/infrastructure/default-export-renderer.js';
+import { KyselyExportsUnitOfWork } from '../../src/modules/exports/infrastructure/persistence/kysely-unit-of-work.js';
+import { FileService } from '../../src/modules/files/application/file.service.js';
+import { FileTypeInspector } from '../../src/modules/files/infrastructure/file-type-inspector.js';
+import { KyselyFileRepository } from '../../src/modules/files/infrastructure/persistence/kysely-file.repository.js';
+import { KyselyFilesUnitOfWork } from '../../src/modules/files/infrastructure/persistence/kysely-unit-of-work.js';
 import { AuthStateService } from '../../src/modules/identity/application/auth-state.service.js';
 import { IdentityAdminService } from '../../src/modules/identity/application/identity-admin.service.js';
 import { LoginService } from '../../src/modules/identity/application/login.service.js';
@@ -26,9 +39,14 @@ import { Argon2PasswordHasher } from '../../src/modules/identity/infrastructure/
 import { JoseTokenService } from '../../src/modules/identity/infrastructure/security/jose-token.service.js';
 import { RfcTotpService } from '../../src/modules/identity/infrastructure/security/rfc-totp.service.js';
 import { SystemClock } from '../../src/modules/identity/infrastructure/system-clock.js';
+import { NotificationDispatcher } from '../../src/modules/notifications/application/notification-dispatcher.js';
+import { OutboxWorker } from '../../src/modules/notifications/infrastructure/outbox-worker.js';
 import type { AuthPrincipal } from '../../src/shared/auth/auth-principal.js';
+import type { EmailMessage, EmailSender } from '../../src/shared/email/email-sender.port.js';
 import type { RequestContext } from '../../src/shared/http/request-context.js';
-import { requireMigratorDatabaseUrl } from '../../src/shared/config/env.js';
+import { StubMalwareScanner } from '../../src/shared/malware/stub-malware-scanner.js';
+import { LocalObjectStorage } from '../../src/shared/storage/local-object-storage.js';
+import { requireMigratorDatabaseUrl, env } from '../../src/shared/config/env.js';
 import { generateTotp } from '../../src/shared/security/totp.js';
 import { InMemoryRateLimiter, InMemorySessionCache } from './support/in-memory-adapters.js';
 
@@ -762,5 +780,378 @@ describe.runIf(hasDatabase)('Flujos de identidad contra PostgreSQL (C2 — RB1-1
     expect(serialized).not.toContain('items');
     expect(serialized).not.toContain('@ccltpg.org');
     expect(serialized).not.toContain('password');
+  });
+
+  describe('Flujos de C3 sobre el mismo esquema (RB1-20…RB1-25)', () => {
+    let root: string;
+    let storage: LocalObjectStorage;
+    let idempotency: KyselyIdempotencyStore;
+    let files: FileService;
+
+    const fileActor = {
+      userId: '',
+      actorProfile: 'administrador',
+      permissions: ['files:document:create', 'files:document:read', 'files:document:read_own'],
+    };
+
+    beforeAll(async () => {
+      root = await mkdtemp(path.join(tmpdir(), 'ccltpg-c3-'));
+      storage = new LocalObjectStorage(root);
+      idempotency = new KyselyIdempotencyStore(db);
+      fileActor.userId = adminId;
+
+      files = new FileService(
+        new KyselyFileRepository(db),
+        new KyselyFilesUnitOfWork(db),
+        new FileTypeInspector(),
+        storage,
+        new StubMalwareScanner(),
+        idempotency,
+        new KyselyAuditWriter(db),
+      );
+    }, 60_000);
+
+    afterAll(async () => {
+      await rm(root, { recursive: true, force: true });
+    });
+
+    it('reserva, repite, detecta conflicto y purga claves de idempotencia (R-032)', async () => {
+      const base = {
+        usuarioId: adminId,
+        operacion: 'prueba:integracion',
+        clave: uuidv7(),
+        hashSolicitud: 'a'.repeat(64),
+        ttlSeconds: 60,
+      };
+
+      const first = await idempotency.reserve(base);
+      expect(first.status).toBe('nuevo');
+      await expect(idempotency.reserve(base)).resolves.toMatchObject({ status: 'en_proceso' });
+
+      await idempotency.complete((first as { id: string }).id, 201, { resultado: 'original' });
+      await expect(idempotency.reserve(base)).resolves.toEqual({
+        status: 'repetir',
+        responseStatus: 201,
+        responseBody: { resultado: 'original' },
+      });
+
+      await expect(
+        idempotency.reserve({ ...base, hashSolicitud: 'b'.repeat(64) }),
+      ).resolves.toMatchObject({ status: 'conflicto' });
+
+      const expired = { ...base, clave: uuidv7() };
+      const reserved = await idempotency.reserve(expired);
+      expect(reserved.status).toBe('nuevo');
+      await sql`
+        update public.idempotency_key
+        set expira_en = now() - interval '1 minute'
+        where clave = ${expired.clave}
+      `.execute(db);
+
+      const renewed = await idempotency.reserve(expired);
+      expect(renewed.status).toBe('nuevo');
+      expect((renewed as { id: string }).id).not.toBe((reserved as { id: string }).id);
+
+      await expect(
+        idempotency.purgeExpired(new Date(Date.now() + 120_000)),
+      ).resolves.toBeGreaterThan(0);
+    });
+
+    it('carga un PDF, deduplica por Idempotency-Key y audita la descarga (RB1-21/22)', async () => {
+      const buffer = Buffer.from('%PDF-1.7\ncontenido de integración\n', 'ascii');
+      const key = uuidv7();
+
+      const view = await files.upload({
+        buffer,
+        nombreOriginal: 'integracion.pdf',
+        mime: 'application/pdf',
+        idempotencyKey: key,
+        actor: fileActor,
+        context: context(),
+      });
+
+      expect(view).toMatchObject({ estadoEscaneo: 'limpio', mime: 'application/pdf' });
+
+      const repeated = await files.upload({
+        buffer,
+        nombreOriginal: 'integracion.pdf',
+        mime: 'application/pdf',
+        idempotencyKey: key,
+        actor: fileActor,
+        context: context(),
+      });
+      expect(repeated.id).toBe(view.id);
+
+      const rows = await sql<{ total: string }>`
+        select count(*) as total from public.archivo where id = ${view.id}
+      `.execute(db);
+      expect(Number(rows.rows[0]?.total)).toBe(1);
+
+      await expect(
+        files.download({
+          id: view.id,
+          actor: {
+            userId: uuidv7(),
+            actorProfile: 'estudiante',
+            permissions: ['files:document:read_own'],
+          },
+          context: context(),
+        }),
+      ).rejects.toMatchObject({ code: 'FILE_NOT_FOUND' });
+
+      // La descarga propia se audita antes de responder.
+      const own = await files.download({
+        id: view.id,
+        actor: { ...fileActor, permissions: ['files:document:read_own'] },
+        context: context(),
+      });
+      expect(own.body).toEqual(buffer);
+
+      const audit = await sql<{ total: string }>`
+        select count(*) as total
+        from public.evento_auditoria
+        where accion = 'archivo.descargado' and recurso_id = ${view.id}
+      `.execute(db);
+      expect(Number(audit.rows[0]?.total)).toBe(1);
+
+      const keyConflict = await files
+        .upload({
+          buffer: Buffer.from('%PDF-1.7 otro\n', 'ascii'),
+          nombreOriginal: 'integracion.pdf',
+          mime: 'application/pdf',
+          idempotencyKey: key,
+          actor: fileActor,
+          context: context(),
+        })
+        .then(
+          () => null,
+          (error: { code?: string }) => error.code,
+        );
+      expect(keyConflict).toBe('IDEMPOTENCY_KEY_REUSED');
+    }, 60_000);
+
+    it('rechaza MIME falsificado, exceso de tamaño y pone EICAR en cuarentena (RB1-21)', async () => {
+      const png = Buffer.concat([
+        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+        Buffer.from([0x00, 0x00, 0x00, 0x0d]),
+        Buffer.from('IHDR', 'ascii'),
+        Buffer.alloc(8),
+      ]);
+
+      await expect(
+        files.upload({
+          buffer: png,
+          nombreOriginal: 'falsa.pdf',
+          mime: 'application/pdf',
+          idempotencyKey: uuidv7(),
+          actor: fileActor,
+          context: context(),
+        }),
+      ).rejects.toMatchObject({ code: 'FILE_MIME_MISMATCH' });
+
+      await expect(
+        files.upload({
+          buffer: Buffer.alloc(10 * 1024 * 1024 + 1),
+          nombreOriginal: 'grande.pdf',
+          mime: 'application/pdf',
+          idempotencyKey: uuidv7(),
+          actor: fileActor,
+          context: context(),
+        }),
+      ).rejects.toMatchObject({ code: 'FILE_TOO_LARGE' });
+
+      const eicar = Buffer.concat([
+        Buffer.from('%PDF-1.7\n', 'ascii'),
+        Buffer.from(
+          'X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*',
+          'ascii',
+        ),
+      ]);
+
+      const infected = await files.upload({
+        buffer: eicar,
+        nombreOriginal: 'infectado.pdf',
+        mime: 'application/pdf',
+        idempotencyKey: uuidv7(),
+        actor: fileActor,
+        context: context(),
+      });
+      expect(infected.estadoEscaneo).toBe('infectado');
+
+      await expect(
+        files.download({
+          id: infected.id,
+          actor: fileActor,
+          context: context(),
+        }),
+      ).rejects.toMatchObject({ code: 'FILE_NOT_FOUND' });
+
+      const audit = await sql<{ total: string }>`
+        select count(*) as total
+        from public.evento_auditoria
+        where accion = 'archivo.cuarentena' and recurso_id = ${infected.id}
+      `.execute(db);
+      expect(Number(audit.rows[0]?.total)).toBe(1);
+    }, 60_000);
+
+    it('procesa la outbox una sola vez y entrega notificaciones con auditoría (RB1-23)', async () => {
+      const delivered: EmailMessage[] = [];
+      const email: EmailSender = {
+        send: (message) => {
+          delivered.push(message);
+          return Promise.resolve();
+        },
+      };
+      const worker = new OutboxWorker(db, new NotificationDispatcher(email));
+
+      const eventId = uuidv7();
+      await db.transaction().execute(async (trx) => {
+        await new KyselyOutboxWriter(trx).enqueue({
+          id: eventId,
+          tipo: 'reporte.generado',
+          agregado: 'archivo',
+          ocurridoEn: new Date(),
+          payload: { archivoId: uuidv7(), plantilla: 'matriculas-por-programa' },
+          usuarioIds: [adminId],
+        });
+      });
+
+      await worker.tick();
+
+      const outbox = await sql<{ estado: string }>`
+        select estado from public.evento_outbox where id = ${eventId}
+      `.execute(db);
+      expect(outbox.rows[0]?.estado).toBe('procesada');
+
+      const notifications = await sql<{ canal: string; estado: string }>`
+        select canal, estado
+        from public.notificacion
+        where evento_id = ${eventId} and usuario_id = ${adminId}
+        order by canal
+      `.execute(db);
+      expect(notifications.rows).toEqual([
+        { canal: 'app', estado: 'enviada' },
+        { canal: 'email', estado: 'enviada' },
+      ]);
+
+      // Solo el canal de correo llama al proveedor; el stub no expone PII.
+      expect(delivered).toHaveLength(1);
+
+      const sentAudit = await sql<{ total: string }>`
+        select count(*) as total
+        from public.evento_auditoria
+        where accion = 'notificacion.enviada' and request_id = ${eventId}
+      `.execute(db);
+      expect(Number(sentAudit.rows[0]?.total)).toBe(2);
+
+      // Un segundo ciclo no reentrega el evento ya procesado.
+      await worker.tick();
+      const again = await sql<{ total: string }>`
+        select count(*) as total
+        from public.notificacion
+        where evento_id = ${eventId} and usuario_id = ${adminId}
+      `.execute(db);
+      expect(Number(again.rows[0]?.total)).toBe(2);
+      expect(delivered).toHaveLength(1);
+    }, 60_000);
+
+    it('reintenta la outbox y la marca fallida al agotar los intentos (RB1-23)', async () => {
+      const failing = {
+        dispatch: () => Promise.reject(new Error('fallo simulado de outbox')),
+      } as unknown as NotificationDispatcher;
+      const worker = new OutboxWorker(db, failing);
+
+      const eventId = uuidv7();
+      await db.transaction().execute(async (trx) => {
+        await new KyselyOutboxWriter(trx).enqueue({
+          id: eventId,
+          tipo: 'reporte.generado',
+          agregado: 'archivo',
+          ocurridoEn: new Date(),
+          payload: { archivoId: uuidv7(), plantilla: 'matriculas-por-programa' },
+          usuarioIds: [adminId],
+        });
+      });
+
+      for (let attempt = 0; attempt < env.OUTBOX_MAX_ATTEMPTS; attempt += 1) {
+        await worker.tick();
+        await sql`
+          update public.evento_outbox
+          set disponible_en = now() - interval '1 second'
+          where id = ${eventId}
+        `.execute(db);
+      }
+
+      const outbox = await sql<{ estado: string; intentos: number; ultimo_error: string }>`
+        select estado, intentos, ultimo_error
+        from public.evento_outbox
+        where id = ${eventId}
+      `.execute(db);
+      expect(outbox.rows[0]).toMatchObject({
+        estado: 'fallida',
+        intentos: env.OUTBOX_MAX_ATTEMPTS,
+      });
+      expect(outbox.rows[0]?.ultimo_error).toBe('Error');
+
+      const notifications = await sql<{ total: number }>`
+        select count(*)::int as total
+        from public.notificacion
+        where evento_id = ${eventId}
+      `.execute(db);
+      expect(notifications.rows[0]?.total).toBe(0);
+    }, 60_000);
+
+    it('exporta CSV, lo registra como archivo y audita reporte.generado (RB1-24/RB1-25)', async () => {
+      const exportsService = new ExportsService(
+        new KyselyExportsUnitOfWork(db),
+        new DefaultExportRenderer(),
+        storage,
+        idempotency,
+      );
+      const key = uuidv7();
+      const request = {
+        plantilla: 'matriculas-por-programa',
+        formato: 'csv',
+        parametros: {
+          periodo: '2026-1',
+          filas: [{ programa: 'Artes', matriculados: 4, activos: 3 }],
+        },
+        idempotencyKey: key,
+        actor: { userId: adminId, actorProfile: 'administrador' },
+        context: context(),
+      };
+
+      const view = await exportsService.create(request);
+      expect(view).toMatchObject({
+        formato: 'csv',
+        nombre: 'matriculas-por-programa-v1.csv',
+        mime: 'text/csv; charset=utf-8',
+      });
+
+      const repeated = await exportsService.create(request);
+      expect(repeated.archivoId).toBe(view.archivoId);
+
+      const stored = await sql<{ ruta_objeto: string }>`
+        select ruta_objeto from public.archivo where id = ${view.archivoId}
+      `.execute(db);
+      const body = await storage.get(stored.rows[0].ruta_objeto);
+      expect(body.subarray(0, 3)).toEqual(Buffer.from([0xef, 0xbb, 0xbf]));
+      expect(body.toString('utf8')).toContain('Artes');
+
+      const audit = await sql<{ total: string }>`
+        select count(*) as total
+        from public.evento_auditoria
+        where accion = 'reporte.generado' and recurso_id = ${view.archivoId}
+      `.execute(db);
+      expect(Number(audit.rows[0]?.total)).toBe(1);
+
+      const outbox = await sql<{ total: string }>`
+        select count(*) as total
+        from public.evento_outbox
+        where tipo = 'reporte.generado'
+          and payload ->> 'archivoId' = ${view.archivoId}
+      `.execute(db);
+      expect(Number(outbox.rows[0]?.total)).toBe(1);
+    }, 60_000);
   });
 });
