@@ -44,6 +44,9 @@ const envSchema = z.object({
   PARTIAL_TOKEN_TTL_SECONDS: z.coerce.number().int().min(60).max(3_600).default(300),
   MFA_ENCRYPTION_KEY: z.string().min(32).optional(),
   EMAIL_HMAC_KEY: z.string().min(32).optional(),
+  // C4: claves separadas para PII académica (cifrado y índice ciego).
+  PII_ENCRYPTION_KEY: z.string().min(32).optional(),
+  PII_HMAC_KEY: z.string().min(32).optional(),
   MFA_ISSUER: z.string().min(1).default('CCLTPG'),
   AUTH_RATE_LIMIT_ENABLED: z
     .string()
@@ -171,6 +174,8 @@ export const env = {
   JWT_KID_PREVIOUS: raw.JWT_KID_PREVIOUS ?? null,
   MFA_ENCRYPTION_KEY: resolveSecret('MFA_ENCRYPTION_KEY', raw.MFA_ENCRYPTION_KEY),
   EMAIL_HMAC_KEY: resolveSecret('EMAIL_HMAC_KEY', raw.EMAIL_HMAC_KEY),
+  PII_ENCRYPTION_KEY: resolveSecret('PII_ENCRYPTION_KEY', raw.PII_ENCRYPTION_KEY),
+  PII_HMAC_KEY: resolveSecret('PII_HMAC_KEY', raw.PII_HMAC_KEY),
 };
 
 export type Env = typeof env;

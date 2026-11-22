@@ -480,6 +480,885 @@
         "x-scope": "global"
       }
     },
+    "/academic/programs": {
+      "get": {
+        "operationId": "listPrograms",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedProgramsDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Listar programas formativos",
+        "tags": ["académico — programas"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Listado de solo lectura sobre datos no sensibles.",
+        "x-error-codes": ["PERMISSION_DENIED", "VALIDATION_FAILED"],
+        "x-permission": ["academic:program:manage"],
+        "x-scope": "global"
+      },
+      "post": {
+        "description": "El programa nace en estado `borrador`. `Idempotency-Key` obligatoria.",
+        "operationId": "createProgram",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProgramResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "415": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Crear programa formativo",
+        "tags": ["académico — programas"],
+        "x-access": "permission",
+        "x-audit-event": "programa.creado",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["academic:program:manage"],
+        "x-scope": "global"
+      }
+    },
+    "/academic/programs/{id}/transitions": {
+      "post": {
+        "description": "Máquina de estados `borrador → publicado → archivado`.",
+        "operationId": "transitionProgram",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProgramResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Transición de estado del programa",
+        "tags": ["académico — programas"],
+        "x-access": "permission",
+        "x-audit-event": "programa.<estado>",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["academic:program:manage"],
+        "x-scope": "global"
+      }
+    },
+    "/academic/groups": {
+      "get": {
+        "description": "El administrador ve todos; el educador ve únicamente los grupos donde figura como educador.",
+        "operationId": "listGroups",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedGroupsDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Listar grupos",
+        "tags": ["académico — grupos y horarios"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Listado de solo lectura filtrado por ámbito.",
+        "x-error-codes": ["PERMISSION_DENIED", "VALIDATION_FAILED"],
+        "x-permission": ["academic:group:manage", "academic:group:read_own"],
+        "x-scope": "mixed"
+      },
+      "post": {
+        "description": "El periodo sigue el formato `YYYY-P`. `Idempotency-Key` obligatoria.",
+        "operationId": "createGroup",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/GroupResponseDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Crear grupo",
+        "tags": ["académico — grupos y horarios"],
+        "x-access": "permission",
+        "x-audit-event": "grupo.creado",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_PERIOD",
+          "INVALID_STATE_TRANSITION",
+          "EDUCATOR_INVALID",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["academic:group:manage"],
+        "x-scope": "global"
+      }
+    },
+    "/academic/groups/{id}/transitions": {
+      "post": {
+        "description": "Máquina de estados `abierto → cerrado`.",
+        "operationId": "transitionGroup",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/GroupResponseDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Cerrar un grupo",
+        "tags": ["académico — grupos y horarios"],
+        "x-access": "permission",
+        "x-audit-event": "grupo.<estado>",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION"
+        ],
+        "x-permission": ["academic:group:manage"],
+        "x-scope": "global"
+      }
+    },
+    "/academic/groups/{id}/schedule": {
+      "get": {
+        "description": "Disponible para administración, educador dueño y estudiante matriculado. Un grupo ajeno responde 404.",
+        "operationId": "getGroupSchedule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ScheduleResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Consultar el horario de un grupo",
+        "tags": ["académico — grupos y horarios"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Consulta de horario sin mutación de estado.",
+        "x-error-codes": ["PERMISSION_DENIED", "RESOURCE_NOT_FOUND", "VALIDATION_FAILED"],
+        "x-permission": [
+          "academic:group:manage",
+          "academic:schedule:read",
+          "academic:schedule:read_own"
+        ],
+        "x-scope": "mixed"
+      },
+      "put": {
+        "description": "Operación atómica: valida franjas y solapamiento por educador y salón dentro del periodo; publica `horario.modificado` por outbox.",
+        "operationId": "replaceGroupSchedule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ScheduleResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Reemplazar el horario de un grupo",
+        "tags": ["académico — grupos y horarios"],
+        "x-access": "permission",
+        "x-audit-event": "horario.modificado",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "SCHEDULE_OVERLAP",
+          "SCHEDULE_INVALID_RANGE"
+        ],
+        "x-permission": ["academic:group:manage"],
+        "x-scope": "global"
+      }
+    },
+    "/academic/students": {
+      "get": {
+        "description": "Listado de datos mínimos. Nunca incluye documento, dirección ni teléfono; el acceso se audita antes de responder.",
+        "operationId": "listStudents",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedStudentsDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Listar estudiantes",
+        "tags": ["académico — estudiantes"],
+        "x-access": "permission",
+        "x-audit-event": "estudiante.listado",
+        "x-error-codes": ["PERMISSION_DENIED", "VALIDATION_FAILED"],
+        "x-permission": ["academic:student:manage"],
+        "x-scope": "global"
+      },
+      "post": {
+        "description": "La PII se cifra antes de persistir y el documento se indexa solo por HMAC. Requiere consentimiento aceptado e `Idempotency-Key`.",
+        "operationId": "createStudent",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StudentResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Registrar estudiante",
+        "tags": ["académico — estudiantes"],
+        "x-access": "permission",
+        "x-audit-event": "estudiante.creado",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "CONSENT_REQUIRED",
+          "STUDENT_DUPLICATE",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["academic:student:manage"],
+        "x-scope": "global"
+      }
+    },
+    "/academic/students/{id}": {
+      "patch": {
+        "description": "Recalcula el índice ciego si cambia el documento. La auditoría registra solo qué campos cambiaron, nunca su valor.",
+        "operationId": "updateStudent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StudentResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Actualizar ficha de estudiante",
+        "tags": ["académico — estudiantes"],
+        "x-access": "permission",
+        "x-audit-event": "estudiante.actualizado",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "CONSENT_REQUIRED",
+          "STUDENT_DUPLICATE",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["academic:student:manage"],
+        "x-scope": "global"
+      }
+    },
+    "/academic/enrollments": {
+      "get": {
+        "description": "La administración ve todas; el educador únicamente las de sus grupos. Nunca se filtra por documento.",
+        "operationId": "listEnrollments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedEnrollmentsDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Roster de matrículas",
+        "tags": ["académico — matrículas"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Listado de solo lectura filtrado por grupo.",
+        "x-error-codes": ["PERMISSION_DENIED", "VALIDATION_FAILED"],
+        "x-permission": ["academic:enrollment:read"],
+        "x-scope": "group"
+      },
+      "post": {
+        "description": "La matrícula nace `preinscrita`. Valida grupo abierto, periodo y duplicados vigentes. `Idempotency-Key` obligatoria.",
+        "operationId": "createEnrollment",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EnrollmentResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Crear matrícula",
+        "tags": ["académico — matrículas"],
+        "x-access": "permission",
+        "x-audit-event": "matricula.creada",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_PERIOD",
+          "GROUP_CLOSED",
+          "GROUP_CAPACITY_EXCEEDED",
+          "ENROLLMENT_DUPLICATE",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["academic:enrollment:create"],
+        "x-scope": "global"
+      }
+    },
+    "/academic/enrollments/{id}/transitions": {
+      "post": {
+        "description": "Al confirmar valida cupo del grupo dentro de la misma transacción; el evento de notificación se escribe en la outbox.",
+        "operationId": "transitionEnrollment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EnrollmentResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Transición de estado de matrícula",
+        "tags": ["académico — matrículas"],
+        "x-access": "permission",
+        "x-audit-event": "matricula.<estado>",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_PERIOD",
+          "GROUP_CLOSED",
+          "GROUP_CAPACITY_EXCEEDED",
+          "ENROLLMENT_DUPLICATE",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "INVALID_STATE_TRANSITION"
+        ],
+        "x-permission": ["academic:enrollment:update"],
+        "x-scope": "global"
+      }
+    },
+    "/me/student": {
+      "get": {
+        "description": "Un usuario sin vínculo de estudiante responde 404 `RESOURCE_NOT_FOUND`.",
+        "operationId": "getMyStudent",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StudentResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Ficha propia del estudiante",
+        "tags": ["académico — vistas propias"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Consulta propia de datos sensibles; no se registra la PII en auditoría.",
+        "x-error-codes": ["PERMISSION_DENIED", "RESOURCE_NOT_FOUND"],
+        "x-permission": ["academic:student:read_own"],
+        "x-scope": "own"
+      }
+    },
+    "/me/enrollments": {
+      "get": {
+        "description": "Un usuario sin vínculo de estudiante recibe una colección vacía.",
+        "operationId": "getMyEnrollments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedEnrollmentsDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Matrículas propias",
+        "tags": ["académico — vistas propias"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Consulta propia paginada sin mutación de estado.",
+        "x-error-codes": ["PERMISSION_DENIED", "VALIDATION_FAILED"],
+        "x-permission": ["academic:enrollment:read_own"],
+        "x-scope": "own"
+      }
+    },
+    "/me/schedule": {
+      "get": {
+        "description": "Solo las franjas de grupos con matrícula vigente del estudiante vinculado.",
+        "operationId": "getMySchedule",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ScheduleResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Horario propio",
+        "tags": ["académico — vistas propias"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Consulta propia de solo lectura.",
+        "x-error-codes": ["PERMISSION_DENIED", "VALIDATION_FAILED"],
+        "x-permission": ["academic:schedule:read_own"],
+        "x-scope": "own"
+      }
+    },
     "/files": {
       "post": {
         "description": "10 MB máximo, lista blanca de MIME, verificación por bytes mágicos, escaneo y cuarentena. `Idempotency-Key` obligatoria.",
@@ -1041,6 +1920,206 @@
           "profiles",
           "permissions"
         ]
+      },
+      "ProgramResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "nombre": { "type": "string" },
+          "descripcion": { "type": "string", "nullable": true },
+          "area": { "type": "string", "enum": ["danza", "musica", "teatro", "artes_plasticas"] },
+          "cupoMaximo": { "type": "number" },
+          "estado": { "type": "string", "enum": ["borrador", "publicado", "archivado"] },
+          "creadoEn": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "nombre", "area", "cupoMaximo", "estado", "creadoEn"]
+      },
+      "PaginatedProgramsDto": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProgramResponseDto" }
+          }
+        },
+        "required": ["page", "pageSize", "total", "data"]
+      },
+      "GroupResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "programaId": { "type": "string", "format": "uuid" },
+          "codigo": { "type": "string" },
+          "educadorId": { "type": "string", "format": "uuid" },
+          "salon": { "type": "string", "nullable": true },
+          "periodo": { "type": "string" },
+          "cupoMaximo": { "type": "number" },
+          "estado": { "type": "string", "enum": ["abierto", "cerrado"] },
+          "creadoEn": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "id",
+          "programaId",
+          "codigo",
+          "educadorId",
+          "periodo",
+          "cupoMaximo",
+          "estado",
+          "creadoEn"
+        ]
+      },
+      "PaginatedGroupsDto": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/GroupResponseDto" } }
+        },
+        "required": ["page", "pageSize", "total", "data"]
+      },
+      "ScheduleItemDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "grupoId": { "type": "string", "format": "uuid" },
+          "grupoCodigo": { "type": "string", "nullable": true },
+          "programaNombre": { "type": "string", "nullable": true },
+          "salon": { "type": "string", "nullable": true },
+          "periodo": { "type": "string", "nullable": true },
+          "diaSemana": { "type": "number", "minimum": 1, "maximum": 7 },
+          "horaInicio": { "type": "string", "example": "08:00" },
+          "horaFin": { "type": "string", "example": "10:00" }
+        },
+        "required": [
+          "id",
+          "grupoId",
+          "grupoCodigo",
+          "programaNombre",
+          "salon",
+          "periodo",
+          "diaSemana",
+          "horaInicio",
+          "horaFin"
+        ]
+      },
+      "ScheduleResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/ScheduleItemDto" } }
+        },
+        "required": ["items"]
+      },
+      "StudentSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "usuarioId": { "type": "string", "format": "uuid", "nullable": true },
+          "tipoDocumento": { "type": "string" },
+          "nombres": { "type": "string" },
+          "apellidos": { "type": "string" },
+          "municipio": { "type": "string", "nullable": true },
+          "barrio": { "type": "string", "nullable": true },
+          "consentimientoAceptado": { "type": "boolean" },
+          "creadoEn": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "id",
+          "tipoDocumento",
+          "nombres",
+          "apellidos",
+          "consentimientoAceptado",
+          "creadoEn"
+        ]
+      },
+      "PaginatedStudentsDto": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/StudentSummaryDto" } }
+        },
+        "required": ["page", "pageSize", "total", "data"]
+      },
+      "StudentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "usuarioId": { "type": "string", "format": "uuid", "nullable": true },
+          "tipoDocumento": { "type": "string" },
+          "nombres": { "type": "string" },
+          "apellidos": { "type": "string" },
+          "municipio": { "type": "string", "nullable": true },
+          "barrio": { "type": "string", "nullable": true },
+          "consentimientoAceptado": { "type": "boolean" },
+          "creadoEn": { "type": "string", "format": "date-time" },
+          "numeroDocumento": { "type": "string", "description": "Solo en la ficha individual." },
+          "fechaNacimiento": { "type": "string", "format": "date", "nullable": true },
+          "direccion": { "type": "string", "nullable": true },
+          "telefono": { "type": "string", "nullable": true },
+          "consentimientoDatos": { "type": "object" },
+          "actualizadoEn": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "id",
+          "tipoDocumento",
+          "nombres",
+          "apellidos",
+          "consentimientoAceptado",
+          "creadoEn",
+          "numeroDocumento",
+          "consentimientoDatos",
+          "actualizadoEn"
+        ]
+      },
+      "EnrollmentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "estudianteId": { "type": "string", "format": "uuid" },
+          "estudianteNombres": { "type": "string" },
+          "estudianteApellidos": { "type": "string" },
+          "grupoId": { "type": "string", "format": "uuid" },
+          "grupoCodigo": { "type": "string" },
+          "programaId": { "type": "string", "format": "uuid" },
+          "programaNombre": { "type": "string" },
+          "periodo": { "type": "string" },
+          "estado": {
+            "type": "string",
+            "enum": ["preinscrita", "confirmada", "activa", "finalizada", "cancelada", "retirada"]
+          },
+          "fechaMatricula": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "id",
+          "estudianteId",
+          "estudianteNombres",
+          "estudianteApellidos",
+          "grupoId",
+          "grupoCodigo",
+          "programaId",
+          "programaNombre",
+          "periodo",
+          "estado",
+          "fechaMatricula"
+        ]
+      },
+      "PaginatedEnrollmentsDto": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/EnrollmentResponseDto" }
+          }
+        },
+        "required": ["page", "pageSize", "total", "data"]
       },
       "FileResponseDto": {
         "type": "object",

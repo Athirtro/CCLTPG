@@ -38,6 +38,48 @@ async function tableExists(db: Kysely<unknown>, name: string): Promise<boolean> 
   return result.rows[0]?.exists === true;
 }
 
+/**
+ * Los fixtures comparten esquema e historial con las migraciones reales. Se
+ * reinicia por completo para que el orden de ejecución de los archivos no
+ * altere el resultado (Vitest ordena por duración histórica).
+ */
+async function resetFixtureSchema(
+  db: Kysely<unknown>,
+  schema: 'public' | 'academic',
+): Promise<void> {
+  const tables = await sql<{ tablename: string }>`
+    select tablename from pg_tables
+    where schemaname = ${schema}
+      and tablename not in ('kysely_migration', 'kysely_migration_lock')
+  `.execute(db);
+  for (const table of tables.rows) {
+    await sql`drop table if exists ${sql.ref(`${schema}.${table.tablename}`)} cascade`.execute(db);
+  }
+  const sequences = await sql<{ sequencename: string }>`
+    select sequencename from pg_sequences where schemaname = ${schema}
+  `.execute(db);
+  for (const sequence of sequences.rows) {
+    await sql`drop sequence if exists ${sql.ref(`${schema}.${sequence.sequencename}`)} cascade`.execute(
+      db,
+    );
+  }
+  const enums = await sql<{ typname: string }>`
+    select t.typname
+    from pg_type t
+    join pg_namespace n on n.oid = t.typnamespace
+    where n.nspname = ${schema} and t.typtype = 'e'
+  `.execute(db);
+  for (const type of enums.rows) {
+    await sql`drop type if exists ${sql.ref(`${schema}.${type.typname}`)} cascade`.execute(db);
+  }
+  const history = await sql<{ exists: boolean }>`
+    select to_regclass(${`${schema}.kysely_migration`}) is not null as exists
+  `.execute(db);
+  if (history.rows[0]?.exists === true) {
+    await sql`delete from ${sql.ref(`${schema}.kysely_migration`)}`.execute(db);
+  }
+}
+
 function newMigratorDb(): Kysely<unknown> {
   return new Kysely<unknown>({
     dialect: new PostgresDialect({
@@ -64,6 +106,7 @@ describe.runIf(hasDatabase)('Migrador Kysely contra PostgreSQL real', () => {
   it('aplica up → down → up sobre base vacía en public', async () => {
     const folder = path.join(import.meta.dirname, '..', 'fixtures', 'migrations', 'public');
     const migrator = createMigrator(db, 'public', folder);
+    await resetFixtureSchema(db, 'public');
 
     const first = await migrator.migrateToLatest();
     expect(first.error).toBeUndefined();
@@ -86,6 +129,7 @@ describe.runIf(hasDatabase)('Migrador Kysely contra PostgreSQL real', () => {
   it('mantiene historiales separados por esquema', async () => {
     const folder = path.join(import.meta.dirname, '..', 'fixtures', 'migrations', 'academic');
     const migrator = createMigrator(db, 'academic', folder);
+    await resetFixtureSchema(db, 'academic');
 
     const result = await migrator.migrateToLatest();
     expect(result.error).toBeUndefined();
@@ -113,7 +157,9 @@ describe.runIf(hasDatabase)('Migraciones del núcleo (C2 — RB1-15)', () => {
   });
 
   it('aplica el núcleo con up → down → up sobre base vacía en public', async () => {
+    await resetFixtureSchema(db, 'public');
     const migrator = createMigrator(db, 'public');
+    await migrator.migrateTo(NO_MIGRATIONS);
 
     const up = await migrator.migrateToLatest();
     expect(up.error).toBeUndefined();
@@ -151,6 +197,87 @@ describe.runIf(hasDatabase)('Migraciones del núcleo (C2 — RB1-15)', () => {
   });
 });
 
+const C4_TABLES = [
+  'academic.programa_formativo',
+  'academic.grupo',
+  'academic.horario_grupo',
+  'academic.estudiante',
+  'academic.matricula',
+] as const;
+
+describe.runIf(hasDatabase)('Migraciones de C4 (contexto académico)', () => {
+  let db: Kysely<unknown>;
+
+  beforeAll(() => {
+    db = newMigratorDb();
+  });
+
+  afterAll(async () => {
+    await db.destroy();
+  });
+
+  it('aplica el núcleo académico con up → down → up y unicidad parcial', async () => {
+    const publicMigrator = createMigrator(db, 'public');
+    const academicMigrator = createMigrator(db, 'academic');
+    await publicMigrator.migrateTo(NO_MIGRATIONS);
+    await academicMigrator.migrateTo(NO_MIGRATIONS);
+
+    const up = await academicMigrator.migrateToLatest();
+    expect(up.error).toBeUndefined();
+    for (const table of C4_TABLES) {
+      await expect(tableExists(db, table)).resolves.toBe(true);
+    }
+
+    const indexes = await sql<{ indexname: string }>`
+      select indexname from pg_indexes
+      where schemaname = 'academic'
+        and indexname in (
+          'matricula_vigente_unique',
+          'matricula_grupo_estado_idx',
+          'horario_grupo_grupo_dia_idx',
+          'grupo_educador_periodo_idx'
+        )
+    `.execute(db);
+    expect(indexes.rows).toHaveLength(4);
+
+    const partial = await sql<{ predicate: string | null }>`
+      select pg_get_expr(i.indpred, i.indrelid) as predicate
+      from pg_index i
+      join pg_class c on c.oid = i.indrelid
+      join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'academic' and c.relname = 'matricula'
+        and i.indisunique and i.indpred is not null
+    `.execute(db);
+    expect(partial.rows[0]?.predicate).toContain('preinscrita');
+
+    const down = await academicMigrator.migrateTo(NO_MIGRATIONS);
+    expect(down.error).toBeUndefined();
+    for (const table of C4_TABLES) {
+      await expect(tableExists(db, table)).resolves.toBe(false);
+    }
+
+    const again = await academicMigrator.migrateToLatest();
+    expect(again.error).toBeUndefined();
+    await expect(tableExists(db, 'academic.matricula')).resolves.toBe(true);
+
+    // public/0007 siembra plantillas: se valida aquí y se limpia al bajar.
+    await publicMigrator.migrateToLatest();
+    const templates = await sql<{ total: number }>`
+      select count(*)::int as total from public.plantilla_notificacion
+    `.execute(db);
+    expect(templates.rows[0]?.total).toBe(18);
+    const academicCodes = await sql<{ total: number }>`
+      select count(*)::int as total from public.plantilla_notificacion
+      where codigo in ('matricula.creada', 'matricula.activada', 'matricula.finalizada',
+        'matricula.cancelada', 'matricula.retirada', 'horario.modificado')
+    `.execute(db);
+    expect(academicCodes.rows[0]?.total).toBe(12);
+
+    await publicMigrator.migrateTo(NO_MIGRATIONS);
+    await academicMigrator.migrateTo(NO_MIGRATIONS);
+  });
+});
+
 describe.runIf(hasDatabase)('Migraciones de C3 (archivos, notificaciones, outbox)', () => {
   let db: Kysely<unknown>;
 
@@ -164,6 +291,7 @@ describe.runIf(hasDatabase)('Migraciones de C3 (archivos, notificaciones, outbox
 
   it('aplica C3 con up → down → up y siembra las plantillas', async () => {
     const migrator = createMigrator(db, 'public');
+    await migrator.migrateTo(NO_MIGRATIONS);
 
     const up = await migrator.migrateToLatest();
     expect(up.error).toBeUndefined();
@@ -174,7 +302,8 @@ describe.runIf(hasDatabase)('Migraciones de C3 (archivos, notificaciones, outbox
     const templates = await sql<{ total: number }>`
       select count(*)::int as total from public.plantilla_notificacion
     `.execute(db);
-    expect(templates.rows[0]?.total).toBe(6);
+    // C3 siembra 6 y C4 añade 12 plantillas académicas (public/0007).
+    expect(templates.rows[0]?.total).toBe(18);
 
     const indexes = await sql<{ indexname: string }>`
       select indexname from pg_indexes

@@ -4,6 +4,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { DatabaseModule } from './database/database.module.js';
 import { HealthModule } from './health/health.module.js';
 import { MetricsModule } from './metrics/metrics.module.js';
+import { AcademicModule } from './modules/academic/academic.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { ExportsModule } from './modules/exports/exports.module.js';
 import { FilesModule } from './modules/files/files.module.js';
@@ -23,6 +24,7 @@ import { loggerModuleOptions } from './shared/observability/logger.config.js';
     EmailModule,
     AuditModule,
     IdentityModule,
+    AcademicModule,
     FilesModule,
     NotificationsModule,
     ExportsModule,

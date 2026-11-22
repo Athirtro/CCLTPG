@@ -165,6 +165,72 @@ export interface EventoOutboxTable {
   ultimo_error: string | null;
 }
 
+export type ProgramaArea = 'danza' | 'musica' | 'teatro' | 'artes_plasticas';
+export type ProgramaEstado = 'borrador' | 'publicado' | 'archivado';
+export type GrupoEstado = 'abierto' | 'cerrado';
+export type MatriculaEstado =
+  'preinscrita' | 'confirmada' | 'activa' | 'finalizada' | 'cancelada' | 'retirada';
+
+export interface ProgramaFormativoTable {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  area: ProgramaArea;
+  cupo_maximo: number;
+  estado: Generated<ProgramaEstado>;
+  creado_en: Generated<Date>;
+}
+
+export interface GrupoTable {
+  id: string;
+  programa_id: string;
+  codigo: string;
+  educador_id: string;
+  salon: string | null;
+  periodo: string;
+  cupo_maximo: number;
+  estado: Generated<GrupoEstado>;
+  creado_en: Generated<Date>;
+}
+
+export interface HorarioGrupoTable {
+  id: string;
+  grupo_id: string;
+  dia_semana: number;
+  hora_inicio: string;
+  hora_fin: string;
+}
+
+export interface EstudianteTable {
+  id: string;
+  usuario_id: string | null;
+  tipo_documento: string;
+  numero_documento: string;
+  numero_documento_hash: string;
+  nombres: string;
+  apellidos: string;
+  fecha_nacimiento: Date | null;
+  municipio: string | null;
+  barrio: string | null;
+  direccion: string | null;
+  telefono: string | null;
+  acudiente: unknown;
+  consentimiento_datos: unknown;
+  creado_en: Generated<Date>;
+  actualizado_en: Generated<Date>;
+}
+
+export interface MatriculaTable {
+  id: string;
+  estudiante_id: string;
+  grupo_id: string;
+  estado: Generated<MatriculaEstado>;
+  fecha_matricula: Generated<Date>;
+  periodo: string;
+  creado_en: Generated<Date>;
+  actualizado_en: Generated<Date>;
+}
+
 export interface Database {
   usuario: UsuarioTable;
   perfil: PerfilTable;
@@ -180,4 +246,9 @@ export interface Database {
   preferencia_notificacion: PreferenciaNotificacionTable;
   idempotency_key: IdempotencyKeyTable;
   evento_outbox: EventoOutboxTable;
+  'academic.programa_formativo': ProgramaFormativoTable;
+  'academic.grupo': GrupoTable;
+  'academic.horario_grupo': HorarioGrupoTable;
+  'academic.estudiante': EstudianteTable;
+  'academic.matricula': MatriculaTable;
 }

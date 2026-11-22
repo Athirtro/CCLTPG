@@ -18,6 +18,7 @@
     "estudiante.actualizado",
     "estudiante.anonimizado",
     "estudiante.creado",
+    "estudiante.listado",
     "evaluacion.actualizada",
     "evaluacion.registrada",
     "grupo.cerrado",

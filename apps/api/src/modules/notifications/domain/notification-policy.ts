@@ -8,7 +8,13 @@
 export const NOTIFICATION_CHANNELS = ['app', 'email'] as const;
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 
-export const CRITICAL_EVENT_PREFIXES = ['matricula.', 'seguridad.', 'usuario.password_'] as const;
+export const CRITICAL_EVENT_PREFIXES = [
+  'matricula.',
+  'horario.',
+  'evaluacion.',
+  'seguridad.',
+  'usuario.password_',
+] as const;
 
 export function isCriticalEvent(evento: string): boolean {
   return CRITICAL_EVENT_PREFIXES.some((prefix) => evento.startsWith(prefix));

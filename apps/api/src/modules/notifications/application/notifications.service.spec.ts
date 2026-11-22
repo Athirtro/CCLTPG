@@ -161,7 +161,7 @@ describe('servicio de notificaciones', () => {
     });
     await expect(h.service.getPreferences(USER)).resolves.toEqual({
       preferencias: [{ evento: 'reporte.generado', canal: 'app', habilitado: false }],
-      criticos: ['matricula.', 'seguridad.', 'usuario.password_'],
+      criticos: ['matricula.', 'horario.', 'evaluacion.', 'seguridad.', 'usuario.password_'],
     });
   });
 

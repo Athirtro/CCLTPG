@@ -42,6 +42,7 @@ export const PROFILE_SEEDS: readonly PerfilSeed[] = [
     descripcion: 'Docencia en sus grupos; ámbito de grupo (PA-002).',
     permisos: [
       'academic:group:read_own',
+      'academic:enrollment:read',
       'academic:schedule:read_own',
       'academic:session:create',
       'academic:session:update',
@@ -86,7 +87,11 @@ export function permissionsFor(perfil: PerfilSeed): string[] {
       const [contexto, , accion] = permiso.split(':');
       for (const candidate of PERMISSION_CATALOG) {
         const [candidateContexto, , candidateAccion] = candidate.split(':');
-        if (candidateContexto === contexto && candidateAccion === accion) {
+        // `manage` implica todas las acciones del contexto. Sin esta regla,
+        // `academic:*:manage` no materializaba recursos sin acción `manage`
+        // en el catálogo (p. ej. `academic:enrollment:create`).
+        const aplica = accion === 'manage' || candidateAccion === accion;
+        if (candidateContexto === contexto && aplica) {
           result.add(candidate);
         }
       }

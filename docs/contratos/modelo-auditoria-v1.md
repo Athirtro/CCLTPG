@@ -106,6 +106,7 @@ Convención: `recurso.accion`, en español, participio para acciones consumadas 
 | `estudiante.creado` | Alta de estudiante | `estudiante` / id | — | `{nombres_iniciales, apellidos_iniciales, documento_cargado: true, consentimiento: true}` |
 | `estudiante.actualizado` | Cambio de datos | `estudiante` / id | diff redactado | diff redactado |
 | `estudiante.anonimizado` | Supresión por anonimización | `estudiante` / id | `{anonimizado: false}` | `{anonimizado: true, motivo}` |
+| `estudiante.listado` | Consulta paginada del listado académico (AC-AUD-04) | `estudiante` / — | — | `{page, pageSize, resultados}` |
 | `consentimiento.registrado` | Registro de consentimiento | `estudiante` / id | — | `{version_aviso, fecha}` |
 | `consentimiento.revocado` | Revocación | `estudiante` / id | `{vigente: true}` | `{vigente: false, motivo}` |
 | `matricula.creada` / `matricula.confirmada` / `matricula.activada` / `matricula.finalizada` / `matricula.cancelada` / `matricula.retirada` | Transición correspondiente | `matricula` / id | `{estado}` | `{estado, motivo?}` |

@@ -20,6 +20,15 @@ const PARTIAL_ACCESS = new Set(['partial', 'partial_or_session']);
  */
 const AUDIT_EVENT_TEMPLATES = {
   'usuario.<estado>': ['usuario.activado', 'usuario.desactivado', 'usuario.bloqueado'],
+  'programa.<estado>': ['programa.publicado', 'programa.archivado'],
+  'grupo.<estado>': ['grupo.cerrado'],
+  'matricula.<estado>': [
+    'matricula.confirmada',
+    'matricula.activada',
+    'matricula.finalizada',
+    'matricula.cancelada',
+    'matricula.retirada',
+  ],
 };
 
 /**

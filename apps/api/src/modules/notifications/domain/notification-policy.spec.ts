@@ -38,7 +38,13 @@ describe('política de notificaciones', () => {
       expect(isCriticalEvent(evento), evento).toBe(false);
     }
 
-    expect([...CRITICAL_EVENT_PREFIXES]).toEqual(['matricula.', 'seguridad.', 'usuario.password_']);
+    expect([...CRITICAL_EVENT_PREFIXES]).toEqual([
+      'matricula.',
+      'horario.',
+      'evaluacion.',
+      'seguridad.',
+      'usuario.password_',
+    ]);
   });
 
   it('exige el formato dominio.accion del catálogo de auditoría', () => {
