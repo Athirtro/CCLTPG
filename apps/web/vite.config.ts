@@ -7,7 +7,6 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      // En desarrollo la SPA llama a /api/v1 y Vite lo redirige a la API local.
       '/api': {
         target: process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:3000',
         changeOrigin: false,
@@ -19,7 +18,8 @@ export default defineConfig({
     strictPort: true,
   },
   test: {
-    environment: 'node',
-    include: ['src/**/*.test.ts'],
+    environment: 'jsdom',
+    include: ['src/**/*.test.{ts,tsx}'],
+    setupFiles: ['./src/test/setup.ts'],
   },
 });

@@ -9,16 +9,16 @@ import {
   MenuItem,
 } from '@mui/material';
 import { AccountCircle, Menu as MenuIcon } from '@mui/icons-material';
+import { useState, type MouseEvent } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 
 type Props = {
   onMenuClick: () => void;
   handleLogout: () => void;
-  user: { email?: string; fullName?: string } | null;
 };
 
-import { useState, type MouseEvent } from 'react';
-
-export default function TopAppBar({ onMenuClick, handleLogout, user }: Props) {
+export default function TopAppBar({ onMenuClick, handleLogout }: Props) {
+  const { user } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -46,8 +46,19 @@ export default function TopAppBar({ onMenuClick, handleLogout, user }: Props) {
                 <AccountCircle sx={{ width: 32, height: 32 }} />
               </IconButton>
               <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
-                <MenuItem onClick={handleMenuClose}>Mi perfil</MenuItem>
-                <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
+                <MenuItem onClick={handleMenuClose}>
+                  {user.fullName} ({user.email})
+                </MenuItem>
+                <MenuItem onClick={handleMenuClose}>Perfil: {user.role}</MenuItem>
+                <MenuItem divider />
+                <MenuItem
+                  onClick={() => {
+                    handleMenuClose();
+                    handleLogout();
+                  }}
+                >
+                  Cerrar sesión
+                </MenuItem>
               </Menu>
             </>
           ) : (

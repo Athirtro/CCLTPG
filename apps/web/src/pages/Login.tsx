@@ -1,10 +1,10 @@
 ﻿import { useState } from 'react';
 import { Box, Button, CssBaseline, Paper, TextField, Typography, Alert } from '@mui/material';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { getErrorMessage } from '../api/errors';
 
 export default function Login() {
-  const navigate = useNavigate();
   const { login, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,13 +15,13 @@ export default function Login() {
     setError(null);
     try {
       await login(email, password);
-      void navigate('/');
-    } catch (err: unknown) {
-      if (err instanceof Error && err.message === 'MFA_REQUIRED') {
-        void navigate('/mfa-verify');
-      } else {
-        setError('Credenciales inválidas o error del servidor');
-      }
+      // El login gestiona la navegación interna según el authStatus:
+      // - authenticated → /me → Home
+      // - mfa_required → /mfa-verify
+      // - password_change_required → /password-change
+      // - mfa_enrollment_required → /mfa-enroll
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Credenciales inválidas o error del servidor');
     }
   };
 
