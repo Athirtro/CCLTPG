@@ -9,6 +9,8 @@ const documentedEvents = [
   'usuario.activado',
   'usuario.desactivado',
   'usuario.bloqueado',
+  'clase.realizada',
+  'clase.cancelada',
 ];
 
 function baseDocument(operationOverrides = {}, additionalPath) {
@@ -101,6 +103,11 @@ test('acepta una operación parcial sin esquema de seguridad (token en el cuerpo
 
 test('acepta la plantilla usuario.<estado> si todas sus expansiones existen', () => {
   const result = validate(baseDocument({ 'x-audit-event': 'usuario.<estado>' }));
+  assert.deepEqual(result.errors, []);
+});
+
+test('acepta la plantilla clase.<estado> (C5) si sus expansiones existen', () => {
+  const result = validate(baseDocument({ 'x-audit-event': 'clase.<estado>' }));
   assert.deepEqual(result.errors, []);
 });
 

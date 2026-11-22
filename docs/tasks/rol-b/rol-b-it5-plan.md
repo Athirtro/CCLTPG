@@ -3,11 +3,11 @@
 - **Fecha:** 21 de noviembre de 2026
 - **Rol:** B — Seguridad, identidad y operación
 - **Iteración objetivo:** **C5 — Académico B y Release 1.0** (endurecimiento, carga y recuperación)
-- **Estado:** **Propuesta, no ejecutada.** Requiere firma de C4 (D59–D68, R-018/R-034/R-035/R-036), ratificación de D69–D79, cierre de la deuda de Rol C y disponibilidad de entorno para carga/TLS/respaldo antes de abrir código.
+- **Estado:** **Ejecutado y publicado (`iteracion 5 b`) — Fases 1 a 4 completadas (RB1-37–RB1-41) y RB1-42 cerrado en contrato.** La orden de inicio se registra como ratificación de D69–D79 y aceptación explícita de la deuda de C4, ya publicada en `a5444c8`. Contrato canónico regenerado en 51 operaciones, 4 públicas y 62 eventos. Siguen pendientes la firma formal, el ajuste de Rol C, RB1-43 y la confirmación de entorno para carga/TLS/respaldo; los criterios que dependan de esos entornos permanecen marcados como pendientes, no como verificados.
 - **Plan predecesor:** `docs/tasks/rol-b/rol-b-it4-plan.md` (bloques RB1-28–RB1-36).
 - **Registro predecesor:** `docs/tasks/rol-b/rol-b-it4-registro.md`.
 - **Paquete de revisión previo:** `docs/reviews/c4/rol-b.md`.
-- **Paquete de revisión a producir:** `docs/reviews/c5/rol-b.md`.
+- **Paquete de revisión:** `docs/reviews/c5/rol-b.md` (parcial: Académico B verificado; endurecimiento y carga pendientes de entorno).
 - **Requisitos:** `docs/requirements/seguridad.md` (AC-SEC-23/28/31/32/33, AC-AUD-15; C5 en §5), `docs/vision-alcance.md` (CAR-03, CAR-06, CAR-08).
 - **Controles:** `docs/contratos/controles-seguridad-v1.md` (C-11, C-20, C-24, C-25, C-26, C-42, C-43, C-45, C-46; mapa en §8).
 - **Diseño:** `docs/diseno-arquitectonico.md` (§7.3, §7.4, §9, §10.3, §14, §18.2).
@@ -187,7 +187,7 @@ acta de simulacro de restauración y de alerta
 2. Firmar C4 o aceptar explícitamente su deuda; confirmar el ajuste de Rol C.
 3. Confirmar entorno disponible para k6, TLS y simulacro de restauración.
 4. Solo entonces abrir la Fase 1 (RB1-37) con `ccltpg_migrador` y TDD, registrando cada tarea en `docs/tasks/rol-b/rol-b-it5-registro.md`.
-5. **Sin publicación automática:** no se hará `git commit` ni `git push` sin autorización expresa; `main` local sigue con C3 + merge + C4 sin publicar.
+5. **Publicación autorizada:** la orden «continuemos subiendo la iteración 5» autorizó `git commit` y `git push` de C5 a `origin/main` con mensaje `iteracion 5 b`. C4 quedó publicada en `a5444c8`. Toda publicación posterior sigue requiriendo autorización expresa.
 
 ## 12. Fuentes
 

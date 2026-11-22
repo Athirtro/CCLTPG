@@ -1,6 +1,6 @@
 # Resumen de iteraciones — CCLTPG
 
-- **Fecha:** 21 de noviembre de 2026
+- **Fecha:** 22 de noviembre de 2026
 - **Responsable:** Rol B (seguridad, identidad y operación) — y en adelante el equipo en conjunto.
 - **Alcance:** visión general de las iteraciones del desarrollo, según `docs/diseno-arquitectonico.md` (§18) y `docs/requirements/seguridad.md`.
 
@@ -18,9 +18,9 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 | 1 | **Esqueleto caminante** | 1.0 | Errores de herramientas y estructura | C1 | **Completada con límites de evidencia** (ver `docs/reviews/c1/rol-b.md`) |
 | 2 | **Identidad, RBAC y auditoría** | 1.0 | Fallos de seguridad | C2 | **Ejecutada con límites de evidencia** (ver `docs/reviews/c2/rol-b.md`) |
 | 3 | Archivos, notificaciones y exportaciones | 1.0 | Contratos compartidos inestables | C3 | **Ejecutada con límites de evidencia** (ver `docs/reviews/c3/rol-b.md`) |
-| 4 | Académico A: programas, grupos, estudiantes, matrícula | 1.0 | Patrón de módulo equivocado | C4 | No iniciada |
-| 5 | Académico B: asistencia, evaluación + endurecimiento | 1.0 | Rendimiento, respaldos, regresiones | C5 | No iniciada |
-| 6 | Reportes, dashboards y notificaciones | 2.0 | KPIs y reportes incorrectos | C6 | No iniciada |
+| 4 | Académico A: programas, grupos, estudiantes, matrícula | 1.0 | Patrón de módulo equivocado | C4 | **Ejecutada con deuda registrada** (publicada en `a5444c8`; ver `docs/reviews/c4/rol-b.md`) |
+| 5 | Académico B: asistencia, evaluación + endurecimiento | 1.0 | Rendimiento, respaldos, regresiones | C5 | **Ejecutada con deuda registrada** (publicada en `iteracion 5 b`; ver `docs/reviews/c5/rol-b.md`) |
+| 6 | Reportes, dashboards y notificaciones | 2.0 | KPIs y reportes incorrectos | C6 | **Plan propuesto, sin ejecutar** (ver `docs/tasks/rol-b/rol-b-it6-plan.md`) |
 | 7 | Accesibilidad y responsividad | 3.0 | Brechas de accesibilidad | C7 | No iniciada |
 | 8 | Endurecimiento y aceptación final | 3.0 | Brechas no funcionales y de cumplimiento | C8 | No iniciada |
 
@@ -62,6 +62,8 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 
 - Se suceden por dominios: académico A, académico B + Release 1.0, reportes/dashboards, accesibilidad, endurecimiento/aceptación final.
 - **Iteración 4:** académico A (programas, grupos, estudiantes y matrícula) sobre el patrón de módulo ya validado en C3.
+- **Iteración 5:** académico B (sesiones, asistencia y evaluación) y Release 1.0; académico B verificado y publicado, con endurecimiento/carga pendientes de entorno.
+- **Iteración 6:** reportes, KPIs y notificaciones académicas (Release 2.0), con verificación manual contra datos crudos.
 
 ## 4. Partes importantes por iteración
 
@@ -85,9 +87,9 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 | C1 | Montaje limpio, CI, arquitectura, contratos, migraciones/roles, seguridad base. | `docs/reviews/c1/rol-b.md` | **Cerrada en código; pendiente CI en GitHub y Docker** |
 | C2 | Seguridad de autenticación/RBAC/auditoría. | `docs/reviews/c2/rol-b.md` | **Ejecutada en código; pendiente firma, Docker/MinIO, CI en GitHub y acta C0/C1** |
 | C3 | Contratos de archivos/notificaciones/exportaciones. | `docs/reviews/c3/rol-b.md` | **Ejecutada en código; pendiente firma, MinIO, CI en GitHub, apertura manual de PDF/XLSX y acta C0/C1** |
-| C4 | Patrón académico y caso de uso. | No iniciada | — |
-| C5 | Endurecimiento, carga, backup. | No iniciada | — |
-| C6 | Reportes/KPIs. | No iniciada | — |
+| C4 | Patrón académico y caso de uso. | `docs/reviews/c4/rol-b.md` | **Ejecutada con deuda registrada** (publicada en `a5444c8`); firma pendiente |
+| C5 | Académico B, endurecimiento, carga y backup. | `docs/reviews/c5/rol-b.md` | **Ejecutada con deuda registrada** (publicada en `iteracion 5 b`); firma, entorno y RB1-43 pendientes |
+| C6 | Reportes/KPIs y notificaciones. | `docs/tasks/rol-b/rol-b-it6-plan.md` | **Plan propuesto, sin ejecutar**; requiere ratificación de D80–D89 |
 | C7 | Accesibilidad. | No iniciada | — |
 | C8 | Aceptación final. | No iniciada | — |
 
@@ -104,5 +106,6 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 - `docs/requirements/seguridad.md`.
 - `docs/tasks/rol-b/rol-b-it1-plan.md`, `docs/tasks/rol-b/rol-b-it2-plan.md`, `docs/tasks/rol-b/rol-b-it3-plan.md`.
 - `docs/tasks/rol-b/rol-b-it2-registro.md`, `docs/tasks/rol-b/rol-b-it3-registro.md`.
-- `docs/reviews/c1/rol-b.md`, `docs/reviews/c2/rol-b.md`, `docs/reviews/c3/rol-b.md`.
+- `docs/tasks/rol-b/rol-b-it5-plan.md`, `docs/tasks/rol-b/rol-b-it5-registro.md`, `docs/tasks/rol-b/rol-b-it6-plan.md`.
+- `docs/reviews/c1/rol-b.md`, `docs/reviews/c2/rol-b.md`, `docs/reviews/c3/rol-b.md`, `docs/reviews/c5/rol-b.md`.
 - `docs/open-questions.md`, `docs/assumptions.md`.

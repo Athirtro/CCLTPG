@@ -20,21 +20,32 @@ import {
 } from 'class-validator';
 
 import {
+  ASISTENCIA_ESTADOS,
+  EVALUACION_VALORES,
   GRUPO_ESTADOS,
   MATRICULA_ESTADOS,
   PROGRAMA_ESTADOS,
   PROGRAM_AREAS,
+  SESION_ESTADOS,
+  type AsistenciaEstado,
+  type EvaluacionValor,
   type GrupoEstado,
   type MatriculaEstado,
   type ProgramaArea,
   type ProgramaEstado,
+  type SesionEstado,
 } from '../../domain/academic-states.js';
 import type {
+  AsistenciaView,
   EstudianteDetailView,
   EstudianteSummaryView,
+  EvaluacionView,
   GrupoView,
+  IndicadorView,
   MatriculaView,
+  MiEvaluacionView,
   ProgramaView,
+  SesionView,
 } from '../../application/academic.views.js';
 
 const PERIOD_PATTERN = /^[0-9]{4}-[0-9]+$/u;
@@ -574,4 +585,214 @@ export class PaginatedEnrollmentsDto {
 
   @ApiProperty({ type: () => [EnrollmentResponseDto] })
   data!: EnrollmentResponseDto[];
+}
+
+/* -------------------------------------------------------------------------- */
+/* Académico B — sesiones, asistencia y evaluación (C5)                        */
+/* -------------------------------------------------------------------------- */
+
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/u;
+
+export class CreateSessionDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  grupoId!: string;
+
+  @ApiProperty({ type: String, example: '2026-09-14' })
+  @Matches(DATE_ONLY_PATTERN, { message: 'La fecha debe tener el formato YYYY-MM-DD.' })
+  fecha!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(200)
+  tema?: string | null;
+}
+
+export class SessionTransitionDto {
+  @ApiProperty({ type: String, enum: [...SESION_ESTADOS] })
+  @IsIn([...SESION_ESTADOS])
+  to!: SesionEstado;
+}
+
+export class SessionResponseDto implements SesionView {
+  @ApiProperty({ type: String, format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ type: String, format: 'uuid' })
+  grupoId!: string;
+
+  @ApiProperty({ type: String, example: '2026-09-14' })
+  fecha!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  tema!: string | null;
+
+  @ApiProperty({ type: String, enum: [...SESION_ESTADOS] })
+  estado!: SesionEstado;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  creadoEn!: string;
+}
+
+export class PaginatedSessionsDto {
+  @ApiProperty({ type: Number })
+  page!: number;
+
+  @ApiProperty({ type: Number })
+  pageSize!: number;
+
+  @ApiProperty({ type: Number })
+  total!: number;
+
+  @ApiProperty({ type: () => [SessionResponseDto] })
+  data!: SessionResponseDto[];
+}
+
+export class AttendanceEntryDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  matriculaId!: string;
+
+  @ApiProperty({ type: String, enum: [...ASISTENCIA_ESTADOS] })
+  @IsIn([...ASISTENCIA_ESTADOS])
+  estado!: AsistenciaEstado;
+}
+
+export class ReplaceAttendanceDto {
+  @ApiProperty({ type: () => [AttendanceEntryDto] })
+  @IsArray()
+  @ArrayMaxSize(200)
+  @ValidateNested({ each: true })
+  @Type(() => AttendanceEntryDto)
+  registros!: AttendanceEntryDto[];
+}
+
+export class AttendanceResponseDto implements AsistenciaView {
+  @ApiProperty({ type: String, format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ type: String, format: 'uuid' })
+  sesionId!: string;
+
+  @ApiProperty({ type: String, format: 'uuid' })
+  matriculaId!: string;
+
+  @ApiProperty({ type: String, enum: [...ASISTENCIA_ESTADOS] })
+  estado!: AsistenciaEstado;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  registradoEn!: string;
+}
+
+export class AttendanceListResponseDto {
+  @ApiProperty({ type: () => [AttendanceResponseDto] })
+  registros!: AttendanceResponseDto[];
+
+  @ApiProperty({ type: Number })
+  total!: number;
+}
+
+export class IndicatorResponseDto implements IndicadorView {
+  @ApiProperty({ type: String, format: 'uuid' })
+  id!: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid', nullable: true })
+  programaId!: string | null;
+
+  @ApiProperty({ type: String })
+  nombre!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  descripcion!: string | null;
+
+  @ApiProperty({ type: String })
+  escala!: string;
+}
+
+export class CreateEvaluationDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  matriculaId!: string;
+
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  indicadorId!: string;
+
+  @ApiProperty({ type: String, example: '2026-1' })
+  @Matches(PERIOD_PATTERN, { message: 'El periodo debe tener el formato YYYY-P.' })
+  periodo!: string;
+
+  @ApiProperty({ type: String, enum: [...EVALUACION_VALORES] })
+  @IsIn([...EVALUACION_VALORES])
+  valor!: EvaluacionValor;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(1000)
+  observacion?: string | null;
+}
+
+export class UpdateEvaluationDto {
+  @ApiProperty({ type: String, enum: [...EVALUACION_VALORES] })
+  @IsIn([...EVALUACION_VALORES])
+  valor!: EvaluacionValor;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(1000)
+  observacion?: string | null;
+}
+
+export class EvaluationResponseDto implements EvaluacionView {
+  @ApiProperty({ type: String, format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ type: String, format: 'uuid' })
+  matriculaId!: string;
+
+  @ApiProperty({ type: String, format: 'uuid' })
+  indicadorId!: string;
+
+  @ApiProperty({ type: String })
+  indicadorNombre!: string;
+
+  @ApiProperty({ type: String, example: '2026-1' })
+  periodo!: string;
+
+  @ApiProperty({ type: String, enum: [...EVALUACION_VALORES] })
+  valor!: EvaluacionValor;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  observacion!: string | null;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  evaluadoEn!: string;
+}
+
+export class MyEvaluationResponseDto extends EvaluationResponseDto implements MiEvaluacionView {
+  @ApiProperty({ type: String })
+  grupoCodigo!: string;
+
+  @ApiProperty({ type: String })
+  programaNombre!: string;
+}
+
+export class PaginatedEvaluationsDto {
+  @ApiProperty({ type: Number })
+  page!: number;
+
+  @ApiProperty({ type: Number })
+  pageSize!: number;
+
+  @ApiProperty({ type: Number })
+  total!: number;
+
+  @ApiProperty({ type: () => [EvaluationResponseDto] })
+  data!: EvaluationResponseDto[];
 }

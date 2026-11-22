@@ -907,6 +907,486 @@
         "x-scope": "global"
       }
     },
+    "/academic/groups/{groupId}/sessions": {
+      "get": {
+        "description": "Administración, educador dueño o estudiante matriculado; ajeno responde 404.",
+        "operationId": "listGroupSessions",
+        "parameters": [
+          {
+            "name": "groupId",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedSessionsDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Listar sesiones de un grupo",
+        "tags": ["académico — sesiones de clase"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Listado de solo lectura filtrado por ámbito.",
+        "x-error-codes": ["PERMISSION_DENIED", "RESOURCE_NOT_FOUND", "VALIDATION_FAILED"],
+        "x-permission": ["academic:group:manage", "academic:group:read_own"],
+        "x-scope": "mixed"
+      }
+    },
+    "/academic/sessions": {
+      "post": {
+        "description": "La sesión nace `programada`; `Idempotency-Key` obligatoria.",
+        "operationId": "createSession",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SessionResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Crear sesión de clase",
+        "tags": ["académico — sesiones de clase"],
+        "x-access": "permission",
+        "x-audit-event": "clase.creada",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["academic:session:create"],
+        "x-scope": "group"
+      }
+    },
+    "/academic/sessions/{id}/transitions": {
+      "post": {
+        "description": "Máquina de estados `programada → realizada|cancelada`.",
+        "operationId": "transitionSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SessionResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Marcar sesión como realizada o cancelada",
+        "tags": ["académico — sesiones de clase"],
+        "x-access": "permission",
+        "x-audit-event": "clase.<estado>",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["academic:session:update"],
+        "x-scope": "group"
+      }
+    },
+    "/academic/sessions/{id}": {
+      "get": {
+        "description": "Administración, educador dueño o estudiante matriculado; ajeno responde 404.",
+        "operationId": "getSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SessionResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Consultar una sesión",
+        "tags": ["académico — sesiones de clase"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Consulta de solo lectura filtrada por ámbito.",
+        "x-error-codes": ["PERMISSION_DENIED", "RESOURCE_NOT_FOUND"],
+        "x-permission": ["academic:group:manage", "academic:group:read_own"],
+        "x-scope": "mixed"
+      }
+    },
+    "/academic/sessions/{sessionId}/attendance": {
+      "put": {
+        "description": "R-010: el cuerpo reemplaza el conjunto completo y es idempotente por estado resultante. Solo sesiones `realizadas`.",
+        "operationId": "replaceAttendance",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AttendanceListResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Registrar o corregir la asistencia de una sesión",
+        "tags": ["académico — asistencia"],
+        "x-access": "permission",
+        "x-audit-event": "asistencia.registrada",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "ATTENDANCE_INVALID_ENROLLMENT"
+        ],
+        "x-permission": ["academic:attendance:create"],
+        "x-scope": "group"
+      },
+      "get": {
+        "operationId": "getSessionAttendance",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AttendanceListResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Consultar la asistencia de una sesión",
+        "tags": ["académico — asistencia"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Consulta de solo lectura dentro del grupo del educador.",
+        "x-error-codes": ["PERMISSION_DENIED", "RESOURCE_NOT_FOUND", "INVALID_STATE_TRANSITION"],
+        "x-permission": ["academic:attendance:read"],
+        "x-scope": "group"
+      }
+    },
+    "/academic/evaluations": {
+      "post": {
+        "description": "Única por matrícula, indicador y periodo; observación redactada en auditoría.",
+        "operationId": "createEvaluation",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EvaluationResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Registrar evaluación cualitativa",
+        "tags": ["académico — evaluación cualitativa"],
+        "x-access": "permission",
+        "x-audit-event": "evaluacion.registrada",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_PERIOD",
+          "EVALUATION_SCALE_INVALID",
+          "EVALUATION_DUPLICATE"
+        ],
+        "x-permission": ["academic:evaluation:create"],
+        "x-scope": "group"
+      },
+      "get": {
+        "operationId": "listEvaluations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedEvaluationsDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Listar evaluaciones del educador",
+        "tags": ["académico — evaluación cualitativa"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Listado de solo lectura filtrado por ámbito.",
+        "x-error-codes": ["PERMISSION_DENIED", "VALIDATION_FAILED"],
+        "x-permission": ["academic:evaluation:read"],
+        "x-scope": "group"
+      }
+    },
+    "/academic/evaluations/{id}": {
+      "patch": {
+        "operationId": "updateEvaluation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EvaluationResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Corregir una evaluación",
+        "tags": ["académico — evaluación cualitativa"],
+        "x-access": "permission",
+        "x-audit-event": "evaluacion.actualizada",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "EVALUATION_SCALE_INVALID"
+        ],
+        "x-permission": ["academic:evaluation:update"],
+        "x-scope": "group"
+      }
+    },
     "/academic/students": {
       "get": {
         "description": "Listado de datos mínimos. Nunca incluye documento, dirección ni teléfono; el acceso se audita antes de responder.",
@@ -1356,6 +1836,47 @@
         "x-audit-exempt": "Consulta propia de solo lectura.",
         "x-error-codes": ["PERMISSION_DENIED", "VALIDATION_FAILED"],
         "x-permission": ["academic:schedule:read_own"],
+        "x-scope": "own"
+      }
+    },
+    "/me/evaluations": {
+      "get": {
+        "description": "Solo las evaluaciones de las matrículas vinculadas al usuario autenticado.",
+        "operationId": "getMyEvaluations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MyEvaluationResponseDto" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Evaluaciones propias",
+        "tags": ["académico — vistas propias"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Consulta propia de solo lectura.",
+        "x-error-codes": ["PERMISSION_DENIED"],
+        "x-permission": ["academic:evaluation:read_own"],
         "x-scope": "own"
       }
     },
@@ -2013,6 +2534,88 @@
         },
         "required": ["items"]
       },
+      "SessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "grupoId": { "type": "string", "format": "uuid" },
+          "fecha": { "type": "string", "example": "2026-09-14" },
+          "tema": { "type": "string", "nullable": true },
+          "estado": { "type": "string", "enum": ["programada", "realizada", "cancelada"] },
+          "creadoEn": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "grupoId", "fecha", "estado", "creadoEn"]
+      },
+      "PaginatedSessionsDto": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SessionResponseDto" }
+          }
+        },
+        "required": ["page", "pageSize", "total", "data"]
+      },
+      "AttendanceResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "sesionId": { "type": "string", "format": "uuid" },
+          "matriculaId": { "type": "string", "format": "uuid" },
+          "estado": { "type": "string", "enum": ["presente", "ausente", "tarde", "excusa"] },
+          "registradoEn": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "sesionId", "matriculaId", "estado", "registradoEn"]
+      },
+      "AttendanceListResponseDto": {
+        "type": "object",
+        "properties": {
+          "registros": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AttendanceResponseDto" }
+          },
+          "total": { "type": "number" }
+        },
+        "required": ["registros", "total"]
+      },
+      "EvaluationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "matriculaId": { "type": "string", "format": "uuid" },
+          "indicadorId": { "type": "string", "format": "uuid" },
+          "indicadorNombre": { "type": "string" },
+          "periodo": { "type": "string", "example": "2026-1" },
+          "valor": { "type": "string", "enum": ["excelente", "bueno", "regular", "deficiente"] },
+          "observacion": { "type": "string", "nullable": true },
+          "evaluadoEn": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "id",
+          "matriculaId",
+          "indicadorId",
+          "indicadorNombre",
+          "periodo",
+          "valor",
+          "evaluadoEn"
+        ]
+      },
+      "PaginatedEvaluationsDto": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/EvaluationResponseDto" }
+          }
+        },
+        "required": ["page", "pageSize", "total", "data"]
+      },
       "StudentSummaryDto": {
         "type": "object",
         "properties": {
@@ -2120,6 +2723,32 @@
           }
         },
         "required": ["page", "pageSize", "total", "data"]
+      },
+      "MyEvaluationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "matriculaId": { "type": "string", "format": "uuid" },
+          "indicadorId": { "type": "string", "format": "uuid" },
+          "indicadorNombre": { "type": "string" },
+          "periodo": { "type": "string", "example": "2026-1" },
+          "valor": { "type": "string", "enum": ["excelente", "bueno", "regular", "deficiente"] },
+          "observacion": { "type": "string", "nullable": true },
+          "evaluadoEn": { "type": "string", "format": "date-time" },
+          "grupoCodigo": { "type": "string" },
+          "programaNombre": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "matriculaId",
+          "indicadorId",
+          "indicadorNombre",
+          "periodo",
+          "valor",
+          "evaluadoEn",
+          "grupoCodigo",
+          "programaNombre"
+        ]
       },
       "FileResponseDto": {
         "type": "object",

@@ -170,6 +170,9 @@ export type ProgramaEstado = 'borrador' | 'publicado' | 'archivado';
 export type GrupoEstado = 'abierto' | 'cerrado';
 export type MatriculaEstado =
   'preinscrita' | 'confirmada' | 'activa' | 'finalizada' | 'cancelada' | 'retirada';
+export type SesionEstado = 'programada' | 'realizada' | 'cancelada';
+export type AsistenciaEstado = 'presente' | 'ausente' | 'tarde' | 'excusa';
+export type EvaluacionValor = 'excelente' | 'bueno' | 'regular' | 'deficiente';
 
 export interface ProgramaFormativoTable {
   id: string;
@@ -231,6 +234,47 @@ export interface MatriculaTable {
   actualizado_en: Generated<Date>;
 }
 
+export interface SesionClaseTable {
+  id: string;
+  grupo_id: string;
+  fecha: Date;
+  tema: string | null;
+  estado: Generated<SesionEstado>;
+  creado_en: Generated<Date>;
+  actualizado_en: Generated<Date>;
+}
+
+export interface AsistenciaTable {
+  id: string;
+  sesion_id: string;
+  matricula_id: string;
+  estado: AsistenciaEstado;
+  registrado_por: string;
+  registrado_en: Generated<Date>;
+}
+
+export interface IndicadorEvaluacionTable {
+  id: string;
+  programa_id: string | null;
+  nombre: string;
+  descripcion: string | null;
+  escala: Generated<string>;
+  creado_en: Generated<Date>;
+}
+
+export interface EvaluacionCualitativaTable {
+  id: string;
+  matricula_id: string;
+  indicador_id: string;
+  periodo: string;
+  valor: EvaluacionValor;
+  observacion: string | null;
+  evaluado_por: string;
+  evaluado_en: Generated<Date>;
+  creado_en: Generated<Date>;
+  actualizado_en: Generated<Date>;
+}
+
 export interface Database {
   usuario: UsuarioTable;
   perfil: PerfilTable;
@@ -251,4 +295,8 @@ export interface Database {
   'academic.horario_grupo': HorarioGrupoTable;
   'academic.estudiante': EstudianteTable;
   'academic.matricula': MatriculaTable;
+  'academic.sesion_clase': SesionClaseTable;
+  'academic.asistencia': AsistenciaTable;
+  'academic.indicador_evaluacion': IndicadorEvaluacionTable;
+  'academic.evaluacion_cualitativa': EvaluacionCualitativaTable;
 }

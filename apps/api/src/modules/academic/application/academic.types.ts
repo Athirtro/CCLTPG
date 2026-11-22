@@ -1,8 +1,11 @@
 import type {
+  AsistenciaEstado,
+  EvaluacionValor,
   GrupoEstado,
   MatriculaEstado,
   ProgramaArea,
   ProgramaEstado,
+  SesionEstado,
 } from '../domain/academic-states.js';
 
 export interface PageInput {
@@ -171,4 +174,93 @@ export interface ConsentimientoDatos {
   fecha: string;
   versionAviso: string;
   medio?: string;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Académico B (C5 — RB1-37)                                                    */
+/* -------------------------------------------------------------------------- */
+
+export interface SesionRecord {
+  id: string;
+  grupoId: string;
+  fecha: Date;
+  tema: string | null;
+  estado: SesionEstado;
+  creadoEn: Date;
+  actualizadoEn: Date;
+}
+
+export interface NewSesionRecord {
+  id: string;
+  grupoId: string;
+  fecha: Date;
+  tema: string | null;
+}
+
+export interface SesionListFilter extends PageInput {
+  grupoId: string;
+}
+
+export interface AsistenciaRecord {
+  id: string;
+  sesionId: string;
+  matriculaId: string;
+  estado: AsistenciaEstado;
+  registradoPor: string;
+  registradoEn: Date;
+}
+
+export interface NewAsistenciaRecord {
+  id: string;
+  sesionId: string;
+  matriculaId: string;
+  estado: AsistenciaEstado;
+  registradoPor: string;
+}
+
+export interface IndicadorRecord {
+  id: string;
+  programaId: string | null;
+  nombre: string;
+  descripcion: string | null;
+  escala: string;
+  creadoEn: Date;
+}
+
+export interface EvaluacionRecord {
+  id: string;
+  matriculaId: string;
+  indicadorId: string;
+  periodo: string;
+  valor: EvaluacionValor;
+  observacion: string | null;
+  evaluadoPor: string;
+  evaluadoEn: Date;
+  creadoEn: Date;
+  actualizadoEn: Date;
+}
+
+export interface NewEvaluacionRecord {
+  id: string;
+  matriculaId: string;
+  indicadorId: string;
+  periodo: string;
+  valor: EvaluacionValor;
+  observacion: string | null;
+  evaluadoPor: string;
+}
+
+export interface EvaluacionListFilter extends PageInput {
+  grupoId: string | null;
+  educadorId: string | null;
+  estudianteUsuarioId: string | null;
+}
+
+export interface EvaluacionConIndicadorRecord extends EvaluacionRecord {
+  indicadorNombre: string;
+}
+
+export interface MiEvaluacionRecord extends EvaluacionConIndicadorRecord {
+  grupoCodigo: string;
+  programaNombre: string;
 }

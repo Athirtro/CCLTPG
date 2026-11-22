@@ -23,6 +23,18 @@ export const MATRICULA_ESTADOS = [
 ] as const;
 export type MatriculaEstado = (typeof MATRICULA_ESTADOS)[number];
 
+export const SESION_ESTADOS = ['programada', 'realizada', 'cancelada'] as const;
+export type SesionEstado = (typeof SESION_ESTADOS)[number];
+
+export const ASISTENCIA_ESTADOS = ['presente', 'ausente', 'tarde', 'excusa'] as const;
+export type AsistenciaEstado = (typeof ASISTENCIA_ESTADOS)[number];
+
+/** Escala cerrada ratificada en D73. */
+export const EVALUACION_VALORES = ['excelente', 'bueno', 'regular', 'deficiente'] as const;
+export type EvaluacionValor = (typeof EVALUACION_VALORES)[number];
+
+export const INDICADOR_ESCALA = EVALUACION_VALORES.join(',');
+
 const PROGRAMA_TRANSITIONS: Record<ProgramaEstado, readonly ProgramaEstado[]> = {
   borrador: ['publicado'],
   publicado: ['archivado'],
@@ -68,6 +80,37 @@ const MATRICULA_EVENT_CODES: Record<MatriculaEstado, string> = {
 
 export function matriculaEventCode(estado: MatriculaEstado): string {
   return MATRICULA_EVENT_CODES[estado];
+}
+
+/** D71: solo se permite avanzar desde `programada`. */
+const SESION_TRANSITIONS: Record<SesionEstado, readonly SesionEstado[]> = {
+  programada: ['realizada', 'cancelada'],
+  realizada: [],
+  cancelada: [],
+};
+
+const SESION_EVENT_CODES: Partial<Record<SesionEstado, string>> = {
+  realizada: 'clase.realizada',
+  cancelada: 'clase.cancelada',
+};
+
+/**
+ * D71: solo una sesión `realizada` admite asistencia; `cancelada` la bloquea.
+ */
+export function sesionAdmiteAsistencia(estado: SesionEstado): boolean {
+  return estado === 'realizada';
+}
+
+export function canTransitionSesion(from: SesionEstado, to: SesionEstado): boolean {
+  return SESION_TRANSITIONS[from].includes(to);
+}
+
+export function sesionEventCode(estado: SesionEstado): string | null {
+  return SESION_EVENT_CODES[estado] ?? null;
+}
+
+export function isValidEvaluacionValor(valor: string): valor is EvaluacionValor {
+  return (EVALUACION_VALORES as readonly string[]).includes(valor);
 }
 
 export function canTransitionPrograma(from: ProgramaEstado, to: ProgramaEstado): boolean {

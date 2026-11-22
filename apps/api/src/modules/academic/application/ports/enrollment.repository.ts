@@ -17,6 +17,7 @@ export abstract class EnrollmentRepository {
   ): Promise<MatriculaRecord | null>;
   abstract updateState(id: string, estado: MatriculaEstado): Promise<MatriculaRecord>;
   abstract countCapacity(grupoId: string): Promise<number>;
+  abstract listByGrupo(grupoId: string): Promise<MatriculaRecord[]>;
   abstract listByEstudiante(
     estudianteId: string,
     page: PageInput,

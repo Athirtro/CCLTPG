@@ -9,9 +9,13 @@ import type {
   AcademicTransactionContext,
   AcademicUnitOfWork,
 } from '../../application/ports/unit-of-work.js';
+import { KyselyAttendanceRepository } from './kysely-attendance.repository.js';
 import { KyselyEnrollmentRepository } from './kysely-enrollment.repository.js';
+import { KyselyEvaluationRepository } from './kysely-evaluation.repository.js';
 import { KyselyGroupRepository } from './kysely-group.repository.js';
+import { KyselyIndicatorRepository } from './kysely-indicator.repository.js';
 import { KyselyProgramRepository } from './kysely-program.repository.js';
+import { KyselySessionRepository } from './kysely-session.repository.js';
 import { KyselyStudentRepository } from './kysely-student.repository.js';
 
 @Injectable()
@@ -25,6 +29,10 @@ export class KyselyAcademicUnitOfWork implements AcademicUnitOfWork {
         groups: new KyselyGroupRepository(trx),
         students: new KyselyStudentRepository(trx),
         enrollments: new KyselyEnrollmentRepository(trx),
+        sessions: new KyselySessionRepository(trx),
+        attendance: new KyselyAttendanceRepository(trx),
+        indicators: new KyselyIndicatorRepository(trx),
+        evaluations: new KyselyEvaluationRepository(trx),
         audit: new KyselyAuditWriter(trx),
         outbox: new KyselyOutboxWriter(trx),
       }),

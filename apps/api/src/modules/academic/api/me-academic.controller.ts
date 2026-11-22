@@ -13,9 +13,11 @@ import { RequirePermissions } from '../../../shared/auth/auth-metadata.js';
 import { ProblemDetailsDto } from '../../../shared/errors/problem-details.dto.js';
 import { ApiContract } from '../../../shared/openapi/contract-metadata.js';
 import { EnrollmentService } from '../application/enrollment.service.js';
+import { EvaluationService } from '../application/evaluation.service.js';
 import { GroupService } from '../application/group.service.js';
 import { StudentService } from '../application/student.service.js';
 import {
+  MyEvaluationResponseDto,
   PaginatedEnrollmentsDto,
   PaginationQueryDto,
   ScheduleResponseDto,
@@ -35,6 +37,7 @@ export class MeAcademicController {
     @Inject(StudentService) private readonly students: StudentService,
     @Inject(EnrollmentService) private readonly enrollments: EnrollmentService,
     @Inject(GroupService) private readonly groups: GroupService,
+    @Inject(EvaluationService) private readonly evaluations: EvaluationService,
   ) {}
 
   @Get('student')
@@ -108,5 +111,27 @@ export class MeAcademicController {
   })
   async getMySchedule(@Req() request: AuthenticatedRequest): Promise<ScheduleResponseDto> {
     return { items: await this.groups.mySchedule(actorOf(request)) };
+  }
+
+  @Get('evaluations')
+  @RequirePermissions('academic:evaluation:read_own')
+  @ApiOperation({
+    operationId: 'getMyEvaluations',
+    summary: 'Evaluaciones propias',
+    description: 'Solo las evaluaciones de las matrículas vinculadas al usuario autenticado.',
+  })
+  @ApiOkResponse({ type: [MyEvaluationResponseDto] })
+  @ApiUnauthorizedResponse({ type: ProblemDetailsDto })
+  @ApiForbiddenResponse({ type: ProblemDetailsDto })
+  @ApiContract({
+    access: 'permission',
+    permission: ['academic:evaluation:read_own'],
+    scope: 'own',
+    auditEvent: '-',
+    auditExempt: 'Consulta propia de solo lectura.',
+    errorCodes: ['PERMISSION_DENIED'],
+  })
+  async getMyEvaluations(@Req() request: AuthenticatedRequest): Promise<MyEvaluationResponseDto[]> {
+    return this.evaluations.listMine(actorOf(request));
   }
 }

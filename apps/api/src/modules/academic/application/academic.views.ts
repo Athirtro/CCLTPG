@@ -1,8 +1,11 @@
 import type {
+  AsistenciaEstado,
+  EvaluacionValor,
   GrupoEstado,
   MatriculaEstado,
   ProgramaArea,
   ProgramaEstado,
+  SesionEstado,
 } from '../domain/academic-states.js';
 
 /**
@@ -78,4 +81,45 @@ export interface MatriculaView {
   periodo: string;
   estado: MatriculaEstado;
   fechaMatricula: string;
+}
+
+export interface SesionView {
+  id: string;
+  grupoId: string;
+  fecha: string;
+  tema: string | null;
+  estado: SesionEstado;
+  creadoEn: string;
+}
+
+export interface AsistenciaView {
+  id: string;
+  sesionId: string;
+  matriculaId: string;
+  estado: AsistenciaEstado;
+  registradoEn: string;
+}
+
+export interface IndicadorView {
+  id: string;
+  programaId: string | null;
+  nombre: string;
+  descripcion: string | null;
+  escala: string;
+}
+
+export interface EvaluacionView {
+  id: string;
+  matriculaId: string;
+  indicadorId: string;
+  indicadorNombre: string;
+  periodo: string;
+  valor: EvaluacionValor;
+  observacion: string | null;
+  evaluadoEn: string;
+}
+
+export interface MiEvaluacionView extends EvaluacionView {
+  grupoCodigo: string;
+  programaNombre: string;
 }

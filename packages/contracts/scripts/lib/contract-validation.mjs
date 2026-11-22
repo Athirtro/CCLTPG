@@ -22,6 +22,7 @@ const AUDIT_EVENT_TEMPLATES = {
   'usuario.<estado>': ['usuario.activado', 'usuario.desactivado', 'usuario.bloqueado'],
   'programa.<estado>': ['programa.publicado', 'programa.archivado'],
   'grupo.<estado>': ['grupo.cerrado'],
+  'clase.<estado>': ['clase.realizada', 'clase.cancelada'],
   'matricula.<estado>': [
     'matricula.confirmada',
     'matricula.activada',

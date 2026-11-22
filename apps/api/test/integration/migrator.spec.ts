@@ -205,6 +205,13 @@ const C4_TABLES = [
   'academic.matricula',
 ] as const;
 
+const C5_TABLES = [
+  'academic.sesion_clase',
+  'academic.asistencia',
+  'academic.indicador_evaluacion',
+  'academic.evaluacion_cualitativa',
+] as const;
+
 describe.runIf(hasDatabase)('Migraciones de C4 (contexto académico)', () => {
   let db: Kysely<unknown>;
 
@@ -275,6 +282,72 @@ describe.runIf(hasDatabase)('Migraciones de C4 (contexto académico)', () => {
 
     await publicMigrator.migrateTo(NO_MIGRATIONS);
     await academicMigrator.migrateTo(NO_MIGRATIONS);
+  });
+});
+
+describe.runIf(hasDatabase)('Migraciones de C5 (Académico B)', () => {
+  let db: Kysely<unknown>;
+
+  beforeAll(() => {
+    db = newMigratorDb();
+  });
+
+  afterAll(async () => {
+    await db.destroy();
+  });
+
+  it('aplica Académico B con up → down → up, unicidades y escala cerrada', async () => {
+    await resetFixtureSchema(db, 'public');
+    await resetFixtureSchema(db, 'academic');
+    const migrator = createMigrator(db, 'academic');
+
+    const up = await migrator.migrateToLatest();
+    expect(up.error).toBeUndefined();
+    for (const table of C5_TABLES) {
+      await expect(tableExists(db, table)).resolves.toBe(true);
+    }
+
+    const indexes = await sql<{ indexname: string }>`
+      select indexname from pg_indexes
+      where schemaname = 'academic'
+        and indexname in (
+          'asistencia_sesion_matricula_key',
+          'evaluacion_cualitativa_unique',
+          'asistencia_matricula_idx',
+          'sesion_clase_grupo_fecha_idx',
+          'sesion_clase_estado_idx',
+          'evaluacion_cualitativa_matricula_idx',
+          'indicador_evaluacion_programa_idx'
+        )
+    `.execute(db);
+    expect(indexes.rows).toHaveLength(7);
+
+    const scale = await sql<{ enumlabel: string }>`
+      select e.enumlabel
+      from pg_enum e
+      join pg_type t on t.oid = e.enumtypid
+      join pg_namespace n on n.oid = t.typnamespace
+      where n.nspname = 'academic' and t.typname = 'evaluacion_valor'
+      order by e.enumsortorder
+    `.execute(db);
+    expect(scale.rows.map((row) => row.enumlabel)).toEqual([
+      'excelente',
+      'bueno',
+      'regular',
+      'deficiente',
+    ]);
+
+    const down = await migrator.migrateTo(NO_MIGRATIONS);
+    expect(down.error).toBeUndefined();
+    for (const table of C5_TABLES) {
+      await expect(tableExists(db, table)).resolves.toBe(false);
+    }
+
+    const again = await migrator.migrateToLatest();
+    expect(again.error).toBeUndefined();
+    await expect(tableExists(db, 'academic.evaluacion_cualitativa')).resolves.toBe(true);
+
+    await migrator.migrateTo(NO_MIGRATIONS);
   });
 });
 

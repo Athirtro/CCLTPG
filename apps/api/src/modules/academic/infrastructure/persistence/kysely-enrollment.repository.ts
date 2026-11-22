@@ -80,6 +80,16 @@ export class KyselyEnrollmentRepository implements EnrollmentRepository {
     return Number(row.total);
   }
 
+  async listByGrupo(grupoId: string): Promise<MatriculaRecord[]> {
+    const rows = await this.db
+      .selectFrom('academic.matricula')
+      .selectAll()
+      .where('grupo_id', '=', grupoId)
+      .orderBy('id', 'asc')
+      .execute();
+    return rows.map(mapMatricula);
+  }
+
   async listByEstudiante(
     estudianteId: string,
     page: PageInput,

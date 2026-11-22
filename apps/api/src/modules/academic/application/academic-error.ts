@@ -22,6 +22,10 @@ export const ACADEMIC_ERRORS = {
   idempotencyKeyRequired: 'IDEMPOTENCY_KEY_REQUIRED',
   idempotencyKeyReused: 'IDEMPOTENCY_KEY_REUSED',
   idempotencyInProgress: 'IDEMPOTENCY_IN_PROGRESS',
+  // C5 — Académico B (RB1-39/RB1-41).
+  attendanceInvalidEnrollment: 'ATTENDANCE_INVALID_ENROLLMENT',
+  evaluationScaleInvalid: 'EVALUATION_SCALE_INVALID',
+  evaluationDuplicate: 'EVALUATION_DUPLICATE',
 } as const;
 
 export type AcademicErrorCode = (typeof ACADEMIC_ERRORS)[keyof typeof ACADEMIC_ERRORS];
@@ -144,6 +148,38 @@ export class AcademicError extends AppError {
       ACADEMIC_ERRORS.idempotencyInProgress,
       HttpStatus.CONFLICT,
       'Hay una solicitud en curso con la misma Idempotency-Key.',
+    );
+  }
+
+  static sessionNotReady(estado: string): AcademicError {
+    return new AcademicError(
+      ACADEMIC_ERRORS.invalidStateTransition,
+      HttpStatus.CONFLICT,
+      `La sesión está "${estado}" y no admite registro de asistencia.`,
+    );
+  }
+
+  static attendanceInvalidEnrollment(): AcademicError {
+    return new AcademicError(
+      ACADEMIC_ERRORS.attendanceInvalidEnrollment,
+      HttpStatus.BAD_REQUEST,
+      'Una o más matrículas no pertenecen al grupo de la sesión o no están vigentes.',
+    );
+  }
+
+  static evaluationScaleInvalid(): AcademicError {
+    return new AcademicError(
+      ACADEMIC_ERRORS.evaluationScaleInvalid,
+      HttpStatus.BAD_REQUEST,
+      'El valor no pertenece a la escala cerrada del indicador.',
+    );
+  }
+
+  static evaluationDuplicate(): AcademicError {
+    return new AcademicError(
+      ACADEMIC_ERRORS.evaluationDuplicate,
+      HttpStatus.CONFLICT,
+      'Ya existe una evaluación para la matrícula, indicador y periodo.',
     );
   }
 }
