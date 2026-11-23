@@ -71,7 +71,7 @@ export default function Exportaciones() {
       const payload: CrearExportacionDto = {
         plantilla: plantillaSeleccionada,
         formato: formatoSeleccionado,
-        entrada,
+        parametros: entrada,
       };
       const {
         data,
@@ -81,14 +81,14 @@ export default function Exportaciones() {
         body: payload,
       });
 
-      if (apiError || response?.status !== 200) {
+      if (apiError || response?.status !== 201) {
         const problema = apiError as ProblemDetailsDto;
         setError(problema?.detail || 'Error al generar la exportación');
         return;
       }
 
       const dto = data;
-      setExito(`Exportación "${dto.plantilla}" generada (${dto.formato.toUpperCase()})`);
+      setExito(`Exportación "${dto.nombre}" generada (${dto.formato.toUpperCase()})`);
       setEntradaJson('{}');
     } catch (err) {
       setError(getErrorMessage(err) || 'Error inesperado al generar');

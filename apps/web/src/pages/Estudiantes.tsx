@@ -19,33 +19,30 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import { People as PeopleIcon, Add as AddIcon } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
 import type {
-  EstudianteDto,
+  EstudianteSummaryDto,
   CrearEstudianteDto,
-  ProgramaDto,
   ProblemDetailsDto,
 } from '../api/client';
 
 export default function Estudiantes() {
   const { hasPermission } = useAuth();
-  const [estudiantes, setEstudiantes] = useState<EstudianteDto[]>([]);
-  const [programas, setProgramas] = useState<ProgramaDto[]>([]);
+  const [estudiantes, setEstudiantes] = useState<EstudianteSummaryDto[]>([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
   const [abiertoDialogo, setAbiertoDialogo] = useState(false);
-  const [nombreNuevo, setNombreNuevo] = useState('');
-  const [emailNuevo, setEmailNuevo] = useState('');
-  const [programaIdNuevo, setProgramaIdNuevo] = useState('');
-  const [estadoNuevo, setEstadoNuevo] = useState<'activo' | 'inactivo' | 'bloqueado'>('activo');
+  const [tipoDocumentoNuevo, setTipoDocumentoNuevo] = useState('');
+  const [numeroDocumentoNuevo, setNumeroDocumentoNuevo] = useState('');
+  const [nombresNuevo, setNombresNuevo] = useState('');
+  const [apellidosNuevo, setApellidosNuevo] = useState('');
+  const [consentimientoNuevo, setConsentimientoNuevo] = useState(false);
 
   const puedeGestionar = hasPermission('academic:student:manage');
 
@@ -54,28 +51,12 @@ export default function Estudiantes() {
     setCargando(true);
     setError(null);
     try {
-      const [resEstudiantes, resProgramas] = await Promise.all([
-        apiClient.GET('/academic/students'),
-        apiClient.GET('/academic/programs'),
-      ]);
+      const resEstudiantes = await apiClient.GET('/academic/students');
       if (resEstudiantes.error || !resEstudiantes.data) {
         setError('No se pudieron cargar los estudiantes');
         return;
       }
-      if (resProgramas.error || !resProgramas.data) {
-        setError('No se pudieron cargar los programas');
-        return;
-      }
-      setEstudiantes(resEstudiantes.data);
-      setProgramas(
-        (resProgramas.data as ProgramaDto[]).map((p) => ({
-          id: p.id,
-          nombre: p.nombre,
-          cupo: p.cupo,
-          inscritos: p.inscritos,
-          estado: p.estado,
-        })),
-      );
+      setEstudiantes(resEstudiantes.data.data);
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al cargar estudiantes');
     } finally {
@@ -86,16 +67,18 @@ export default function Estudiantes() {
   const manejarCrear = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!nombreNuevo.trim() || !emailNuevo.trim()) {
-      setError('Nombre y correo son obligatorios');
+    if (!tipoDocumentoNuevo.trim() || !numeroDocumentoNuevo.trim() || !nombresNuevo.trim() || !apellidosNuevo.trim()) {
+      setError('Todos los campos son obligatorios');
       return;
     }
     setCargando(true);
     try {
       const payload: CrearEstudianteDto = {
-        nombre: nombreNuevo.trim(),
-        email: emailNuevo.trim(),
-        programaId: programaIdNuevo.trim() || undefined,
+        tipoDocumento: tipoDocumentoNuevo.trim(),
+        numeroDocumento: numeroDocumentoNuevo.trim(),
+        nombres: nombresNuevo.trim(),
+        apellidos: apellidosNuevo.trim(),
+        consentimientoDatos: { aceptado: consentimientoNuevo, medio: 'web' },
       };
       const {
         data,
@@ -108,11 +91,12 @@ export default function Estudiantes() {
         return;
       }
       const dto = data;
-      setExito(`Estudiante "${dto.nombre}" creado correctamente`);
-      setNombreNuevo('');
-      setEmailNuevo('');
-      setProgramaIdNuevo('');
-      setEstadoNuevo('activo');
+      setExito(`Estudiante "${dto.nombres} ${dto.apellidos}" creado correctamente`);
+      setTipoDocumentoNuevo('');
+      setNumeroDocumentoNuevo('');
+      setNombresNuevo('');
+      setApellidosNuevo('');
+      setConsentimientoNuevo(false);
       setAbiertoDialogo(false);
       await cargarEstudiantes();
     } catch (err) {
@@ -148,7 +132,7 @@ export default function Estudiantes() {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Administración de Estudiantes</Typography>
+        <Typography variant="h1">Administración de Estudiantes</Typography>
         <Button startIcon={<AddIcon />} variant="contained" onClick={() => setAbiertoDialogo(true)}>
           Nuevo estudiante
         </Button>
@@ -166,43 +150,34 @@ export default function Estudiantes() {
       )}
 
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+        <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
           Listado de estudiantes
         </Typography>
         <TableContainer>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Correo</TableCell>
-                <TableCell>Programa</TableCell>
+                <TableCell>Documento</TableCell>
+                <TableCell>Nombres</TableCell>
+                <TableCell>Apellidos</TableCell>
                 <TableCell>Estado</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {estudiantes.map((e) => {
-                const programa = programas.find((p) => p.id === e.programaId);
-                return (
-                  <TableRow key={e.id}>
-                    <TableCell sx={{ fontWeight: 'medium' }}>{e.nombre}</TableCell>
-                    <TableCell>{e.email}</TableCell>
-                    <TableCell>{programa?.nombre || '-'}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={e.estado}
-                        size="small"
-                        color={
-                          e.estado === 'activo'
-                            ? 'success'
-                            : e.estado === 'inactivo'
-                              ? 'default'
-                              : 'error'
-                        }
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {estudiantes.map((e) => (
+                <TableRow key={e.id}>
+                  <TableCell sx={{ fontWeight: 'medium' }}>{e.tipoDocumento}</TableCell>
+                  <TableCell>{e.nombres}</TableCell>
+                  <TableCell>{e.apellidos}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={e.consentimientoAceptado ? 'Activo' : 'Sin consentimiento'}
+                      size="small"
+                      color={e.consentimientoAceptado ? 'success' : 'default'}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
               {estudiantes.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={4}>No hay estudiantes registrados.</TableCell>
@@ -220,55 +195,62 @@ export default function Estudiantes() {
           <TextField
             autoFocus
             margin="dense"
-            id="nombre-estudiante"
-            label="Nombre completo"
+            id="tipo-documento"
+            label="Tipo de documento (ej. CC)"
             type="text"
             fullWidth
-            value={nombreNuevo}
-            onChange={(e) => setNombreNuevo(e.target.value)}
+            value={tipoDocumentoNuevo}
+            onChange={(e) => setTipoDocumentoNuevo(e.target.value)}
           />
           <TextField
             margin="dense"
-            id="email-estudiante"
-            label="Correo electrónico"
-            type="email"
+            id="numero-documento"
+            label="Número de documento"
+            type="text"
             fullWidth
-            value={emailNuevo}
-            onChange={(e) => setEmailNuevo(e.target.value)}
+            value={numeroDocumentoNuevo}
+            onChange={(e) => setNumeroDocumentoNuevo(e.target.value)}
           />
-          <FormControl margin="dense" fullWidth>
-            <InputLabel>Programa</InputLabel>
-            <Select
-              label="Programa"
-              value={programaIdNuevo}
-              onChange={(e) => setProgramaIdNuevo(e.target.value)}
-            >
-              <MenuItem value="">Sin programa asignado</MenuItem>
-              {programas.map((p) => (
-                <MenuItem key={p.id} value={p.id}>
-                  {p.nombre}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl margin="dense" fullWidth>
-            <InputLabel>Estado</InputLabel>
-            <Select
-              label="Estado"
-              value={estadoNuevo}
-              onChange={(e) => setEstadoNuevo(e.target.value)}
-            >
-              <MenuItem value="activo">Activo</MenuItem>
-              <MenuItem value="inactivo">Inactivo</MenuItem>
-              <MenuItem value="bloqueado">Bloqueado</MenuItem>
-            </Select>
-          </FormControl>
+          <TextField
+            margin="dense"
+            id="nombres-estudiante"
+            label="Nombres"
+            type="text"
+            fullWidth
+            value={nombresNuevo}
+            onChange={(e) => setNombresNuevo(e.target.value)}
+          />
+          <TextField
+            margin="dense"
+            id="apellidos-estudiante"
+            label="Apellidos"
+            type="text"
+            fullWidth
+            value={apellidosNuevo}
+            onChange={(e) => setApellidosNuevo(e.target.value)}
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={consentimientoNuevo}
+                onChange={() => setConsentimientoNuevo(!consentimientoNuevo)}
+              />
+            }
+            label="Acepto el tratamiento de datos personales"
+            labelPlacement="end"
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAbiertoDialogo(false)}>Cancelar</Button>
           <Button
             onClick={manejarCrear}
-            disabled={cargando || !nombreNuevo.trim() || !emailNuevo.trim()}
+            disabled={
+              cargando ||
+              !tipoDocumentoNuevo.trim() ||
+              !numeroDocumentoNuevo.trim() ||
+              !nombresNuevo.trim() ||
+              !apellidosNuevo.trim()
+            }
           >
             {cargando ? <CircularProgress size={20} /> : 'Crear'}
           </Button>

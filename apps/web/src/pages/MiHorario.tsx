@@ -11,7 +11,6 @@ import {
   TableRow,
   Typography,
   Alert,
-  Chip,
   CircularProgress,
 } from '@mui/material';
 import { Schedule as ScheduleIcon, Refresh as RefreshIcon } from '@mui/icons-material';
@@ -20,14 +19,15 @@ import { getErrorMessage } from '../api/errors';
 
 type SesionHorarioView = {
   id: string;
-  grupoNombre: string;
-  programaNombre: string;
-  fecha: string;
+  grupoCodigo: string | null;
+  programaNombre: string | null;
+  diaSemana: number;
   horaInicio: string;
   horaFin: string;
-  salon: string;
-  estado: 'programada' | 'realizada' | 'cancelada';
+  salon: string | null;
 };
+
+const DIAS_SEMANA = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 export default function MiHorario() {
   const { hasPermission } = useAuth();
@@ -48,26 +48,14 @@ export default function MiHorario() {
         return;
       }
       setSesiones(
-        (
-          data as Array<{
-            id: string;
-            grupoNombre: string;
-            programaNombre: string;
-            fecha: string;
-            horaInicio: string;
-            horaFin: string;
-            salon: string;
-            estado: string;
-          }>
-        ).map((s) => ({
+        data.items.map((s) => ({
           id: s.id,
-          grupoNombre: s.grupoNombre,
+          grupoCodigo: s.grupoCodigo,
           programaNombre: s.programaNombre,
-          fecha: s.fecha,
+          diaSemana: s.diaSemana,
           horaInicio: s.horaInicio,
           horaFin: s.horaFin,
           salon: s.salon,
-          estado: s.estado as 'programada' | 'realizada' | 'cancelada',
         })),
       );
     } catch (err) {
@@ -148,37 +136,21 @@ export default function MiHorario() {
               <TableRow>
                 <TableCell>Programa</TableCell>
                 <TableCell>Grupo</TableCell>
-                <TableCell>Fecha</TableCell>
+                <TableCell>Día</TableCell>
                 <TableCell>Hora</TableCell>
                 <TableCell>Salón</TableCell>
-                <TableCell>Estado</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {sesiones.map((s) => (
                 <TableRow key={s.id}>
-                  <TableCell sx={{ fontWeight: 'medium' }}>{s.programaNombre}</TableCell>
-                  <TableCell>{s.grupoNombre}</TableCell>
-                  <TableCell>
-                    {s.fecha ? new Date(s.fecha).toLocaleDateString('es-CO') : '-'}
-                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'medium' }}>{s.programaNombre || '-'}</TableCell>
+                  <TableCell>{s.grupoCodigo || '-'}</TableCell>
+                  <TableCell>{DIAS_SEMANA[s.diaSemana] || '-'}</TableCell>
                   <TableCell>
                     {s.horaInicio} - {s.horaFin}
                   </TableCell>
-                  <TableCell>{s.salon}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={s.estado}
-                      size="small"
-                      color={
-                        s.estado === 'programada'
-                          ? 'info'
-                          : s.estado === 'realizada'
-                            ? 'success'
-                            : 'default'
-                      }
-                    />
-                  </TableCell>
+                  <TableCell>{s.salon || '-'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

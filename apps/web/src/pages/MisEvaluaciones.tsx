@@ -11,25 +11,31 @@ import {
   TableRow,
   Typography,
   Alert,
+  Chip,
   CircularProgress,
 } from '@mui/material';
 import { BarChart as BarChartIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
+import type { MyEvaluacionDto } from '../api/client';
 
-type EvaluacionView = {
-  id: string;
-  estudianteNombre: string;
-  grupoNombre: string;
-  indicador: string;
-  periodo: string;
-  valor: number;
-  fecha: string;
+const VALOR_LABEL: Record<string, string> = {
+  excelente: 'Excelente',
+  bueno: 'Bueno',
+  regular: 'Regular',
+  deficiente: 'Deficiente',
+};
+
+const VALOR_COLOR: Record<string, 'success' | 'warning' | 'default' | 'error'> = {
+  excelente: 'success',
+  bueno: 'success',
+  regular: 'warning',
+  deficiente: 'error',
 };
 
 export default function MisEvaluaciones() {
   const { hasPermission } = useAuth();
-  const [evaluaciones, setEvaluaciones] = useState<EvaluacionView[]>([]);
+  const [evaluaciones, setEvaluaciones] = useState<MyEvaluacionDto[]>([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,27 +51,7 @@ export default function MisEvaluaciones() {
         setError('No se pudieron cargar las evaluaciones');
         return;
       }
-      setEvaluaciones(
-        (
-          data as Array<{
-            id: string;
-            estudianteNombre: string;
-            grupoNombre: string;
-            indicador: string;
-            periodo: string;
-            valor: number;
-            fecha: string;
-          }>
-        ).map((e) => ({
-          id: e.id,
-          estudianteNombre: e.estudianteNombre,
-          grupoNombre: e.grupoNombre,
-          indicador: e.indicador,
-          periodo: e.periodo,
-          valor: e.valor,
-          fecha: e.fecha,
-        })),
-      );
+      setEvaluaciones(data.data as MyEvaluacionDto[]);
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al cargar evaluaciones');
     } finally {
@@ -99,11 +85,6 @@ export default function MisEvaluaciones() {
       </Box>
     );
   }
-
-  const promedio =
-    evaluaciones.length > 0
-      ? (evaluaciones.reduce((sum, e) => sum + e.valor, 0) / evaluaciones.length).toFixed(1)
-      : '—';
 
   return (
     <Box sx={{ p: 3 }}>
@@ -144,10 +125,10 @@ export default function MisEvaluaciones() {
           </Box>
           <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1, textAlign: 'center' }}>
             <Typography variant="caption" color="text.secondary">
-              Promedio
+              Último indicador
             </Typography>
             <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-              {promedio}
+              {evaluaciones.length > 0 ? VALOR_LABEL[evaluaciones[0].valor] : '—'}
             </Typography>
           </Box>
         </Box>
@@ -176,6 +157,7 @@ export default function MisEvaluaciones() {
             <TableHead>
               <TableRow>
                 <TableCell>Grupo</TableCell>
+                <TableCell>Programa</TableCell>
                 <TableCell>Indicador</TableCell>
                 <TableCell>Periodo</TableCell>
                 <TableCell>Valor</TableCell>
@@ -185,12 +167,19 @@ export default function MisEvaluaciones() {
             <TableBody>
               {evaluaciones.map((e) => (
                 <TableRow key={e.id}>
-                  <TableCell sx={{ fontWeight: 'medium' }}>{e.grupoNombre}</TableCell>
-                  <TableCell>{e.indicador}</TableCell>
+                  <TableCell sx={{ fontWeight: 'medium' }}>{e.grupoCodigo}</TableCell>
+                  <TableCell>{e.programaNombre}</TableCell>
+                  <TableCell>{e.indicadorNombre}</TableCell>
                   <TableCell>{e.periodo}</TableCell>
-                  <TableCell>{e.valor}</TableCell>
                   <TableCell>
-                    {e.fecha ? new Date(e.fecha).toLocaleDateString('es-CO') : '-'}
+                    <Chip
+                      label={VALOR_LABEL[e.valor]}
+                      size="small"
+                      color={VALOR_COLOR[e.valor]}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {e.evaluadoEn ? new Date(e.evaluadoEn).toLocaleDateString('es-CO') : '-'}
                   </TableCell>
                 </TableRow>
               ))}

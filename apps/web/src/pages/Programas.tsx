@@ -19,6 +19,10 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import {
   School as SchoolIcon,
@@ -38,6 +42,8 @@ export default function Programas() {
   const [exito, setExito] = useState<string | null>(null);
   const [abiertoDialogo, setAbiertoDialogo] = useState(false);
   const [nombreNuevo, setNombreNuevo] = useState('');
+  const [areaNuevo, setAreaNuevo] = useState<'danza' | 'musica' | 'teatro' | 'artes_plasticas'>('musica');
+  const [descripcionNuevo, setDescripcionNuevo] = useState('');
   const [cupoNuevo, setCupoNuevo] = useState('');
 
   const puedeGestionar = hasPermission('academic:program:manage');
@@ -52,7 +58,7 @@ export default function Programas() {
         setError('No se pudieron cargar los programas');
         return;
       }
-      setProgramas(data);
+      setProgramas(data.data);
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al cargar programas');
     } finally {
@@ -64,14 +70,16 @@ export default function Programas() {
     e.preventDefault();
     setError(null);
     if (!nombreNuevo.trim() || !cupoNuevo.trim()) {
-      setError('Nombre y cupo son obligatorios');
+      setError('Nombre y cupo máximo son obligatorios');
       return;
     }
     setCargando(true);
     try {
       const payload: CrearProgramaDto = {
         nombre: nombreNuevo.trim(),
-        cupo: parseInt(cupoNuevo, 10),
+        descripcion: descripcionNuevo.trim() || null,
+        area: areaNuevo,
+        cupoMaximo: parseInt(cupoNuevo, 10),
       };
       const {
         data,
@@ -86,6 +94,8 @@ export default function Programas() {
       const dto = data;
       setExito(`Programa "${dto.nombre}" creado correctamente`);
       setNombreNuevo('');
+      setAreaNuevo('musica');
+      setDescripcionNuevo('');
       setCupoNuevo('');
       setAbiertoDialogo(false);
       await cargarProgramas();
@@ -96,7 +106,7 @@ export default function Programas() {
     }
   };
 
-  const manejarTransicion = async (programa: ProgramaDto, to: 'publicado' | 'cerrado') => {
+  const manejarTransicion = async (programa: ProgramaDto, to: 'publicado' | 'archivado') => {
     setCargando(true);
     setError(null);
     try {
@@ -144,7 +154,7 @@ export default function Programas() {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Administración de Programas</Typography>
+        <Typography variant="h1">Administración de Programas</Typography>
         <Button startIcon={<AddIcon />} variant="contained" onClick={() => setAbiertoDialogo(true)}>
           Nuevo programa
         </Button>
@@ -162,7 +172,7 @@ export default function Programas() {
       )}
 
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+        <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
           Listado de programas
         </Typography>
         <TableContainer>
@@ -170,9 +180,8 @@ export default function Programas() {
             <TableHead>
               <TableRow>
                 <TableCell>Nombre</TableCell>
-                <TableCell>Cupo</TableCell>
-                <TableCell>Inscritos</TableCell>
-                <TableCell>Disponibles</TableCell>
+                <TableCell>Área</TableCell>
+                <TableCell>Cupo máximo</TableCell>
                 <TableCell>Estado</TableCell>
                 <TableCell>Acciones</TableCell>
               </TableRow>
@@ -181,9 +190,8 @@ export default function Programas() {
               {programas.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell sx={{ fontWeight: 'medium' }}>{p.nombre}</TableCell>
-                  <TableCell>{p.cupo}</TableCell>
-                  <TableCell>{p.inscritos}</TableCell>
-                  <TableCell>{p.cupo - p.inscritos}</TableCell>
+                  <TableCell>{p.area}</TableCell>
+                  <TableCell>{p.cupoMaximo}</TableCell>
                   <TableCell>
                     <Chip
                       label={p.estado}
@@ -191,7 +199,7 @@ export default function Programas() {
                       color={
                         p.estado === 'publicado'
                           ? 'success'
-                          : p.estado === 'cerrado'
+                          : p.estado === 'archivado'
                             ? 'default'
                             : 'warning'
                       }
@@ -212,10 +220,10 @@ export default function Programas() {
                       <Button
                         size="small"
                         startIcon={<LockIcon fontSize="small" />}
-                        onClick={() => void manejarTransicion(p, 'cerrado')}
+                        onClick={() => void manejarTransicion(p, 'archivado')}
                         disabled={cargando}
                       >
-                        Cerrar
+                        Archivar
                       </Button>
                     )}
                   </TableCell>
@@ -223,7 +231,7 @@ export default function Programas() {
               ))}
               {programas.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6}>No hay programas registrados.</TableCell>
+                  <TableCell colSpan={5}>No hay programas registrados.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -244,6 +252,30 @@ export default function Programas() {
             fullWidth
             value={nombreNuevo}
             onChange={(e) => setNombreNuevo(e.target.value)}
+          />
+          <FormControl margin="dense" fullWidth>
+            <InputLabel id="label-area">Área artística</InputLabel>
+            <Select
+              labelId="label-area"
+              id="select-area"
+              label="Área artística"
+              value={areaNuevo}
+              onChange={(e) => setAreaNuevo(e.target.value as typeof areaNuevo)}
+            >
+              <MenuItem value="danza">Danza</MenuItem>
+              <MenuItem value="musica">Música</MenuItem>
+              <MenuItem value="teatro">Teatro</MenuItem>
+              <MenuItem value="artes_plasticas">Artes plásticas</MenuItem>
+            </Select>
+          </FormControl>
+          <TextField
+            margin="dense"
+            id="descripcion-programa"
+            label="Descripción"
+            type="text"
+            fullWidth
+            value={descripcionNuevo}
+            onChange={(e) => setDescripcionNuevo(e.target.value)}
           />
           <TextField
             margin="dense"

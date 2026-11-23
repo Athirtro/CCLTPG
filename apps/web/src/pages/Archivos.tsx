@@ -61,13 +61,13 @@ export default function Archivos() {
     setSubiendo(true);
     try {
       const formData = new FormData();
-      formData.append('archivo', archivoSeleccionado);
+      formData.append('file', archivoSeleccionado);
 
       const {
         data,
         error: apiError,
         response,
-      } = await apiClient.POST('/files', {
+      } = await (apiClient as any).POST('/files', {
         body: formData,
         headers: {
           'Idempotency-Key': idempotencyKey.trim(),

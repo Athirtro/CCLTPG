@@ -1,4 +1,4 @@
-﻿import { useState, useCallback } from 'react';
+﻿import { useState, useCallback, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -19,42 +19,12 @@ import {
 import { Assignment as AssignmentIcon } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type { MatriculaDto, ProblemDetailsDto, GrupoDto } from '../api/client';
-
-type MatriculaView = {
-  id: string;
-  estudianteNombre: string;
-  programaNombre: string;
-  grupoNombre: string;
-  estado: 'pendiente' | 'confirmada' | 'cancelada';
-  creadoEn: string;
-};
+import type { MatriculaDto, GrupoDto, ProblemDetailsDto } from '../api/client';
 
 export default function Matriculas() {
   const { user, hasPermission } = useAuth();
-  const [matriculas, setMatriculas] = useState<MatriculaView[]>([]);
-  const [gruposDisponibles] = useState<GrupoDto[]>([
-    {
-      id: 'G-001',
-      nombre: 'Guitarra Básica',
-      programaId: 'P-001',
-      programaNombre: 'Música',
-      horario: 'Lun 18:00',
-      cupo: 15,
-      inscritos: 5,
-      estado: 'abierto',
-    },
-    {
-      id: 'G-002',
-      nombre: 'Acuarela',
-      programaId: 'P-002',
-      programaNombre: 'Pintura',
-      horario: 'Mar 16:00',
-      cupo: 10,
-      inscritos: 3,
-      estado: 'abierto',
-    },
-  ]);
+  const [matriculas, setMatriculas] = useState<MatriculaDto[]>([]);
+  const [gruposDisponibles, setGruposDisponibles] = useState<GrupoDto[]>([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
@@ -73,22 +43,30 @@ export default function Matriculas() {
         setError('No se pudieron cargar las matrículas');
         return;
       }
-      setMatriculas(
-        (data as MatriculaDto[]).map((m) => ({
-          id: m.id,
-          estudianteNombre: m.estudianteNombre,
-          programaNombre: m.programaNombre,
-          grupoNombre: m.grupoNombre,
-          estado: m.estado,
-          creadoEn: m.creadoEn,
-        })),
-      );
+      setMatriculas(data.data);
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al cargar matrículas');
     } finally {
       setCargando(false);
     }
   }, [puedeLeerPropia, puedeGestionar]);
+
+  const cargarGrupos = useCallback(async () => {
+    if (!puedeGestionar) return;
+    try {
+      const { data, error: apiError } = await apiClient.GET('/academic/groups');
+      if (apiError || !data) return;
+      setGruposDisponibles(data.data.filter((g) => g.estado === 'abierto'));
+    } catch {
+      // No bloquear la creación si falla la carga de grupos
+    }
+  }, [puedeGestionar]);
+
+  useEffect(() => {
+    if (puedeGestionar) {
+      void cargarGrupos();
+    }
+  }, [cargarGrupos, puedeGestionar]);
 
   const manejarCrear = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,7 +92,7 @@ export default function Matriculas() {
         return;
       }
       const dto = data;
-      setExito(`Matrícula en "${dto.grupoNombre}" creada correctamente`);
+      setExito(`Matrícula en "${dto.grupoCodigo}" creada correctamente`);
       setGrupoSeleccionado('');
       await cargarMatriculas();
     } catch (err) {
@@ -150,7 +128,7 @@ export default function Matriculas() {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Gestión de Matrículas</Typography>
+        <Typography variant="h1">Gestión de Matrículas</Typography>
         {puedeGestionar && (
           <Button size="small" disabled={cargando} onClick={cargarMatriculas}>
             Actualizar
@@ -171,22 +149,22 @@ export default function Matriculas() {
 
       {puedeGestionar && (
         <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+          <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
             Nueva matrícula
           </Typography>
           <form noValidate>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
               <Box component="label" sx={{ fontWeight: 'medium', mb: 1 }}>
-                Grupo
+                Grupo abierto
               </Box>
               <Select
                 value={grupoSeleccionado}
                 onChange={(e) => setGrupoSeleccionado(e.target.value)}
               >
                 <MenuItem value="">Selecciona un grupo abierto</MenuItem>
-                {gruposDisponibles.map((g: GrupoDto) => (
+                {gruposDisponibles.map((g) => (
                   <MenuItem key={g.id} value={g.id}>
-                    {g.nombre} ({g.programaNombre})
+                    {g.codigo} — {g.periodo}
                   </MenuItem>
                 ))}
               </Select>
@@ -204,7 +182,7 @@ export default function Matriculas() {
       )}
 
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+        <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
           Mis matrículas
         </Typography>
         <TableContainer>
@@ -213,6 +191,7 @@ export default function Matriculas() {
               <TableRow>
                 <TableCell>Programa</TableCell>
                 <TableCell>Grupo</TableCell>
+                <TableCell>Periodo</TableCell>
                 <TableCell>Estado</TableCell>
                 <TableCell>Fecha</TableCell>
               </TableRow>
@@ -221,28 +200,31 @@ export default function Matriculas() {
               {matriculas.map((m) => (
                 <TableRow key={m.id}>
                   <TableCell sx={{ fontWeight: 'medium' }}>{m.programaNombre}</TableCell>
-                  <TableCell>{m.grupoNombre}</TableCell>
+                  <TableCell>{m.grupoCodigo}</TableCell>
+                  <TableCell>{m.periodo}</TableCell>
                   <TableCell>
                     <Chip
                       label={m.estado}
                       size="small"
                       color={
-                        m.estado === 'confirmada'
+                        m.estado === 'confirmada' || m.estado === 'activa'
                           ? 'success'
-                          : m.estado === 'pendiente'
+                          : m.estado === 'preinscrita'
                             ? 'warning'
-                            : 'default'
+                            : m.estado === 'cancelada' || m.estado === 'retirada'
+                              ? 'default'
+                              : 'secondary'
                       }
                     />
                   </TableCell>
                   <TableCell>
-                    {m.creadoEn ? new Date(m.creadoEn).toLocaleString('es-CO') : '-'}
+                    {m.fechaMatricula ? new Date(m.fechaMatricula).toLocaleString('es-CO') : '-'}
                   </TableCell>
                 </TableRow>
               ))}
               {matriculas.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4}>No hay matrículas registradas.</TableCell>
+                  <TableCell colSpan={5}>No hay matrículas registradas.</TableCell>
                 </TableRow>
               )}
             </TableBody>

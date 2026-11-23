@@ -56,7 +56,7 @@ export default function Notificaciones() {
         setError('No se pudieron cargar las notificaciones');
         return;
       }
-      setNotificaciones(data);
+      setNotificaciones(data.items);
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al cargar notificaciones');
     } finally {

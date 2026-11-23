@@ -37,9 +37,10 @@ export default function Grupos() {
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
   const [abiertoDialogo, setAbiertoDialogo] = useState(false);
-  const [nombreNuevo, setNombreNuevo] = useState('');
+  const [codigoNuevo, setCodigoNuevo] = useState('');
   const [programaIdNuevo, setProgramaIdNuevo] = useState('');
-  const [horarioNuevo, setHorarioNuevo] = useState('');
+  const [educadorIdNuevo, setEducadorIdNuevo] = useState('');
+  const [periodoNuevo, setPeriodoNuevo] = useState('');
   const [cupoNuevo, setCupoNuevo] = useState('');
 
   const puedeGestionar = hasPermission('academic:group:manage');
@@ -61,16 +62,8 @@ export default function Grupos() {
         setError('No se pudieron cargar los programas');
         return;
       }
-      setGrupos(resGrupos.data);
-      setProgramas(
-        (resProgramas.data as ProgramaDto[]).map((p) => ({
-          id: p.id,
-          nombre: p.nombre,
-          cupo: p.cupo,
-          inscritos: p.inscritos,
-          estado: p.estado,
-        })),
-      );
+      setGrupos(resGrupos.data.data);
+      setProgramas(resProgramas.data.data);
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al cargar grupos');
     } finally {
@@ -82,9 +75,10 @@ export default function Grupos() {
     e.preventDefault();
     setError(null);
     if (
-      !nombreNuevo.trim() ||
+      !codigoNuevo.trim() ||
       !programaIdNuevo.trim() ||
-      !horarioNuevo.trim() ||
+      !educadorIdNuevo.trim() ||
+      !periodoNuevo.trim() ||
       !cupoNuevo.trim()
     ) {
       setError('Todos los campos son obligatorios');
@@ -93,10 +87,11 @@ export default function Grupos() {
     setCargando(true);
     try {
       const payload: CrearGrupoDto = {
-        nombre: nombreNuevo.trim(),
+        codigo: codigoNuevo.trim(),
         programaId: programaIdNuevo.trim(),
-        horario: horarioNuevo.trim(),
-        cupo: parseInt(cupoNuevo, 10),
+        educadorId: educadorIdNuevo.trim(),
+        periodo: periodoNuevo.trim(),
+        cupoMaximo: parseInt(cupoNuevo, 10),
       };
       const {
         data,
@@ -109,10 +104,11 @@ export default function Grupos() {
         return;
       }
       const dto = data;
-      setExito(`Grupo "${dto.nombre}" creado correctamente`);
-      setNombreNuevo('');
+      setExito(`Grupo "${dto.codigo}" creado correctamente`);
+      setCodigoNuevo('');
       setProgramaIdNuevo('');
-      setHorarioNuevo('');
+      setEducadorIdNuevo('');
+      setPeriodoNuevo('');
       setCupoNuevo('');
       setAbiertoDialogo(false);
       await cargarGrupos();
@@ -136,7 +132,7 @@ export default function Grupos() {
         setError(problema?.detail || 'Error al cambiar el estado');
         return;
       }
-      setExito(`Estado del grupo "${grupo.nombre}" cambiado a ${to}`);
+      setExito(`Estado del grupo "${grupo.codigo}" cambiado a ${to}`);
       await cargarGrupos();
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al cambiar el estado');
@@ -171,7 +167,7 @@ export default function Grupos() {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Administración de Grupos</Typography>
+        <Typography variant="h1">Administración de Grupos</Typography>
         <Button startIcon={<AddIcon />} variant="contained" onClick={() => setAbiertoDialogo(true)}>
           Nuevo grupo
         </Button>
@@ -189,18 +185,17 @@ export default function Grupos() {
       )}
 
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+        <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
           Listado de grupos
         </Typography>
         <TableContainer>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Nombre</TableCell>
+                <TableCell>Código</TableCell>
                 <TableCell>Programa</TableCell>
-                <TableCell>Horario</TableCell>
-                <TableCell>Cupo</TableCell>
-                <TableCell>Inscritos</TableCell>
+                <TableCell>Periodo</TableCell>
+                <TableCell>Cupo máximo</TableCell>
                 <TableCell>Estado</TableCell>
                 <TableCell>Acciones</TableCell>
               </TableRow>
@@ -210,11 +205,10 @@ export default function Grupos() {
                 const programa = programas.find((p) => p.id === g.programaId);
                 return (
                   <TableRow key={g.id}>
-                    <TableCell sx={{ fontWeight: 'medium' }}>{g.nombre}</TableCell>
+                    <TableCell sx={{ fontWeight: 'medium' }}>{g.codigo}</TableCell>
                     <TableCell>{programa?.nombre || '-'}</TableCell>
-                    <TableCell>{g.horario}</TableCell>
-                    <TableCell>{g.cupo}</TableCell>
-                    <TableCell>{g.inscritos}</TableCell>
+                    <TableCell>{g.periodo}</TableCell>
+                    <TableCell>{g.cupoMaximo}</TableCell>
                     <TableCell>
                       <Chip
                         label={g.estado}
@@ -239,7 +233,7 @@ export default function Grupos() {
               })}
               {grupos.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7}>No hay grupos registrados.</TableCell>
+                  <TableCell colSpan={6}>No hay grupos registrados.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -254,12 +248,12 @@ export default function Grupos() {
           <TextField
             autoFocus
             margin="dense"
-            id="nombre-grupo"
-            label="Nombre del grupo"
+            id="codigo-grupo"
+            label="Código del grupo (ej. G-01)"
             type="text"
             fullWidth
-            value={nombreNuevo}
-            onChange={(e) => setNombreNuevo(e.target.value)}
+            value={codigoNuevo}
+            onChange={(e) => setCodigoNuevo(e.target.value)}
           />
           <FormControl margin="dense" fullWidth>
             <InputLabel id="label-programa">Programa</InputLabel>
@@ -280,12 +274,21 @@ export default function Grupos() {
           </FormControl>
           <TextField
             margin="dense"
-            id="horario-grupo"
-            label="Horario (ej. Lun 18:00)"
+            id="educador-grupo"
+            label="ID del educador (UUID)"
             type="text"
             fullWidth
-            value={horarioNuevo}
-            onChange={(e) => setHorarioNuevo(e.target.value)}
+            value={educadorIdNuevo}
+            onChange={(e) => setEducadorIdNuevo(e.target.value)}
+          />
+          <TextField
+            margin="dense"
+            id="periodo-grupo"
+            label="Periodo (ej. 2026-1)"
+            type="text"
+            fullWidth
+            value={periodoNuevo}
+            onChange={(e) => setPeriodoNuevo(e.target.value)}
           />
           <TextField
             margin="dense"
@@ -303,9 +306,10 @@ export default function Grupos() {
             onClick={manejarCrear}
             disabled={
               cargando ||
-              !nombreNuevo.trim() ||
+              !codigoNuevo.trim() ||
               !programaIdNuevo.trim() ||
-              !horarioNuevo.trim() ||
+              !educadorIdNuevo.trim() ||
+              !periodoNuevo.trim() ||
               !cupoNuevo.trim()
             }
           >

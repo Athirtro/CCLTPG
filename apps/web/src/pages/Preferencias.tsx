@@ -46,7 +46,7 @@ export default function Preferencias() {
         setError('No se pudieron cargar las preferencias');
         return;
       }
-      setPreferencias(data);
+      setPreferencias(data.preferencias);
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al cargar preferencias');
     } finally {
@@ -85,7 +85,7 @@ export default function Preferencias() {
         return;
       }
       setExito('Preferencias guardadas correctamente');
-      setPreferencias(data);
+      setPreferencias(data.preferencias);
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al guardar preferencias');
     } finally {
