@@ -1880,6 +1880,54 @@
         "x-scope": "own"
       }
     },
+    "/analytics/kpis": {
+      "get": {
+        "description": "Seis KPIs con fórmula documentada. El ámbito del educador se aplica en servidor; las respuestas contienen solo agregados y las celdas derivadas de PII con menos de 5 casos se suprimen.",
+        "operationId": "getKpis",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/KpisResponseDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Consultar KPIs académicos",
+        "tags": ["analítica"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Agregados de solo lectura; sin PII individual ni mutación de estado.",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_PERIOD",
+          "KPI_NOT_FOUND"
+        ],
+        "x-permission": ["analytics:kpi:read"],
+        "x-scope": "mixed"
+      }
+    },
     "/files": {
       "post": {
         "description": "10 MB máximo, lista blanca de MIME, verificación por bytes mágicos, escaneo y cuarentena. `Idempotency-Key` obligatoria.",
@@ -2242,6 +2290,125 @@
         ],
         "x-permission": ["exports:report:export"],
         "x-scope": "global"
+      }
+    },
+    "/reports/catalog": {
+      "get": {
+        "description": "Cuatro definiciones cerradas en código con sus formatos y columnas.",
+        "operationId": "listReportCatalog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReportCatalogResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Catálogo de reportes académicos",
+        "tags": ["reportes"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Catálogo estático de solo lectura; no expone datos de estudiantes.",
+        "x-error-codes": ["PERMISSION_DENIED"],
+        "x-permission": ["exports:report:create", "exports:report:export"],
+        "x-scope": "global"
+      }
+    },
+    "/reports/{code}/generate": {
+      "post": {
+        "description": "Los datos se consultan en servidor con el ámbito del actor y se entregan mediante el servicio de exportaciones; la generación queda registrada como `reporte.generado`.",
+        "operationId": "generateReport",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "description": "Código del catálogo de reportes: asistencia, desempeno, matricula o desercion.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ExportResponseDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "415": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Genera un reporte académico exportable",
+        "tags": ["reportes"],
+        "x-access": "permission",
+        "x-audit-event": "reporte.generado",
+        "x-error-codes": [
+          "REPORT_NOT_FOUND",
+          "RESOURCE_NOT_FOUND",
+          "INVALID_PERIOD",
+          "VALIDATION_FAILED",
+          "EXPORT_FORMAT_NOT_SUPPORTED",
+          "EXPORT_PARAMETERS_INVALID",
+          "EXPORT_TOO_LARGE",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "FILE_STORAGE_UNAVAILABLE",
+          "PERMISSION_DENIED"
+        ],
+        "x-permission": ["exports:report:create"],
+        "x-scope": "mixed"
       }
     },
     "/health/live": {
@@ -2750,6 +2917,43 @@
           "programaNombre"
         ]
       },
+      "KpiBreakdownItemDto": {
+        "type": "object",
+        "properties": { "clave": { "type": "string" }, "total": { "type": "number" } },
+        "required": ["clave", "total"]
+      },
+      "KpiResultDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "matricula_activa",
+              "asistencia",
+              "evaluacion",
+              "programas",
+              "desercion",
+              "distribucion_geografica"
+            ]
+          },
+          "nombre": { "type": "string" },
+          "valor": { "type": "number", "nullable": true },
+          "unidad": { "type": "string", "enum": ["conteo", "porcentaje", "distribucion"] },
+          "desglose": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/KpiBreakdownItemDto" }
+          },
+          "calculadoEn": { "type": "string", "format": "date-time" }
+        },
+        "required": ["code", "nombre", "valor", "unidad", "desglose", "calculadoEn"]
+      },
+      "KpisResponseDto": {
+        "type": "object",
+        "properties": {
+          "kpis": { "type": "array", "items": { "$ref": "#/components/schemas/KpiResultDto" } }
+        },
+        "required": ["kpis"]
+      },
       "FileResponseDto": {
         "type": "object",
         "properties": {
@@ -2854,6 +3058,41 @@
           "hashSha256",
           "descargaUrl"
         ]
+      },
+      "ReportColumnDto": {
+        "type": "object",
+        "properties": { "key": { "type": "string" }, "label": { "type": "string" } },
+        "required": ["key", "label"]
+      },
+      "ReportCatalogItemDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["asistencia", "desempeno", "matricula", "desercion"]
+          },
+          "nombre": { "type": "string" },
+          "descripcion": { "type": "string" },
+          "formatos": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["pdf", "xlsx", "csv"] }
+          },
+          "columnas": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ReportColumnDto" }
+          }
+        },
+        "required": ["code", "nombre", "descripcion", "formatos", "columnas"]
+      },
+      "ReportCatalogResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ReportCatalogItemDto" }
+          }
+        },
+        "required": ["items"]
       },
       "LivenessResponseDto": {
         "type": "object",

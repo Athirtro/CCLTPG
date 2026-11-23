@@ -1,6 +1,7 @@
 {
   "version": "1.0",
   "source": "docs/contratos/modelo-auditoria-v1.md",
+  "amendments": ["docs/contratos/cambios/cambio-eventos-c6.md"],
   "events": [
     "archivo.cuarentena",
     "archivo.descargado",
@@ -20,6 +21,7 @@
     "estudiante.creado",
     "estudiante.listado",
     "evaluacion.actualizada",
+    "evaluacion.publicada",
     "evaluacion.registrada",
     "grupo.cerrado",
     "grupo.creado",
@@ -38,6 +40,7 @@
     "programa.archivado",
     "programa.creado",
     "programa.publicado",
+    "recordatorio.fechas",
     "reporte.generado",
     "seguridad.acceso_denegado",
     "sesion.cerrada",

@@ -117,6 +117,25 @@ export class SessionService {
             },
             requestId: actor.requestId,
           });
+
+          // C6/D85: el recordatorio de fechas sale por la outbox en la misma
+          // transacción que la sesión. El despachador aplica las preferencias
+          // del destinatario (no es un evento crítico).
+          const usuarioIds = await tx.groups.listEnrolledUsuarioIds(created.grupoId);
+          if (usuarioIds.length > 0) {
+            await tx.outbox.enqueue({
+              id: uuidv7(),
+              tipo: 'recordatorio.fechas',
+              agregado: 'clase',
+              ocurridoEn: new Date(),
+              payload: {
+                sesionId: created.id,
+                grupoId: created.grupoId,
+                fecha: formatFecha(created.fecha),
+              },
+              usuarioIds,
+            });
+          }
           return created;
         });
         return toSesionView(record);

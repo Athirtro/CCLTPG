@@ -33,7 +33,9 @@ export const PROFILE_SEEDS: readonly PerfilSeed[] = [
       'notifications:notification:update_own',
       'notifications:preference:read_own',
       'notifications:preference:update_own',
+      'exports:report:create',
       'exports:report:export',
+      'analytics:kpi:read',
     ],
   },
   {
@@ -58,6 +60,8 @@ export const PROFILE_SEEDS: readonly PerfilSeed[] = [
       'notifications:notification:update_own',
       'notifications:preference:read_own',
       'notifications:preference:update_own',
+      'exports:report:create',
+      'analytics:kpi:read',
     ],
   },
   {

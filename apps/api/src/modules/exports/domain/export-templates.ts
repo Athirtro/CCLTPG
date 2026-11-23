@@ -1,10 +1,12 @@
 /**
- * Registro de plantillas de exportación en código (D56).
+ * Registro de plantillas de exportación en código (D56, ampliado en C6/D81).
  *
  * El módulo no accede a la base ni a repositorios de dominio: recibe un JSON
- * de entrada ya saneado, lo valida y produce filas. Los reportes académicos
- * reales llegan en C6; esta plantilla es la muestra de compuerta.
+ * de entrada ya saneado, lo valida y produce filas. En C6 se añaden cuatro
+ * plantillas de reporte alimentadas por el proveedor de datos de analítica;
+ * las filas se validan contra las columnas del catálogo compartido.
  */
+import { REPORT_DEFINITIONS } from '../../../shared/analytics/analytics-catalog.js';
 
 export const EXPORT_FORMATS = ['pdf', 'xlsx', 'csv'] as const;
 export type ExportFormat = (typeof EXPORT_FORMATS)[number];
@@ -30,6 +32,16 @@ const MAX_PROGRAM_LENGTH = 200;
 const MAX_PERIOD_LENGTH = 32;
 
 export const EXPORT_TEMPLATES: readonly ExportTemplate[] = [
+  ...REPORT_DEFINITIONS.map((definition): ExportTemplate => {
+    const keys = definition.columnas.map((column) => column.key);
+    return {
+      codigo: `reporte-${definition.code}`,
+      version: 1,
+      descripcion: definition.descripcion,
+      columns: definition.columnas.map((column) => ({ key: column.key, label: column.label })),
+      build: (parametros) => buildReportRows(parametros, keys),
+    };
+  }),
   {
     codigo: 'matriculas-por-programa',
     version: 1,
@@ -109,6 +121,37 @@ function integerOf(value: unknown, field: string): number {
     throw invalid(`El campo "${field}" debe ser un entero no negativo.`);
   }
   return value;
+}
+
+/** Valida las filas producidas por el proveedor de reportes (C6 — RB1-52). */
+function buildReportRows(parametros: unknown, keys: readonly string[]): ExportTemplateRow[] {
+  if (!isRecord(parametros)) {
+    throw invalid('Los parámetros del reporte deben ser un objeto.');
+  }
+  if (typeof parametros.periodo !== 'string' || parametros.periodo.length === 0) {
+    throw invalid('El parámetro "periodo" del reporte es obligatorio.');
+  }
+  if (!Array.isArray(parametros.filas)) {
+    throw invalid('El parámetro "filas" del reporte debe ser un arreglo.');
+  }
+
+  return parametros.filas.map((fila, index) => {
+    if (!isRecord(fila)) {
+      throw invalid(`La fila ${index + 1} del reporte no es un objeto.`);
+    }
+    const row: ExportTemplateRow = {};
+    for (const key of keys) {
+      const value = fila[key];
+      if (typeof value !== 'string' && typeof value !== 'number') {
+        throw invalid(`La fila ${index + 1} no tiene un valor válido para "${key}".`);
+      }
+      if (typeof value === 'number' && !Number.isFinite(value)) {
+        throw invalid(`La fila ${index + 1} tiene un número no finito en "${key}".`);
+      }
+      row[key] = value;
+    }
+    return row;
+  });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

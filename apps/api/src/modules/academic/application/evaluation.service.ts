@@ -112,6 +112,26 @@ export class EvaluationService {
         },
         requestId: actor.requestId,
       });
+
+      // C6/D85: la publicación al estudiante viaja por la outbox en la misma
+      // transacción. El payload excluye la observación (AC-AUD-08) y los datos
+      // personales; el despachador resuelve canal y preferencias.
+      const usuarioId = await tx.students.findUsuarioIdByMatricula(created.matriculaId);
+      if (usuarioId) {
+        await tx.outbox.enqueue({
+          id: uuidv7(),
+          tipo: 'evaluacion.publicada',
+          agregado: 'evaluacion',
+          ocurridoEn: new Date(),
+          payload: {
+            matriculaId: created.matriculaId,
+            indicadorId: created.indicadorId,
+            periodo: created.periodo,
+            valor: created.valor,
+          },
+          usuarioIds: [usuarioId],
+        });
+      }
       return created;
     });
 

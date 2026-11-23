@@ -47,6 +47,13 @@ describe('política de notificaciones', () => {
     ]);
   });
 
+  it('D85: evaluacion.publicada es crítica y recordatorio.fechas respeta preferencias', () => {
+    expect(isCriticalEvent('evaluacion.publicada')).toBe(true);
+    expect(isCriticalEvent('recordatorio.fechas')).toBe(false);
+    expect(isEventName('evaluacion.publicada')).toBe(true);
+    expect(isEventName('recordatorio.fechas')).toBe(true);
+  });
+
   it('exige el formato dominio.accion del catálogo de auditoría', () => {
     for (const evento of ['reporte.generado', 'archivo.subido', 'usuario.password_cambiada']) {
       expect(isEventName(evento), evento).toBe(true);

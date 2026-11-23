@@ -65,6 +65,16 @@ export class KyselyStudentRepository implements StudentRepository {
     return row ? mapEstudiante(row) : null;
   }
 
+  async findUsuarioIdByMatricula(matriculaId: string): Promise<string | null> {
+    const row = await this.db
+      .selectFrom('academic.matricula as m')
+      .innerJoin('academic.estudiante as e', 'e.id', 'm.estudiante_id')
+      .select('e.usuario_id as usuarioId')
+      .where('m.id', '=', matriculaId)
+      .executeTakeFirst();
+    return row?.usuarioId ?? null;
+  }
+
   async update(id: string, input: UpdateEstudianteRecord): Promise<EstudianteRecord> {
     const row = await this.db
       .updateTable('academic.estudiante')

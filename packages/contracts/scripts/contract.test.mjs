@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { test } from 'node:test';
 
+import { readCatalogEvents, readCatalogWithAmendments } from './lib/catalog.mjs';
 import { validateContract } from './lib/contract-validation.mjs';
 
 const documentedEvents = [
@@ -165,4 +168,21 @@ test('falla si aparece una ruta pública fuera de la allowlist', () => {
 test('falla si el catálogo generado deriva del documento fuente', () => {
   const result = validate(baseDocument(), catalogOf(['sesion.iniciada']));
   assert.ok(result.errors.some((error) => error.includes('no contiene "grupo.creado"')));
+});
+
+test('la enmienda C6 amplía el catálogo sin editar el documento congelado', () => {
+  const root = resolve(import.meta.dirname, '..', '..', '..');
+  const base = readCatalogEvents(resolve(root, 'docs/contratos/modelo-auditoria-v1.md'));
+  const merged = readCatalogWithAmendments(root);
+
+  assert.equal(base.length, 62);
+  assert.equal(merged.events.length, 64);
+  assert.ok(merged.events.includes('evaluacion.publicada'));
+  assert.ok(merged.events.includes('recordatorio.fechas'));
+  assert.ok(merged.amendments.some((entry) => entry.file.endsWith('cambio-eventos-c6.md')));
+  assert.ok(
+    readFileSync(resolve(root, 'docs/contratos/modelo-auditoria-v1.md'), 'utf8').includes(
+      '| `reporte.generado` |',
+    ),
+  );
 });

@@ -267,18 +267,23 @@ describe.runIf(hasDatabase)('Migraciones de C4 (contexto académico)', () => {
     expect(again.error).toBeUndefined();
     await expect(tableExists(db, 'academic.matricula')).resolves.toBe(true);
 
-    // public/0007 siembra plantillas: se valida aquí y se limpia al bajar.
+    // public/0007 siembra 12 plantillas académicas y public/0008 añade 4 de C6.
     await publicMigrator.migrateToLatest();
     const templates = await sql<{ total: number }>`
       select count(*)::int as total from public.plantilla_notificacion
     `.execute(db);
-    expect(templates.rows[0]?.total).toBe(18);
+    expect(templates.rows[0]?.total).toBe(22);
     const academicCodes = await sql<{ total: number }>`
       select count(*)::int as total from public.plantilla_notificacion
       where codigo in ('matricula.creada', 'matricula.activada', 'matricula.finalizada',
         'matricula.cancelada', 'matricula.retirada', 'horario.modificado')
     `.execute(db);
     expect(academicCodes.rows[0]?.total).toBe(12);
+    const c6Codes = await sql<{ total: number }>`
+      select count(*)::int as total from public.plantilla_notificacion
+      where codigo in ('evaluacion.publicada', 'recordatorio.fechas')
+    `.execute(db);
+    expect(c6Codes.rows[0]?.total).toBe(4);
 
     await publicMigrator.migrateTo(NO_MIGRATIONS);
     await academicMigrator.migrateTo(NO_MIGRATIONS);
@@ -375,8 +380,8 @@ describe.runIf(hasDatabase)('Migraciones de C3 (archivos, notificaciones, outbox
     const templates = await sql<{ total: number }>`
       select count(*)::int as total from public.plantilla_notificacion
     `.execute(db);
-    // C3 siembra 6 y C4 añade 12 plantillas académicas (public/0007).
-    expect(templates.rows[0]?.total).toBe(18);
+    // C3 siembra 6, C4 añade 12 (public/0007) y C6 añade 4 (public/0008).
+    expect(templates.rows[0]?.total).toBe(22);
 
     const indexes = await sql<{ indexname: string }>`
       select indexname from pg_indexes

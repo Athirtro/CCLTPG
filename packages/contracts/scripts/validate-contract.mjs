@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { readCatalogEvents } from './lib/catalog.mjs';
+import { readCatalogWithAmendments } from './lib/catalog.mjs';
 import { validateContract } from './lib/contract-validation.mjs';
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
@@ -13,9 +13,7 @@ const repositoryRoot = resolve(contractsDirectory, '..', '..');
 const document = readJson(resolve(contractsDirectory, 'openapi.json'));
 const catalog = readJson(resolve(contractsDirectory, 'events.json'));
 const allowlist = readJson(resolve(contractsDirectory, 'public-routes.json'));
-const documentedEvents = readCatalogEvents(
-  resolve(repositoryRoot, 'docs', 'contratos', 'modelo-auditoria-v1.md'),
-);
+const { events: documentedEvents } = readCatalogWithAmendments(repositoryRoot);
 
 const { errors, warnings, stats } = validateContract({
   document,

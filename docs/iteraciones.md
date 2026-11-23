@@ -20,7 +20,7 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 | 3 | Archivos, notificaciones y exportaciones | 1.0 | Contratos compartidos inestables | C3 | **Ejecutada con límites de evidencia** (ver `docs/reviews/c3/rol-b.md`) |
 | 4 | Académico A: programas, grupos, estudiantes, matrícula | 1.0 | Patrón de módulo equivocado | C4 | **Ejecutada con deuda registrada** (publicada en `a5444c8`; ver `docs/reviews/c4/rol-b.md`) |
 | 5 | Académico B: asistencia, evaluación + endurecimiento | 1.0 | Rendimiento, respaldos, regresiones | C5 | **Ejecutada con deuda registrada** (publicada en `iteracion 5 b`; ver `docs/reviews/c5/rol-b.md`) |
-| 6 | Reportes, dashboards y notificaciones | 2.0 | KPIs y reportes incorrectos | C6 | **Plan propuesto, sin ejecutar** (ver `docs/tasks/rol-b/rol-b-it6-plan.md`) |
+| 6 | Reportes, dashboards y notificaciones | 2.0 | KPIs y reportes incorrectos | C6 | **Ejecutada con deuda registrada** (publicada en `iteracion 6 b`; ver `docs/reviews/c6/rol-b.md`) |
 | 7 | Accesibilidad y responsividad | 3.0 | Brechas de accesibilidad | C7 | No iniciada |
 | 8 | Endurecimiento y aceptación final | 3.0 | Brechas no funcionales y de cumplimiento | C8 | No iniciada |
 
@@ -63,7 +63,7 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 - Se suceden por dominios: académico A, académico B + Release 1.0, reportes/dashboards, accesibilidad, endurecimiento/aceptación final.
 - **Iteración 4:** académico A (programas, grupos, estudiantes y matrícula) sobre el patrón de módulo ya validado en C3.
 - **Iteración 5:** académico B (sesiones, asistencia y evaluación) y Release 1.0; académico B verificado y publicado, con endurecimiento/carga pendientes de entorno.
-- **Iteración 6:** reportes, KPIs y notificaciones académicas (Release 2.0), con verificación manual contra datos crudos.
+- **Iteración 6:** reportes, KPIs y notificaciones académicas (Release 2.0), con verificación manual contra datos crudos; código verificado y publicado, con demo de Rol C y evidencia externa pendientes.
 
 ## 4. Partes importantes por iteración
 
@@ -75,7 +75,7 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 | 3 | Archivos, notificaciones, exportaciones. | Congelar contratos de esos servicios. |
 | 4 | Académico A: patrón de módulo. | Si el patrón falla, se corrige aquí (no se replica). |
 | 5 | Académico B + Release 1.0: endurecimiento, backup/restauración, carga. | Etiqueta `release-1.0-rc`. |
-| 6 | Reportes, dashboards, notificaciones (Release 2.0). | Verificación manual contra datos crudos. |
+| 6 | Reportes, dashboards, notificaciones (Release 2.0). | Verificación manual contra datos crudos (`docs/reviews/c6/verificacion-reportes-kpis.md`); cliente Rol C pendiente. |
 | 7 | Accesibilidad (Release 3.0). | WCAG 2.1 AA. |
 | 8 | Endurecimiento final, aceptación, trazabilidad requisito-código-prueba. | Aceptación final y etiqueta `release-3.0`. |
 
@@ -89,7 +89,7 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 | C3 | Contratos de archivos/notificaciones/exportaciones. | `docs/reviews/c3/rol-b.md` | **Ejecutada en código; pendiente firma, MinIO, CI en GitHub, apertura manual de PDF/XLSX y acta C0/C1** |
 | C4 | Patrón académico y caso de uso. | `docs/reviews/c4/rol-b.md` | **Ejecutada con deuda registrada** (publicada en `a5444c8`); firma pendiente |
 | C5 | Académico B, endurecimiento, carga y backup. | `docs/reviews/c5/rol-b.md` | **Ejecutada con deuda registrada** (publicada en `iteracion 5 b`); firma, entorno y RB1-43 pendientes |
-| C6 | Reportes/KPIs y notificaciones. | `docs/tasks/rol-b/rol-b-it6-plan.md` | **Plan propuesto, sin ejecutar**; requiere ratificación de D80–D89 |
+| C6 | Reportes/KPIs y notificaciones. | `docs/reviews/c6/rol-b.md` | **Ejecutada con deuda registrada** (publicada en `iteracion 6 b`); firma, Rol C y entorno pendientes |
 | C7 | Accesibilidad. | No iniciada | — |
 | C8 | Aceptación final. | No iniciada | — |
 

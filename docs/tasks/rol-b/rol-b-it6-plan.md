@@ -3,7 +3,7 @@
 - **Fecha:** 22 de noviembre de 2026
 - **Rol:** B — Seguridad, identidad y operación
 - **Iteración objetivo:** **C6 — Reportes, dashboards y notificaciones (Release 2.0)**
-- **Estado:** **Propuesto — sin ejecutar.** Requiere ratificación del plan y de D80–D89, y confirmación de los límites arrastrados de C5 antes de abrir código.
+- **Estado:** **Ejecutada y publicada en `iteracion 6 b`; compuerta no firmada.** RB1-51…RB1-60 ejecutados con la deuda registrada en `docs/reviews/c6/rol-b.md`. La orden «empieza entonces la iteración» ratificó D80–D89 en sus opciones recomendadas (A), por analogía con el inicio de C5. D85 se implementó como ampliación controlada del catálogo a 64 eventos sin editar el documento congelado. C5 quedó publicada en `c91009d` con la deuda de RB1-43 a RB1-48 registrada (D89).
 - **Predecesor:** C5 publicada en el commit `iteracion 5 b` (Académico B verificado; deuda de entorno y firma pendiente).
 - **Registro predecesor:** `docs/tasks/rol-b/rol-b-it5-registro.md`.
 - **Paquete de revisión anterior:** `docs/reviews/c5/rol-b.md`.
@@ -64,6 +64,8 @@ Estado inicial de todas: **propuestas**. Numeración continua desde RB1-50.
 | RB1-58 | Contrato, permisos y matriz | 3 `operationId` nuevos con `x-*`, esquemas concretos, matriz 54 × 3 perfiles, validación bidireccional de eventos y cliente regenerado por Rol C | AC-SEC-16/17/20, AC-AUD-13, C-19 | RB1-52–RB1-57, D87 |
 | RB1-59 | Verificación manual y acta | Tres reportes y tres KPIs comparados contra SQL directo sobre PostgreSQL real; acta con consultas, resultados y diferencias | Compuerta 6, CAR-04/05 | RB1-52–RB1-56, D86 |
 | RB1-60 | Regresión, demo y paquete C6 | `docs/reviews/c6/rol-b.md`, registro de ejecución, demo guiada y propuesta de firma; sin etiqueta automática | Compuerta 6, D88 | RB1-51–RB1-59 |
+
+**Estado final de las tareas:** RB1-51…RB1-59 cumplidos; RB1-60 parcial (regresión local y paquete producidos, demo con cliente real pendiente). El detalle está en `docs/tasks/rol-b/rol-b-it6-registro.md`.
 
 **Delegación a Rol C:** pantallas de dashboards para administración y educadores, gráficas con Recharts, navegación derivada de `/me`, regeneración del cliente desde el contrato canónico y retirada de mocks. Rol B no implementa UI y no adapta el backend a formas del mock.
 
@@ -174,7 +176,7 @@ demo con cliente regenerado por Rol C
 2. Confirmar el estado real de la deuda C5 (RB1-43 a RB1-48) y del cliente de Rol C.
 3. Confirmar entorno disponible para CI, PostgreSQL de preproducción y k6.
 4. Solo entonces abrir RB1-51 con TDD, registrando cada tarea en `docs/tasks/rol-b/rol-b-it6-registro.md`.
-5. **Sin publicación automática:** este plan no autoriza `git commit` ni `git push`; toda publicación requiere autorización expresa.
+5. **Publicación:** el plan no autorizaba `git commit` ni `git push`; la orden posterior «continuemos subiendo la iteración 6 y hagamos lo que se pueda de la 6» autorizó el commit y push con mensaje `iteracion 6 b`. La firma y la etiqueta siguen sujetas a evidencia externa y a Rol C.
 
 ## 12. Fuentes
 
