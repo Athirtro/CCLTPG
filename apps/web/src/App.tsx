@@ -21,6 +21,8 @@ import Exportaciones from './pages/Exportaciones';
 import MiHorario from './pages/MiHorario';
 import MisEvaluaciones from './pages/MisEvaluaciones';
 import VistaEducador from './pages/VistaEducador';
+import Kpis from './pages/Kpis';
+import Reportes from './pages/Reportes';
 import NotFound from './pages/NotFound';
 
 const theme = createTheme({
@@ -60,6 +62,8 @@ export default function App() {
               <Route path="/mi-horario" element={<MiHorario />} />
               <Route path="/mis-evaluaciones" element={<MisEvaluaciones />} />
               <Route path="/vista-educador" element={<VistaEducador />} />
+              <Route path="/kpis" element={<Kpis />} />
+              <Route path="/reportes" element={<Reportes />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

@@ -139,14 +139,15 @@ export default function Exportaciones() {
       )}
 
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+        <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
           Nueva exportación
         </Typography>
         <form noValidate>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
             <FormControl fullWidth>
-              <InputLabel>Plantilla</InputLabel>
+              <InputLabel id="label-plantilla">Plantilla</InputLabel>
               <Select
+                labelId="label-plantilla"
                 value={plantillaSeleccionada}
                 onChange={(e) => setPlantillaSeleccionada(e.target.value)}
                 label="Plantilla"
@@ -160,8 +161,9 @@ export default function Exportaciones() {
               </Select>
             </FormControl>
             <FormControl fullWidth>
-              <InputLabel>Formato</InputLabel>
+              <InputLabel id="label-formato">Formato</InputLabel>
               <Select
+                labelId="label-formato"
                 value={formatoSeleccionado}
                 onChange={(e) => setFormatoSeleccionado(e.target.value)}
                 label="Formato"
@@ -197,7 +199,7 @@ export default function Exportaciones() {
       </Paper>
 
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+        <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
           Mis exportaciones
         </Typography>
         <Typography variant="body2" color="text.secondary">

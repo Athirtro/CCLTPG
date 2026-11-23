@@ -11,6 +11,8 @@ import Exportaciones from '../pages/Exportaciones';
 import MiHorario from '../pages/MiHorario';
 import MisEvaluaciones from '../pages/MisEvaluaciones';
 import VistaEducador from '../pages/VistaEducador';
+import Kpis from '../pages/Kpis';
+import Reportes from '../pages/Reportes';
 
 const mockEstudiante: User = {
   id: 'U-001',
@@ -26,6 +28,8 @@ const mockEstudiante: User = {
     'notifications:preference:read_own',
     'notifications:preference:update_own',
     'files:document:read_own',
+    'analytics:kpi:read',
+    'exports:report:export',
   ],
   mfaEnabled: true,
   mustChangePassword: false,
@@ -131,6 +135,16 @@ describe('Accesibilidad WCAG 2.1 AA — Páginas principales', () => {
   it('Página VistaEducador no tiene violaciones de accesibilidad (educador)', async () => {
     const { container } = renderWithProviders(<VistaEducador />, mockEducador);
     await checkAccessibility(container, 'VistaEducador');
+  });
+
+  it('Página KPIs no tiene violaciones de accesibilidad', async () => {
+    const { container } = renderWithProviders(<Kpis />);
+    await checkAccessibility(container, 'KPIs');
+  });
+
+  it('Página Reportes no tiene violaciones de accesibilidad', async () => {
+    const { container } = renderWithProviders(<Reportes />);
+    await checkAccessibility(container, 'Reportes');
   });
 });
 

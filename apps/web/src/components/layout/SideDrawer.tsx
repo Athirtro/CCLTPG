@@ -21,6 +21,8 @@ import {
   FileCopy as FileCopyIcon,
   Schedule as ScheduleIcon,
   BarChart as BarChartIcon,
+  Description as DescriptionIcon,
+  InsertChart as InsertChartIcon,
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -88,6 +90,18 @@ const MENU_ITEMS = [
     label: 'Vista educador',
     icon: <ShieldIcon />,
     requires: 'academic:attendance:create',
+  },
+  {
+    path: '/kpis',
+    label: 'Indicadores (KPIs)',
+    icon: <InsertChartIcon />,
+    requires: 'analytics:kpi:read',
+  },
+  {
+    path: '/reportes',
+    label: 'Reportes',
+    icon: <DescriptionIcon />,
+    requires: 'exports:report:export',
   },
 ];
 
