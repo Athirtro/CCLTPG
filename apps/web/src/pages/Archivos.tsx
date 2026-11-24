@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Box, Button, Paper, TextField, Typography, Alert } from '@mui/material';
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
-import { useAuth, apiClient } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type { ProblemDetailsDto } from '../api/client';
+import type { SubirArchivoResponseDto } from '../api/client';
+import { postWithIdempotency } from '../api/idempotent-client';
 
 const LISTA_BLANCA_MIME = [
   'application/pdf',
@@ -63,24 +64,24 @@ export default function Archivos() {
       const formData = new FormData();
       formData.append('file', archivoSeleccionado);
 
-      const {
-        data,
-        error: apiError,
-        response,
-      } = await (apiClient as any).POST('/files', {
-        body: formData,
-        headers: {
-          'Idempotency-Key': idempotencyKey.trim(),
-        },
-      });
+      const result = await postWithIdempotency(
+        '/files',
+        { body: formData, idempotencyKey: idempotencyKey.trim() || undefined },
+      );
 
-      if (apiError || response?.status !== 200) {
-        const problema = apiError as ProblemDetailsDto;
-        setError(problema?.detail || 'Error al subir el archivo');
+      if (result.error || result.response?.status !== 200) {
+        const detalle = result.error && typeof result.error === 'object' && 'detail' in result.error
+          ? (result.error as { detail?: string }).detail
+          : undefined;
+        setError(detalle || 'Error al subir el archivo');
         return;
       }
 
-      const dto = data;
+      if (!result.data || typeof result.data !== 'object' || !('archivo' in result.data)) {
+        setError('Error al subir el archivo');
+        return;
+      }
+      const dto = result.data as SubirArchivoResponseDto;
       setExito(`Archivo "${dto.archivo.nombreOriginal}" subido correctamente`);
       setArchivoSeleccionado(null);
       setNombreArchivo('');

@@ -42,7 +42,7 @@ export default function Programas() {
   const [exito, setExito] = useState<string | null>(null);
   const [abiertoDialogo, setAbiertoDialogo] = useState(false);
   const [nombreNuevo, setNombreNuevo] = useState('');
-  const [areaNuevo, setAreaNuevo] = useState<'danza' | 'musica' | 'teatro' | 'artes_plasticas'>('musica');
+  const [areaNuevo, setAreaNuevo] = useState<string>('musica');
   const [descripcionNuevo, setDescripcionNuevo] = useState('');
   const [cupoNuevo, setCupoNuevo] = useState('');
 
@@ -75,10 +75,21 @@ export default function Programas() {
     }
     setCargando(true);
     try {
+      const areasValidas: Record<string, 'danza' | 'musica' | 'teatro' | 'artes_plasticas'> = {
+        danza: 'danza',
+        musica: 'musica',
+        teatro: 'teatro',
+        artes_plasticas: 'artes_plasticas',
+      };
+      const areaValida = areasValidas[areaNuevo];
+      if (!areaValida) {
+        setError('Área artística no válida');
+        return;
+      }
       const payload: CrearProgramaDto = {
         nombre: nombreNuevo.trim(),
         descripcion: descripcionNuevo.trim() || null,
-        area: areaNuevo,
+        area: areaValida,
         cupoMaximo: parseInt(cupoNuevo, 10),
       };
       const {
@@ -260,7 +271,7 @@ export default function Programas() {
               id="select-area"
               label="Área artística"
               value={areaNuevo}
-              onChange={(e) => setAreaNuevo(e.target.value as typeof areaNuevo)}
+              onChange={(e) => setAreaNuevo(e.target.value)}
             >
               <MenuItem value="danza">Danza</MenuItem>
               <MenuItem value="musica">Música</MenuItem>

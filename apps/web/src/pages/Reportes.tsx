@@ -29,8 +29,8 @@ import { getErrorMessage } from '../api/errors';
 import type {
   ReportCatalogItemDto,
   ExportacionDto,
-  ProblemDetailsDto,
 } from '../api/client';
+import { postWithIdempotency } from '../api/idempotent-client';
 
 export default function Reportes() {
   const { hasPermission } = useAuth();
@@ -97,25 +97,30 @@ export default function Reportes() {
     setExito(null);
     setResultado(null);
     try {
-      const {
-        data,
-        error: apiError,
-        response,
-      } = await (apiClient as any).POST(`/reports/${reporteSeleccionado.code}/generate`, {
-        body: {
-          plantilla: reporteSeleccionado.code,
-          formato: formatoSeleccionado,
-          parametros,
+      const result = await postWithIdempotency(
+        `/reports/${reporteSeleccionado.code}/generate`,
+        {
+          body: {
+            plantilla: reporteSeleccionado.code,
+            formato: formatoSeleccionado,
+            parametros,
+          },
         },
-      });
+      );
 
-      if (apiError || response?.status !== 201) {
-        const problema = apiError as ProblemDetailsDto;
-        setError(problema?.detail || 'Error al generar el reporte');
+      if (result.error || result.response?.status !== 201) {
+        const detalle = result.error && typeof result.error === 'object' && 'detail' in result.error
+          ? (result.error as { detail?: string }).detail
+          : undefined;
+        setError(detalle || 'Error al generar el reporte');
         return;
       }
 
-      const dto = data as ExportacionDto;
+      if (!result.data || typeof result.data !== 'object' || !('archivoId' in result.data)) {
+        setError('Error al generar el reporte');
+        return;
+      }
+      const dto = result.data as ExportacionDto;
       setResultado(dto);
       setExito(`Reporte "${dto.nombre}" generado correctamente`);
     } catch (err) {

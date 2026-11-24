@@ -43,7 +43,7 @@ import type {
 type RegistroAsistenciaView = {
   matriculaId: string;
   estudianteNombre: string;
-  estado: 'presente' | 'ausente' | 'tarde' | 'excusa';
+  estado: string;
 };
 
 const ESTADO_ASISTENCIA: Array<{ valor: 'presente' | 'ausente' | 'tarde' | 'excusa'; label: string }> = [
@@ -75,7 +75,7 @@ export default function VistaEducador() {
   const [matriculaIdEval, setMatriculaIdEval] = useState('');
   const [indicadorIdEval, setIndicadorIdEval] = useState('');
   const [periodoEval, setPeriodoEval] = useState('');
-  const [valorEval, setValorEval] = useState<'excelente' | 'bueno' | 'regular' | 'deficiente'>('bueno');
+  const [valorEval, setValorEval] = useState<string>('bueno');
   const [observacionEval, setObservacionEval] = useState('');
 
   const puedeTomarAsistencia = hasPermission('academic:attendance:create');
@@ -158,14 +158,28 @@ export default function VistaEducador() {
     void cargarAsistencia();
   };
 
+  const ESTADOS_ASISTENCIA_VALIDOS: Array<'presente' | 'ausente' | 'tarde' | 'excusa'> = [
+    'presente',
+    'ausente',
+    'tarde',
+    'excusa',
+  ];
+
   const manejarTomarAsistencia = async () => {
     if (!sesionSeleccionada) return;
     setCargando(true);
     setError(null);
     try {
+      const estadosInvalidos = registrosAsistencia.filter(
+        (r) => !ESTADOS_ASISTENCIA_VALIDOS.includes(r.estado as 'presente' | 'ausente' | 'tarde' | 'excusa'),
+      );
+      if (estadosInvalidos.length > 0) {
+        setError('Algunos estados de asistencia no son válidos');
+        return;
+      }
       const registros: RegistroAsistenciaDto[] = registrosAsistencia.map((r) => ({
         matriculaId: r.matriculaId,
-        estado: r.estado,
+        estado: r.estado as 'presente' | 'ausente' | 'tarde' | 'excusa',
       }));
       const { error: apiError, response } = await apiClient.PUT(
         '/academic/sessions/{sessionId}/attendance',
@@ -198,11 +212,22 @@ export default function VistaEducador() {
     }
     setCargando(true);
     try {
+      const VALORES_EVALUACION_VALIDOS: Array<'excelente' | 'bueno' | 'regular' | 'deficiente'> = [
+        'excelente',
+        'bueno',
+        'regular',
+        'deficiente',
+      ];
+      const valorValido = VALORES_EVALUACION_VALIDOS.find((v) => v === valorEval);
+      if (!valorValido) {
+        setError('Valor de evaluación no válido');
+        return;
+      }
       const payload: CrearEvaluacionDto = {
         matriculaId: matriculaIdEval.trim(),
         indicadorId: indicadorIdEval.trim(),
         periodo: periodoEval.trim(),
-        valor: valorEval,
+        valor: valorValido,
         observacion: observacionEval.trim() || null,
       };
       const { error: apiError, response } = await apiClient.POST('/academic/evaluations', {
@@ -362,7 +387,7 @@ export default function VistaEducador() {
                               setRegistrosAsistencia(
                                 registrosAsistencia.map((x) =>
                                   x.matriculaId === r.matriculaId
-                                    ? { ...x, estado: e.target.value as typeof r.estado }
+                                    ? { ...x, estado: e.target.value }
                                     : x,
                                 ),
                               )
@@ -451,7 +476,7 @@ export default function VistaEducador() {
                     id="select-valor-eval"
                     label="Valor"
                     value={valorEval}
-                    onChange={(e) => setValorEval(e.target.value as typeof valorEval)}
+                    onChange={(e) => setValorEval(e.target.value)}
                   >
                     {VALOR_EVALUACION.map((v) => (
                       <MenuItem key={v.valor} value={v.valor}>
