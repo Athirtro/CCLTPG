@@ -37,6 +37,7 @@ import type {
   SesionDto,
   RegistroAsistenciaDto,
   CrearEvaluacionDto,
+  MatriculaDto,
   ProblemDetailsDto,
 } from '../api/client';
 
@@ -64,6 +65,7 @@ export default function VistaEducador() {
   const { hasPermission } = useAuth();
   const [grupos, setGrupos] = useState<GrupoDto[]>([]);
   const [sesiones, setSesiones] = useState<SesionDto[]>([]);
+  const [matriculasDelGrupo, setMatriculasDelGrupo] = useState<MatriculaDto[]>([]);
   const [registrosAsistencia, setRegistrosAsistencia] = useState<RegistroAsistenciaView[]>([]);
   const [grupoSeleccionado, setGrupoSeleccionado] = useState<string>('');
   const [sesionSeleccionada, setSesionSeleccionada] = useState<SesionDto | null>(null);
@@ -120,6 +122,23 @@ export default function VistaEducador() {
     }
   }, [grupoSeleccionado]);
 
+  const cargarMatriculasDelGrupo = useCallback(async () => {
+    if (!grupoSeleccionado) return;
+    setError(null);
+    try {
+      const { data, error: apiError } = await apiClient.GET('/academic/enrollments');
+      if (apiError || !data) {
+        setError('No se pudieron cargar las matrículas del grupo');
+        return;
+      }
+      setMatriculasDelGrupo(
+        data.data.filter((m) => m.grupoId === grupoSeleccionado),
+      );
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al cargar matrículas del grupo');
+    }
+  }, [grupoSeleccionado]);
+
   const cargarAsistencia = useCallback(async () => {
     if (!sesionSeleccionada) return;
     setError(null);
@@ -133,24 +152,32 @@ export default function VistaEducador() {
         return;
       }
       setRegistrosAsistencia(
-        data.registros.map((r) => ({
-          matriculaId: r.matriculaId,
-          estudianteNombre: r.matriculaId, // El backend no devuelve nombre; usamos el id como fallback
-          estado: r.estado,
-        })),
+        data.registros.map((r) => {
+          const matricula = matriculasDelGrupo.find((m) => m.id === r.matriculaId);
+          const nombreCompleto = matricula
+            ? `${matricula.estudianteNombres} ${matricula.estudianteApellidos}`
+            : r.matriculaId;
+          return {
+            matriculaId: r.matriculaId,
+            estudianteNombre: nombreCompleto,
+            estado: r.estado,
+          };
+        }),
       );
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al cargar asistencia');
     } finally {
       // sin estado de carga dedicado para asistencia
     }
-  }, [sesionSeleccionada]);
+  }, [sesionSeleccionada, matriculasDelGrupo]);
 
   const seleccionarGrupo = (grupoId: string) => {
     setGrupoSeleccionado(grupoId);
     setSesionSeleccionada(null);
     setRegistrosAsistencia([]);
+    setMatriculasDelGrupo([]);
     void cargarSesiones();
+    void cargarMatriculasDelGrupo();
   };
 
   const seleccionarSesion = (sesion: SesionDto) => {
