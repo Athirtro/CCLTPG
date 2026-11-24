@@ -12,7 +12,7 @@
 - **Controles:** `docs/contratos/controles-seguridad-v1.md` (C-16, C-21/C-22, C-27, C-38).
 - **Diseño:** `docs/diseno-arquitectonico.md` (§7.3, §8.2, §9, §18.2, §19).
 - **Datos:** `docs/diccionario-datos.md` (§3, §4).
-- **Contrato:** `docs/contratos/api-v1.openapi.yaml` (referencia histórica; para C4 queda superado por el contrato canónico code-first `packages/contracts/openapi.json`), `docs/contratos/matriz-autorizacion-v1.md` (OP-11–OP-23, OP-36, OP-46–OP-48).
+- **Contrato:** `packages/contracts/openapi.json` (contrato canónico code-first; la propuesta YAML C0 fue retirada), `docs/contratos/matriz-autorizacion-v1.md` (OP-11–OP-23, OP-36, OP-46–OP-48).
 
 ## 1. Objetivo de la iteración
 
@@ -74,7 +74,7 @@ Las decisiones siguientes se aplicaron en la ejecución; la aprobación formal d
 | D62 — Cupo | El cupo que se valida al confirmar es **`grupo.cupo_maximo`**; `programa.cupo_maximo` queda como límite de oferta. Requiere añadir la columna al modelo (R-034) y contar `confirmada` + `activa` dentro de una transacción con bloqueo del grupo | **A — cupo por grupo** | Media |
 | D63 — Unicidad de matrícula | Índice único parcial por (`estudiante_id`, `grupo_id`, `periodo`) **solo para estados vigentes** (`preinscrita`, `confirmada`, `activa`); permite re-matricular tras `cancelada`/`retirada` conservando historial. Requiere ratificación (R-034) | **A — único parcial** | Media |
 | D64 — Máquinas de estado | Programa `borrador→publicado→archivado`; grupo `abierto→cerrado`; matrícula `preinscrita→confirmada→activa→finalizada`, con `cancelada`/`retirada` según diseño §9. Transición inválida → 409 `INVALID_STATE_TRANSITION`; grupo cerrado → 409 `GROUP_CLOSED` | **A — fijado** | Costosa por contrato |
-| D65 — Idempotencia académica | `Idempotency-Key` obligatoria en **todos los POST de creación** académicos (programa, grupo, estudiante, matrícula), como ya declara `api-v1.openapi.yaml`; reutiliza el almacén de C3 con TTL 24 h | **A — fijado** | Media |
+| D65 — Idempotencia académica | `Idempotency-Key` obligatoria en **todos los POST de creación** académicos (programa, grupo, estudiante, matrícula), como declara el contrato canónico `packages/contracts/openapi.json`; reutiliza el almacén de C3 con TTL 24 h | **A — fijado** | Media |
 | D66 — Horarios | `PUT` reemplaza el horario completo del grupo de forma atómica; franjas con `dia_semana` ISO 1–7 y `hora_fin > hora_inicio`; solapamiento por educador y por salón dentro del mismo periodo; bloqueo por asesoría (`pg_advisory_xact_lock`) por periodo/día/educador y periodo/día/salón; evento `horario.modificado` | **A — subrecurso atómico** | Media |
 | D67 — Notificaciones académicas | Plantillas versionadas por migración para `matricula.creada`, `matricula.confirmada`, `matricula.cancelada` y `horario.modificado`; `matricula.*` y `horario.modificado` son críticas (no silenciables); destinatario = estudiante vinculado a `usuario_id`; sin vínculo no se envía y se registra el motivo | **A — fijado** | Barata |
 | D68 — Contrato y eventos | Concretar los esquemas `TODO` del contrato académico; añadir `estudiante.listado` al catálogo de auditoría (61 → 62); sin permisos nuevos: R-018 solo asigna `academic:enrollment:read` al educador | **A — ratificar antes de congelar** | Costosa tras congelar |
@@ -242,7 +242,7 @@ Pendiente:
 - `docs/contratos/modelo-auditoria-v1.md` (`programa.*`, `grupo.*`, `estudiante.*`, `matricula.*`, `horario.modificado`).
 - `docs/contratos/gramatica-y-catalogo-permisos-v1.md` (catálogo académico y asignaciones).
 - `docs/contratos/reconciliacion-c0-rol-b.md` (R-018, R-024, R-025, R-026).
-- `docs/contratos/api-v1.openapi.yaml` (operaciones y esquemas académicos).
+- `packages/contracts/openapi.json` (operaciones y esquemas académicos).
 - `docs/diccionario-datos.md` (§3, §4, §6).
 - `docs/diseno-arquitectonico.md` (§7.3, §8.2, §9, §18.2, §19).
 - `docs/tasks/rol-b/rol-b-it3-plan.md`, `docs/reviews/c3/rol-b.md`.

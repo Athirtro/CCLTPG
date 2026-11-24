@@ -50,7 +50,7 @@ El usuario aprobó ejecutar la iteración; la firma formal del equipo sigue pend
 2. **4 rutas públicas** sin cambios; las 37 operaciones restantes exigen permiso y aparecen en la matriz con casos permitidos y denegados.
 3. **Evento nuevo:** `estudiante.listado` en `packages/contracts/events.json` y en `docs/contratos/modelo-auditoria-v1.md`; total 62.
 4. **Permisos:** catálogo de 37 sin cambios. R-018 asigna `academic:enrollment:read` al perfil `educador`. Se corrigió la expansión de `manage` en `apps/api/src/modules/identity/domain/perfiles.ts` para que `academic:*:manage` materialice también `create`/`read`/`update`.
-5. **Fuente canónica:** `pnpm contracts:generate` produce `packages/contracts/openapi.json`; `docs/contratos/api-v1.openapi.yaml` queda superado para las operaciones académicas. `ScheduleResponseDto.items` usa `ScheduleItemDto` (vista completa), regenerado y validado.
+5. **Fuente canónica:** `pnpm contracts:generate` produce `packages/contracts/openapi.json`; La propuesta OpenAPI C0 quedó superada; el contrato canónico es `packages/contracts/openapi.json`. `ScheduleResponseDto.items` usa `ScheduleItemDto` (vista completa), regenerado y validado.
 6. **Plantillas:** `public/0007` siembra 12 filas nuevas, 6 códigos × `app`/`email`: `matricula.creada`, `matricula.activada`, `matricula.finalizada`, `matricula.cancelada`, `matricula.retirada` y `horario.modificado`. `matricula.confirmada` ya existía desde C3; total 18 tras C4.
 
 ### 2.3 Propuestas registradas para ratificación

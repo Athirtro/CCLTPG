@@ -88,7 +88,7 @@ Estado actual: RB1-61 a RB1-69 **ejecutados por Rol B**; la compuerta permanece 
 
 - No se crean `operationId`, permisos ni eventos nuevos en este plan.
 - Totales esperados: **54 operaciones**, **4 públicas**, **37 permisos**, **64 eventos**. Cualquier desviación se documenta antes de avanzar.
-- `docs/contratos/auth-v1.md`, `modelo-auditoria-v1.md` y `api-v1.openapi.yaml` permanecen intactos; PA-010 se cierra con una decisión o, si procede, con `docs/contratos/cambios/*.md`.
+- `docs/contratos/auth-v1.md` y `modelo-auditoria-v1.md` permanecen intactos; la propuesta OpenAPI C0 fue retirada y el contrato canónico es `packages/contracts/openapi.json`; PA-010 se cierra con una decisión o, si procede, con `docs/contratos/cambios/*.md`.
 - Las pruebas de cabeceras viven en la API (`apps/api/test/api/security-headers.spec.ts` y configuración de `configureApp`); no se introducen dependencias nuevas sin autorización.
 
 ## 6. Evidencia y verificación esperada

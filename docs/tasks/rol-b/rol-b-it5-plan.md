@@ -85,7 +85,7 @@ Requieren ratificación antes de ejecutar. Se registran aquí para no modificar 
 | D73 — Indicadores | Catálogo sembrado por migración, con `programa_id` y escala cerrada `excelente`, `bueno`, `regular`, `deficiente`; **sin CRUD** en v1.0; eventos `indicador.*` quedan reservados y se documenta la decisión. Alternativa: CRUD administrativo con 3 OP nuevos y permisos existentes, previa ratificación | **A — sembrar por migración** (evita ampliar superficie sin criterio aprobado) | Media |
 | D74 — Evaluación | Única por (`matricula_id`, `indicador_id`, `periodo`); `valor` validado contra la escala de D73; `observacion` se redacta en auditoría como `{"cambiado": true}` (AC-AUD-08); `POST` crea, `PATCH` corrige con `evaluacion.actualizada`, `GET /me/evaluations` solo lo propio | **A — fijado** | Media |
 | D75 — Ámbito | Educador solo sobre grupos donde `grupo.educador_id = sub`; estudiante solo sobre sus matrículas; ajeno → 404 `RESOURCE_NOT_FOUND`; colecciones filtradas sin totales ajenos (R-011, PA-002) | **A — guard + refuerzo en dominio** | Costosa tras congelar |
-| D76 — Contrato | 10 operaciones nuevas (41 → 51), **4 públicas sin cambios**, **62 eventos sin cambios** y **37 permisos sin cambios**; `docs/contratos/api-v1.openapi.yaml` queda como referencia histórica | **A — contrato canónico code-first** | Costosa tras congelar |
+| D76 — Contrato | 10 operaciones nuevas (41 → 51), **4 públicas sin cambios**, **62 eventos sin cambios** y **37 permisos sin cambios**; `packages/contracts/openapi.json` queda como referencia histórica | **A — contrato canónico code-first** | Costosa tras congelar |
 | D77 — Endurecimiento | TLS/HSTS se verifica en preproducción, no en el host; rotación con doble `kid` probada sobre JWT y claves PII; purga programada de idempotencia y outbox se implementa con prueba; SCA y escaneo de secretos sin críticas abiertas | **A — con declaración explícita de límites de entorno** | Media |
 | D78 — Carga y recuperación | k6 a 200 usuarios, p95 < 4 s y sin 5xx; RPO ≤ 15 min, RTO ≤ 4 h (SUP-005); el simulacro se ejecuta contra PostgreSQL real y mide tiempos; si no hay entorno, el criterio queda pendiente, no aprobado | **A — medir, no estimar** | Media |
 | D79 — Congelamiento | Etiqueta `release-1.0-rc` solo después de firmar compuerta y de que Rol C haya regenerado el cliente; C6 puede abrirse con el contrato congelado | **A — firmar antes de congelar** | Costosa tras etiquetar |
@@ -116,7 +116,7 @@ Operaciones nuevas previstas (todas ya declaradas en la matriz de C0; **no se pr
 
 ## 6. Contrato y reconciliación con Rol C
 
-La fuente canónica es `packages/contracts/openapi.json`, generada NestJS → Swagger → `contracts:generate`. El YAML `docs/contratos/api-v1.openapi.yaml` sigue siendo referencia histórica y **no se edita**.
+La fuente canónica es `packages/contracts/openapi.json`, generada NestJS → Swagger → `contracts:generate`. El YAML la propuesta OpenAPI C0 fue retirada; el contrato canónico es `packages/contracts/openapi.json` y **no se edita**.
 
 | Elemento | Estado al cierre de C4 | Acción en C5 |
 | --- | --- | --- |

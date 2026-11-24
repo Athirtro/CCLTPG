@@ -3,7 +3,7 @@
 - **Estado:** Observaciones de Rol B para **Rol A** (modelo y diccionario) y **Rol C** (catálogo y OpenAPI); requiere respuesta de cada rol y cierre en Compuerta 0.
 - **Fecha:** 2026-11-16
 - **Revisor:** Rol B (seguridad, identidad y operación)
-- **Artefactos revisados:** `docs/diccionario-datos.md`; `docs/contratos/api-v1.openapi.yaml`; `docs/contratos/gramatica-y-catalogo-permisos-v1.md`; `docs/tasks/rol-a/rol-a-it0-revision-modelo.md`; `docs/contratos/reconciliacion-c0.md`; `docs/contratos/reconciliacion-c0-rol-b.md`; `docs/contratos/auth-v1.md`; `docs/contratos/matriz-autorizacion-v1.md`; `docs/contratos/modelo-auditoria-v1.md`; ADR-0001…ADR-0004.
+- **Artefactos revisados:** `docs/diccionario-datos.md`; `packages/contracts/openapi.json`; `docs/contratos/gramatica-y-catalogo-permisos-v1.md`; `docs/tasks/rol-a/rol-a-it0-revision-modelo.md`; `docs/contratos/reconciliacion-c0.md`; `docs/contratos/reconciliacion-c0-rol-b.md`; `docs/contratos/auth-v1.md`; `docs/contratos/matriz-autorizacion-v1.md`; `docs/contratos/modelo-auditoria-v1.md`; ADR-0001…ADR-0004.
 - **Regla:** esta revisión no modifica los artefactos de otros roles. Cada hallazgo tiene un dueño, una corrección concreta y un criterio de aceptación; se cierra cuando el dueño aplica el cambio o responde con una objeción fundamentada que el equipo ratifique.
 
 ## 1. Resumen
@@ -63,8 +63,8 @@
 | X-01 | `diccionario-datos.md` §3.4 (`numero_documento` único) | ADR-0003 / R-025 (ciphertext + hash) | Unicidad imposible sobre ciphertext | RC-A-01 |
 | X-02 | `diccionario-datos.md` §2.7 (`recurso` texto libre, sin `recurso_id`) | ADR-0004 / R-030 | No se puede consultar el historial por registro | RC-A-02 |
 | X-03 | `gramatica-y-catalogo-permisos-v1.md` (sin `update_own` de notificaciones ni `enrollment:read` del educador) | R-018/R-020/R-029 | La matriz referencia permisos que el catálogo no contiene | RC-C-01/02 |
-| X-04 | `api-v1.openapi.yaml` (30 paths, permisos en prosa) | `matriz-autorizacion-v1.md` (48 operaciones, `x-*`) | No hay origen común ni cobertura bidireccional | RC-C-03/04 |
-| X-05 | `auth-v1.md` §12 (rutas y estados nuevos) | `api-v1.openapi.yaml` (solo 4 rutas de auth) | El contrato de auth no está reflejado | RC-C-04 |
+| X-04 | Propuesta OpenAPI YAML C0 (30 paths, permisos en prosa; retirada) | `matriz-autorizacion-v1.md` (48 operaciones, `x-*`) | No había origen común ni cobertura bidireccional | RC-C-03/04 |
+| X-05 | `auth-v1.md` §12 (rutas y estados nuevos) | Propuesta OpenAPI YAML C0 (solo 4 rutas de auth; retirada) | El contrato de auth no estaba reflejado | RC-C-04 |
 
 > **Nota:** las inconsistencias INC-001…INC-014 de Rol A siguen abiertas como registro histórico, pero R-001…R-031 ya proponen su resolución. No se pide reescribir el documento de revisión de Rol A; se pide reflejar las resoluciones en el diccionario.
 

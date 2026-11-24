@@ -3,7 +3,7 @@
 - **Fecha:** 2026-11-15
 - **Iteración / compuerta:** Iteración 0 (preparación documental) / Compuerta 0
 - **Responsable:** Rol A (backend, dominio y datos)
-- **Estado:** Completada (pendiente de confirmación final del equipo sobre ubicación de `reviews/`)
+- **Estado:** Completada (ubicación `docs/reviews/` confirmada por el equipo el 2026-11-24)
 
 ## Objetivo
 Reorganizar la documentación del repositorio para alinearla con la estructura descrita en el capítulo 6.1 del documento de diseño, sin renombrar archivos ni cambiar su contenido sustantivo, y dejar preparada la base documental de la Iteración 0.

@@ -68,7 +68,7 @@ Si un cambio añade una ruta pública, CI falla hasta que se revise y actualice 
 
 ## Referencias
 
-- `docs/contratos/api-v1.openapi.yaml` (propuesta documental de C0, no vinculante)
+- `packages/contracts/openapi.json` (contrato canónico generado desde `apps/api`)
 - `docs/contratos/modelo-auditoria-v1.md` (catálogo de eventos)
 - `docs/contratos/matriz-autorizacion-v1.md` (R-028/R-031)
 - `docs/contratos/controles-seguridad-v1.md` (C-14, C-27, C-41)

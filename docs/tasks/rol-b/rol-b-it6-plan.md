@@ -84,7 +84,7 @@ Requieren ratificación antes de ejecutar. No se modifica ningún documento cong
 | D84 — Caché y PII | Caché Redis con TTL corto e invalidación por eventos; si Redis falla, se consulta la BD (disponibilidad), nunca se devuelve dato ajeno; respuestas solo agregados, sin PII individual; la exportación de reportes sigue auditada con `reporte.generado` | **A — agregados seguros** | Media |
 | D85 — Eventos | Añadir `evaluacion.publicada` y `recordatorio.fechas` al catálogo (62 → 64) mediante solicitud de cambio a `modelo-auditoria-v1.md`; si no se ratifica, CAR-09 queda diferido y el catálogo se mantiene en 62 | **A — ampliar con acta** | Costosa tras congelar |
 | D86 — Verificación | Tres reportes y tres KPIs comparados contra consultas directas; acta con fecha, consulta, resultado y tolerancia cero para conteos; sin acta no hay firma | **A — verificar, no estimar** | Barata |
-| D87 — Contrato | 51 → 54 operaciones, 4 públicas y 37 permisos sin cambios; eventos 64 si D85, 62 si no; `docs/contratos/api-v1.openapi.yaml` sigue siendo referencia histórica | **A — code-first** | Costosa tras congelar |
+| D87 — Contrato | 51 → 54 operaciones, 4 públicas y 37 permisos sin cambios; eventos 64 si D85, 62 si no; la propuesta OpenAPI C0 fue retirada; el contrato canónico es `packages/contracts/openapi.json` | **A — code-first** | Costosa tras congelar |
 | D88 — Congelamiento | Etiqueta `release-2.0-rc` solo tras firma de C6 y cliente Rol C regenerado; C7 puede abrirse con contrato congelado | **A — firmar antes de etiquetar** | Costosa tras etiquetar |
 | D89 — Deuda C5 | La publicación de C5 no cierra RB1-43 a RB1-48; C6 registra su estado y no reutiliza su deuda como evidencia | **A — arrastrar explícitamente** | Barata |
 
@@ -104,7 +104,7 @@ Requieren ratificación antes de ejecutar. No se modifica ningún documento cong
 
 ## 6. Contrato y reconciliación con Rol C
 
-La fuente canónica sigue siendo `packages/contracts/openapi.json`. El YAML `docs/contratos/api-v1.openapi.yaml` no se edita.
+La fuente canónica sigue siendo `packages/contracts/openapi.json`. La propuesta OpenAPI C0 fue retirada; el contrato canónico es `packages/contracts/openapi.json`.
 
 | Elemento | Estado al cierre de C5 | Acción en C6 |
 | --- | --- | --- |

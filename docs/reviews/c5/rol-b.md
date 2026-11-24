@@ -62,8 +62,7 @@ decisiones y aceptación de la deuda de C4; el acta formal sigue pendiente.
   introdujo: se reutiliza `INVALID_STATE_TRANSITION` (D71).
 - La matriz ejecutable amplía la cobertura a 51 `operationId` × 3 perfiles con
   caso permitido y denegado (244 pruebas verdes).
-- `docs/contratos/api-v1.openapi.yaml` permanece como referencia histórica;
-  Rol C debe alinearse a `packages/contracts/openapi.json`.
+- Propuesta OpenAPI C0 retirada; el contrato canónico es `packages/contracts/openapi.json`.
 
 ## 4. Evidencia de pruebas
 

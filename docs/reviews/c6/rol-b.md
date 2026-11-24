@@ -51,7 +51,7 @@ La orden «empieza entonces la iteración» se registró como ratificación de D
 - Códigos de error estables nuevos: `REPORT_NOT_FOUND`, `KPI_NOT_FOUND`; se reutilizan `RESOURCE_NOT_FOUND`, `VALIDATION_FAILED` y `INVALID_PERIOD`.
 - Matriz ejecutable: 54 `operationId` × 3 perfiles, con caso permitido y denegado.
 - Ámbito ajeno: `404 RESOURCE_NOT_FOUND`, sin totales ni filas de otro educador (integración y unitario).
-- `docs/contratos/api-v1.openapi.yaml` permanece como referencia histórica; Rol C debe alinearse a `packages/contracts/openapi.json`.
+- Propuesta OpenAPI C0 retirada; el contrato canónico es `packages/contracts/openapi.json`.
 
 ## 4. Evidencia de pruebas
 

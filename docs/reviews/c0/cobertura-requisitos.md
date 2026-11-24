@@ -2,7 +2,7 @@
 
 - **Estado:** Revisión de Rol B para **Compuerta 0**. No crea criterios funcionales: verifica qué requisito tiene criterio verificable y cuál queda cubierto por pregunta abierta (PA) con responsable y valor por defecto, como exige el diseño §18.2.
 - **Fecha:** 2026-11-16
-- **Fuentes:** `docs/vision-alcance.md` (CAR-01…CAR-12); `docs/diseno-arquitectonico.md` caps. 7–10, 14, 17, 18; `docs/contratos/api-v1.openapi.yaml`; `docs/contratos/matriz-autorizacion-v1.md`; `docs/requirements/seguridad.md`; `docs/contratos/reconciliacion-c0.md`; `docs/open-questions.md`.
+- **Fuentes:** `docs/vision-alcance.md` (CAR-01…CAR-12); `docs/diseno-arquitectonico.md` caps. 7–10, 14, 17, 18; `packages/contracts/openapi.json`; `docs/contratos/matriz-autorizacion-v1.md`; `docs/requirements/seguridad.md`; `docs/contratos/reconciliacion-c0.md`; `docs/open-questions.md`.
 - **Regla:** un requisito está cubierto si tiene (a) criterio de aceptación verificable, o (b) PA con responsable, valor por defecto y compuerta. “Cubierto por diseño” no basta si no hay forma de verificarlo.
 
 ## 1. Resumen
@@ -39,7 +39,7 @@
 
 **Valor por defecto propuesto:**
 
-- **CAR-01…CAR-03 (Release 1.0):** adoptar como criterio vinculante las reglas de los caps. 7.3, 9 y 10 del diseño y los contratos de `api-v1.openapi.yaml`; redactar AC-FUN-01…03 antes de la implementación de su módulo y verificarlos en C4.
+- **CAR-01…CAR-03 (Release 1.0):** adoptar como criterio vinculante las reglas de los caps. 7.3, 9 y 10 del diseño y los contratos de `packages/contracts/openapi.json`; redactar AC-FUN-01…03 antes de la implementación de su módulo y verificarlos en C4.
 - **CAR-09 (notificaciones):** adoptar R-009/R-020 y el catálogo de eventos; redactar AC-FUN-09 antes de C3 y verificarlos en C3/C6.
 - **CAR-04/CAR-05 (Release 2.0):** mantener R-003 (sin endpoints en v1.0); redactar AC-FUN-04/05 antes de C6 y verificarlos en C6.
 - **CAR-06/08/11:** ya tienen meta medible en el diseño cap. 14; formalizarlas como AC-FUN en C1 sin cambiar el valor.

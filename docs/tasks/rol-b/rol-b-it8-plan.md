@@ -99,7 +99,7 @@ Estado actual: RB1-70 a RB1-79 **ejecutados por Rol B**; la compuerta permanece 
 
 - No se crean `operationId`, permisos ni eventos nuevos en este plan. Si D104 se revierte y se exige una operación de supresión, se tramita por enmienda controlada antes de escribir código.
 - Totales esperados: **54 operaciones**, **4 públicas**, **37 permisos**, **64 eventos**. Cualquier desviación se documenta antes de avanzar.
-- `auth-v1.md`, `modelo-auditoria-v1.md`, `api-v1.openapi.yaml`, ADR-0003 y ADR-0004 permanecen intactos. PA-011 y PA-016 se cierran en `docs/contratos/cambios/*.md`.
+- `auth-v1.md`, `modelo-auditoria-v1.md`, ADR-0003 y ADR-0004 permanecen intactos; la propuesta OpenAPI C0 fue retirada y el contrato canónico es `packages/contracts/openapi.json`. PA-011 y PA-016 se cierran en `docs/contratos/cambios/*.md`.
 - El evento `estudiante.anonimizado` ya figura en el catálogo (§3 del modelo); no se amplía el catálogo en C8.
 - Auditoría: sin borrado desde la aplicación, sin `UPDATE`/`DELETE`/`TRUNCATE`, corrección solo por `auditoria.correccion`; la restauración sigue el procedimiento de excepción documentado (AC-AUD-06/07/15).
 - Migraciones: solo con `ccltpg_migrador`, probadas `up`/`down`/`up`. La API no ejecuta DDL (AC-SEC-31).

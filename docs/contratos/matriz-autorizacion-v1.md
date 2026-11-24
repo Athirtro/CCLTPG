@@ -3,7 +3,7 @@
 - **Estado:** Propuesta de Rol B para **ratificación en Compuerta 0**. Es la versión documental de la matriz; en C2 se convierte en fixture ejecutable (ver §9).
 - **Fecha:** 2026-11-16
 - **Responsable:** Rol B (seguridad, identidad y operación)
-- **Alcance:** **48 operaciones** = 35 del contrato vigente (`api-v1.openapi.yaml` v1.0.0-propuesta) + 13 propuestas en R-018, R-019, R-021, R-024 y R-026. R-029 no añade ruta: corrige la autorización de OP-30.
+- **Alcance:** **48 operaciones** = 35 del contrato histórico C0 (propuesta YAML retirada) + 13 propuestas en R-018, R-019, R-021, R-024 y R-026. R-029 no añade ruta: corrige la autorización de OP-30. El contrato canónico vigente es `packages/contracts/openapi.json`.
 - **Fuentes:** `docs/tasks/rol-b/rol-b-it0-inventario.md` (OP-01…OP-35), `docs/tasks/rol-b/rol-b-it0-revision-permisos.md`, `docs/contratos/auth-v1.md`, `docs/contratos/gramatica-y-catalogo-permisos-v1.md`, `docs/contratos/reconciliacion-c0-rol-b.md` (R-018…R-029), ADR-0001/0002/0003.
 - **Regla:** la matriz asume el catálogo v1.0 **con** los cambios de R-018, R-020 y R-029. Las celdas que dependen de una resolución aún no ratificada llevan **†**; si C0 no las ratifica, la celda se recalcula y la matriz no se firma.
 - **No cubre:** validaciones de negocio (400/409/422), límites de tasa (429) ni disponibilidad (503); esas respuestas son ortogonales a la autorización y pertenecen a los contratos de recurso y a `auth-v1` §8–§9.

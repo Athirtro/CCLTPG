@@ -179,9 +179,9 @@ El patrón de permisos declarativo (decorador sobre cada ruta más un guard glob
     requirements/       # Catálogo de requisitos (Iteración 0)
     tasks/              # Registro de tareas por iteración
     adr/                # Registros de decisión arquitectónica
+    reviews/            # Paquetes de revisión por compuerta
     open-questions.md
     assumptions.md
-  reviews/              # Paquetes de revisión por compuerta
 ```
 
 ### 6.2 Convenciones transversales

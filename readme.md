@@ -81,7 +81,7 @@ Los detalles, las justificaciones y las reglas de dependencia están en el Docum
     reviews/        # Paquetes de revisión por compuerta
 ```
 
-> Nota: el capítulo 6.1 del diseño arquitectónico ubica `reviews/` en la raíz; en esta reorganización se adopta `docs/reviews/` para mantener la documentación junta. La decisión queda registrada como pregunta abierta para confirmación del equipo.
+> Nota: los paquetes de revisión por compuerta se mantienen en `docs/reviews/` para centralizar la documentación del proyecto.
 
 ## Puesta en marcha (desarrollo)
 

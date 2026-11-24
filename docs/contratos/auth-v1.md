@@ -1,6 +1,6 @@
 # Contrato de autenticación, sesión y autorización v1 (propuesta Rol B)
 
-- **Estado:** Propuesta para **Compuerta 0** — Rol B es dueño de la semántica de autenticación y permisos; Rol C la formaliza en `docs/contratos/api-v1.openapi.yaml`. No es vinculante hasta ratificación del equipo.
+- **Estado:** Propuesta para **Compuerta 0** — Rol B es dueño de la semántica de autenticación y permisos; Rol C la formaliza en `packages/contracts/openapi.json`. No es vinculante hasta ratificación del equipo.
 - **Fecha:** 2026-11-16
 - **Alcance:** flujos de login/MFA, tokens, refresh, logout, cambio y reset de contraseña, CSRF, cabeceras, límites, bloqueo, errores estables, eventos de auditoría de identidad y contrato de `/me`.
 - **Fuentes:** diseño caps. 8, 9, 11, 12, 13, 16; R-005, R-012, R-014, R-021, R-027; ADR-0001, ADR-0002; inventario Rol B (G-05, G-14, G-15).

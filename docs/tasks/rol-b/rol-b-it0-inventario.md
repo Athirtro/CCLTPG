@@ -4,7 +4,7 @@
 - **Iteración / compuerta:** Iteración 0 / Compuerta 0
 - **Responsable:** Rol B (seguridad, identidad y operación)
 - **Tarea:** 0 — inventario de la superficie de seguridad y trazabilidad
-- **Fuentes:** `docs/diseno-arquitectonico.md` (caps. 4, 6–14, 16–19), `docs/vision-alcance.md` (CAR-07, CAR-12), `docs/diccionario-datos.md`, `docs/contratos/api-v1.openapi.yaml` (v1.0.0-propuesta), `docs/contratos/gramatica-y-catalogo-permisos-v1.md`, `docs/contratos/reconciliacion-c0.md` (R-001…R-017), `docs/open-questions.md` (PA-001…PA-008), planes de trabajo por rol.
+- **Fuentes:** `docs/diseno-arquitectonico.md` (caps. 4, 6–14, 16–19), `docs/vision-alcance.md` (CAR-07, CAR-12), `docs/diccionario-datos.md`, `packages/contracts/openapi.json` (v1.0.0-propuesta), `docs/contratos/gramatica-y-catalogo-permisos-v1.md`, `docs/contratos/reconciliacion-c0.md` (R-001…R-017), `docs/open-questions.md` (PA-001…PA-008), planes de trabajo por rol.
 - **Regla:** el OpenAPI, el catálogo y el diccionario son **propuestas**; este inventario no los modifica. Las correcciones se registran en `docs/contratos/reconciliacion-c0-rol-b.md` (R-018…R-028) para ratificación en C0.
 
 ## 1. Método

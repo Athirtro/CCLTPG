@@ -48,7 +48,7 @@ Los chequeos se ejecutaron sobre el árbol de trabajo el 2026-11-16. Cualquiera 
 
 | Qué se verifica | Cómo | Resultado |
 | --- | --- | --- |
-| Operaciones del OpenAPI | Contar `operationId:` en `api-v1.openapi.yaml` | **35** operaciones en **30** rutas |
+| Operaciones del OpenAPI histórico C0 | Contar `operationId:` en la propuesta YAML C0 (retirada) | **35** operaciones en **30** rutas |
 | Cobertura de la matriz | Comparar los 35 `operationId` con las filas OP-01…OP-35 | **35/35**, 0 faltantes, sin OP duplicados |
 | Tamaño de la matriz | Contar filas OP-01…OP-48 | **48** operaciones (35 vigentes + 13 propuestas) |
 | Reglas y casos | Contar E1…E11 y A-01…A-14 | **11** reglas, **14** casos de ámbito |
@@ -149,7 +149,7 @@ La compuerta C0 es documental; la demostración consiste en verificar que las de
 | Paso | Acción | Resultado esperado |
 | --- | --- | --- |
 | 1 | Abrir `docs/reviews/c0/rol-b.md` y `docs/adr/README.md` | Se entiende el alcance, las decisiones y lo que falta sin leer todo el repositorio |
-| 2 | Contar operaciones: `Select-String -Path docs\contratos\api-v1.openapi.yaml -Pattern "operationId:"` | 35 operaciones |
+| 2 | Contar operaciones en la propuesta YAML C0 (retirada; histórico): 35 `operationId` | 35 operaciones |
 | 3 | Abrir `docs/contratos/matriz-autorizacion-v1.md` §4–§5 | 48 operaciones con permiso, ámbito, 401/403/404 y evento |
 | 4 | Abrir `docs/contratos/modelo-auditoria-v1.md` §5 y ADR-0004 | Privilegios, disparador y pruebas T-AUD-01…05 listas para C2 |
 | 5 | Abrir `docs/requirements/seguridad.md` §3–§4 | 33 AC-SEC + 15 AC-AUD, cada uno con verificación y compuerta |

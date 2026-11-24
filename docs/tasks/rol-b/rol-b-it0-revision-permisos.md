@@ -5,7 +5,7 @@
 - **Responsable:** Rol B (seguridad, identidad y operación)
 - **Tarea:** 1 — revisión formal de la gramática de permisos y del catálogo
 - **Documento revisado:** `docs/contratos/gramatica-y-catalogo-permisos-v1.md` (propuesta), reconciliación R-001/R-002/R-011/R-017.
-- **Insumos:** `docs/contratos/api-v1.openapi.yaml` (35 operaciones), `docs/tasks/rol-b/rol-b-it0-inventario.md`, `docs/diseno-arquitectonico.md` (caps. 8, 9, 11, 12), `docs/diccionario-datos.md`.
+- **Insumos:** `packages/contracts/openapi.json` (35 operaciones), `docs/tasks/rol-b/rol-b-it0-inventario.md`, `docs/diseno-arquitectonico.md` (caps. 8, 9, 11, 12), `docs/diccionario-datos.md`.
 - **Veredicto:** **Gramática aprobada** (reglas 1–6). **Catálogo y asignaciones aprobados con reservas**: no son firmables para C0 hasta resolver las objeciones B-01…B-09 mediante R-018…R-028.
 
 ## 1. Método

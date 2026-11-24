@@ -2,7 +2,7 @@
 
 - **Estado:** Propuesta de Rol B para **ratificación en Compuerta 0**. Complementa `docs/contratos/reconciliacion-c0.md` (R-001…R-017) sin reemplazarlo.
 - **Fecha:** 2026-11-16
-- **Fuentes:** `docs/contratos/auth-v1.md`, ADR-0001/0002/0003, `docs/tasks/rol-b/rol-b-it0-inventario.md`, `docs/tasks/rol-b/rol-b-it0-revision-permisos.md`, `docs/contratos/api-v1.openapi.yaml`, `docs/diseno-arquitectonico.md` (caps. 8–13), `docs/diccionario-datos.md`.
+- **Fuentes:** `docs/contratos/auth-v1.md`, ADR-0001/0002/0003, `docs/tasks/rol-b/rol-b-it0-inventario.md`, `docs/tasks/rol-b/rol-b-it0-revision-permisos.md`, `packages/contracts/openapi.json`, `docs/diseno-arquitectonico.md` (caps. 8–13), `docs/diccionario-datos.md`.
 - **Regla:** no se modifican artefactos congelados ni documentos de otros roles; las resoluciones se aplican cuando el equipo las ratifique y Rol C/A formalicen los artefactos de su propiedad.
 
 ## 1. Resoluciones propuestas
@@ -60,7 +60,7 @@
 | Artefacto | Cambio requerido | Responsable |
 | --- | --- | --- |
 | `docs/contratos/gramatica-y-catalogo-permisos-v1.md` | Añadir dos permisos y asignaciones; nota de reservados | Rol C |
-| `docs/contratos/api-v1.openapi.yaml` | Rutas nuevas, esquemas de auth, `x-*`, `429`/`503`, `cookieAuth`, CSRF | Rol C |
+| `packages/contracts/openapi.json` | Rutas nuevas, esquemas de auth, `x-*`, `429`/`503`, `cookieAuth`, CSRF | Rol C |
 | `docs/diccionario-datos.md` | Documento cifrado + hash, `debe_cambiar_password`, `password_actualizado_en`, `codigo_recuperacion_mfa`, índices; `recurso_id` e índices de auditoría (R-030) | Rol A |
 | `docs/contratos/matriz-autorizacion-v1.md` | Construida: 48 operaciones (35 vigentes + 13 propuestas), con ámbitos y casos 404 | Rol B (hecho) |
 | `docs/contratos/modelo-auditoria-v1.md` | Construido: modelo, catálogo de 59 eventos (58 obligatorios + 1 opcional), redacción, inmutabilidad y consulta | Rol B (hecho) |

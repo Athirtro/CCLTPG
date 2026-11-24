@@ -157,7 +157,7 @@ notification-policy.ts y sus pruebas: prefijos críticos ampliados
 
 **Hecho**
 
-- Contrato canónico code-first publicado; `docs/contratos/api-v1.openapi.yaml` queda superado para las operaciones académicas.
+- Contrato canónico code-first publicado; La propuesta OpenAPI C0 quedó superada; el contrato canónico es `packages/contracts/openapi.json`.
 - Diferencias con `apps/web/src/api/client.ts` y las pantallas documentadas en `docs/tasks/rol-b/rol-b-it4-plan.md` §6.1.
 - Rol C confirmó que ajustará pantallas y cliente cuando Rol B termine; no se implementaron las formas del mock en la API.
 

@@ -48,6 +48,5 @@ test('no marca variables de psql ni credenciales de CI efímeras', () => {
 
 test('excluye artefactos generados y documentación congelada', () => {
   assert.equal(isExcluded('pnpm-lock.yaml'), true);
-  assert.equal(isExcluded('docs/contratos/api-v1.openapi.yaml'), true);
   assert.equal(isExcluded('apps/api/src/main.ts'), false);
 });
