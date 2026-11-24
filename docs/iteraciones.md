@@ -22,7 +22,7 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 | 5 | Académico B: asistencia, evaluación + endurecimiento | 1.0 | Rendimiento, respaldos, regresiones | C5 | **Ejecutada con deuda registrada** (publicada en `iteracion 5 b`; ver `docs/reviews/c5/rol-b.md`) |
 | 6 | Reportes, dashboards y notificaciones | 2.0 | KPIs y reportes incorrectos | C6 | **Ejecutada con deuda registrada** (publicada en `0ecbe32` (`iteracion 6 b`); ver `docs/reviews/c6/rol-b.md`) |
 | 7 | Accesibilidad y responsividad | 3.0 | Brechas de accesibilidad | C7 | **Rol B ejecutado; compuerta abierta, sin firmar ni publicar** (ver `docs/tasks/rol-b/rol-b-it7-plan.md`) |
-| 8 | Endurecimiento y aceptación final | 3.0 | Brechas no funcionales y de cumplimiento | C8 | No iniciada |
+| 8 | Endurecimiento y aceptación final | 3.0 | Brechas no funcionales y de cumplimiento | C8 | **Rol B ejecutado; compuerta abierta, sin firmar ni publicar** (ver `docs/tasks/rol-b/rol-b-it8-plan.md`) |
 
 ## 3. Contenido de cada iteración
 
@@ -91,7 +91,7 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 | C5 | Académico B, endurecimiento, carga y backup. | `docs/reviews/c5/rol-b.md` | **Ejecutada con deuda registrada** (publicada en `iteracion 5 b`); firma, entorno y RB1-43 pendientes |
 | C6 | Reportes/KPIs y notificaciones. | `docs/reviews/c6/rol-b.md` | **Ejecutada con deuda registrada** (publicada en `0ecbe32` (`iteracion 6 b`)); firma, Rol C y entorno pendientes |
 | C7 | Accesibilidad. | `docs/tasks/rol-b/rol-b-it7-plan.md` | **Rol B ejecutado; compuerta abierta, sin firmar ni publicar** |
-| C8 | Aceptación final. | No iniciada | — |
+| C8 | Aceptación final. | `docs/tasks/rol-b/rol-b-it8-plan.md` | **Rol B ejecutado; compuerta abierta, sin firmar ni publicar** |
 
 ## 6. Puntos críticos que aparecen en cada iteración
 
@@ -106,6 +106,6 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 - `docs/requirements/seguridad.md`.
 - `docs/tasks/rol-b/rol-b-it1-plan.md`, `docs/tasks/rol-b/rol-b-it2-plan.md`, `docs/tasks/rol-b/rol-b-it3-plan.md`.
 - `docs/tasks/rol-b/rol-b-it2-registro.md`, `docs/tasks/rol-b/rol-b-it3-registro.md`.
-- `docs/tasks/rol-b/rol-b-it5-plan.md`, `docs/tasks/rol-b/rol-b-it5-registro.md`, `docs/tasks/rol-b/rol-b-it6-plan.md`.
+- `docs/tasks/rol-b/rol-b-it5-plan.md`, `docs/tasks/rol-b/rol-b-it5-registro.md`, `docs/tasks/rol-b/rol-b-it6-plan.md`, `docs/tasks/rol-b/rol-b-it8-plan.md`.
 - `docs/reviews/c1/rol-b.md`, `docs/reviews/c2/rol-b.md`, `docs/reviews/c3/rol-b.md`, `docs/reviews/c5/rol-b.md`.
 - `docs/open-questions.md`, `docs/assumptions.md`.
