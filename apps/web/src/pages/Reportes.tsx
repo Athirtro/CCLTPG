@@ -26,10 +26,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type {
-  ReportCatalogItemDto,
-  ExportacionDto,
-} from '../api/client';
+import type { ReportCatalogItemDto, ExportacionDto } from '../api/client';
 import { postWithIdempotency } from '../api/idempotent-client';
 
 export default function Reportes() {
@@ -97,21 +94,19 @@ export default function Reportes() {
     setExito(null);
     setResultado(null);
     try {
-      const result = await postWithIdempotency(
-        `/reports/${reporteSeleccionado.code}/generate`,
-        {
-          body: {
-            plantilla: reporteSeleccionado.code,
-            formato: formatoSeleccionado,
-            parametros,
-          },
+      const result = await postWithIdempotency(`/reports/${reporteSeleccionado.code}/generate`, {
+        body: {
+          plantilla: reporteSeleccionado.code,
+          formato: formatoSeleccionado,
+          parametros,
         },
-      );
+      });
 
       if (result.error || result.response?.status !== 201) {
-        const detalle = result.error && typeof result.error === 'object' && 'detail' in result.error
-          ? (result.error as { detail?: string }).detail
-          : undefined;
+        const detalle =
+          result.error && typeof result.error === 'object' && 'detail' in result.error
+            ? (result.error as { detail?: string }).detail
+            : undefined;
         setError(detalle || 'Error al generar el reporte');
         return;
       }

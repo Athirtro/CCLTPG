@@ -172,11 +172,7 @@ export default function MisEvaluaciones() {
                   <TableCell>{e.indicadorNombre}</TableCell>
                   <TableCell>{e.periodo}</TableCell>
                   <TableCell>
-                    <Chip
-                      label={VALOR_LABEL[e.valor]}
-                      size="small"
-                      color={VALOR_COLOR[e.valor]}
-                    />
+                    <Chip label={VALOR_LABEL[e.valor]} size="small" color={VALOR_COLOR[e.valor]} />
                   </TableCell>
                   <TableCell>
                     {e.evaluadoEn ? new Date(e.evaluadoEn).toLocaleDateString('es-CO') : '-'}

@@ -1,10 +1,4 @@
-﻿import {
-  Box,
-  CssBaseline,
-  Drawer,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
+﻿import { Box, CssBaseline, Drawer, useMediaQuery, useTheme } from '@mui/material';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';

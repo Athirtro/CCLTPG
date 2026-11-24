@@ -83,12 +83,7 @@ export default function Kpis() {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h1">Indicadores (KPIs)</Typography>
-        <Button
-          startIcon={<RefreshIcon />}
-          size="small"
-          disabled={cargando}
-          onClick={cargarKpis}
-        >
+        <Button startIcon={<RefreshIcon />} size="small" disabled={cargando} onClick={cargarKpis}>
           {cargando ? (
             <CircularProgress size={20} aria-label="Cargando indicadores" />
           ) : (
@@ -122,7 +117,9 @@ export default function Kpis() {
 
       {kpis.map((kpi) => (
         <Paper key={kpi.code} sx={{ p: 3, mb: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Typography variant="h2" sx={{ fontWeight: 'bold' }}>
                 {kpi.nombre}
@@ -131,9 +128,7 @@ export default function Kpis() {
             </Box>
             <Button
               size="small"
-              onClick={() =>
-                setPanelAbierto(panelAbierto === kpi.code ? null : kpi.code)
-              }
+              onClick={() => setPanelAbierto(panelAbierto === kpi.code ? null : kpi.code)}
             >
               {panelAbierto === kpi.code ? 'Ocultar detalle' : 'Ver detalle'}
             </Button>

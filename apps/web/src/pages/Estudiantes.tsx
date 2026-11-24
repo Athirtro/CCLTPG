@@ -25,11 +25,7 @@ import {
 import { People as PeopleIcon, Add as AddIcon } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type {
-  EstudianteSummaryDto,
-  CrearEstudianteDto,
-  ProblemDetailsDto,
-} from '../api/client';
+import type { EstudianteSummaryDto, CrearEstudianteDto, ProblemDetailsDto } from '../api/client';
 
 export default function Estudiantes() {
   const { hasPermission } = useAuth();
@@ -67,7 +63,12 @@ export default function Estudiantes() {
   const manejarCrear = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!tipoDocumentoNuevo.trim() || !numeroDocumentoNuevo.trim() || !nombresNuevo.trim() || !apellidosNuevo.trim()) {
+    if (
+      !tipoDocumentoNuevo.trim() ||
+      !numeroDocumentoNuevo.trim() ||
+      !nombresNuevo.trim() ||
+      !apellidosNuevo.trim()
+    ) {
       setError('Todos los campos son obligatorios');
       return;
     }

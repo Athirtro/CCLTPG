@@ -24,12 +24,14 @@ export async function postWithIdempotency(
     headers['Idempotency-Key'] = options.idempotencyKey;
   }
 
-  const result = await (apiClient as unknown as {
-    POST: (
-      p: string,
-      opts: { body: unknown; headers?: Record<string, string> },
-    ) => Promise<{ data: unknown; error: unknown; response: { status: number } }>;
-  }).POST(path, { body: options.body, headers });
+  const result = await (
+    apiClient as unknown as {
+      POST: (
+        p: string,
+        opts: { body: unknown; headers?: Record<string, string> },
+      ) => Promise<{ data: unknown; error: unknown; response: { status: number } }>;
+    }
+  ).POST(path, { body: options.body, headers });
 
   return {
     data: result.data,

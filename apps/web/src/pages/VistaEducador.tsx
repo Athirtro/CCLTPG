@@ -47,14 +47,20 @@ type RegistroAsistenciaView = {
   estado: string;
 };
 
-const ESTADO_ASISTENCIA: Array<{ valor: 'presente' | 'ausente' | 'tarde' | 'excusa'; label: string }> = [
+const ESTADO_ASISTENCIA: Array<{
+  valor: 'presente' | 'ausente' | 'tarde' | 'excusa';
+  label: string;
+}> = [
   { valor: 'presente', label: 'Presente' },
   { valor: 'ausente', label: 'Ausente' },
   { valor: 'tarde', label: 'Tarde' },
   { valor: 'excusa', label: 'Excusa' },
 ];
 
-const VALOR_EVALUACION: Array<{ valor: 'excelente' | 'bueno' | 'regular' | 'deficiente'; label: string }> = [
+const VALOR_EVALUACION: Array<{
+  valor: 'excelente' | 'bueno' | 'regular' | 'deficiente';
+  label: string;
+}> = [
   { valor: 'excelente', label: 'Excelente' },
   { valor: 'bueno', label: 'Bueno' },
   { valor: 'regular', label: 'Regular' },
@@ -106,10 +112,9 @@ export default function VistaEducador() {
     setCargandoSesiones(true);
     setError(null);
     try {
-      const { data, error: apiError } = await apiClient.GET(
-        '/academic/groups/{groupId}/sessions',
-        { params: { path: { groupId: grupoSeleccionado } } },
-      );
+      const { data, error: apiError } = await apiClient.GET('/academic/groups/{groupId}/sessions', {
+        params: { path: { groupId: grupoSeleccionado } },
+      });
       if (apiError || !data) {
         setError('No se pudieron cargar las sesiones');
         return;
@@ -131,9 +136,7 @@ export default function VistaEducador() {
         setError('No se pudieron cargar las matrículas del grupo');
         return;
       }
-      setMatriculasDelGrupo(
-        data.data.filter((m) => m.grupoId === grupoSeleccionado),
-      );
+      setMatriculasDelGrupo(data.data.filter((m) => m.grupoId === grupoSeleccionado));
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al cargar matrículas del grupo');
     }
@@ -198,7 +201,10 @@ export default function VistaEducador() {
     setError(null);
     try {
       const estadosInvalidos = registrosAsistencia.filter(
-        (r) => !ESTADOS_ASISTENCIA_VALIDOS.includes(r.estado as 'presente' | 'ausente' | 'tarde' | 'excusa'),
+        (r) =>
+          !ESTADOS_ASISTENCIA_VALIDOS.includes(
+            r.estado as 'presente' | 'ausente' | 'tarde' | 'excusa',
+          ),
       );
       if (estadosInvalidos.length > 0) {
         setError('Algunos estados de asistencia no son válidos');
@@ -310,12 +316,7 @@ export default function VistaEducador() {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h1">Vista del educador</Typography>
-        <Button
-          startIcon={<RefreshIcon />}
-          size="small"
-          disabled={cargando}
-          onClick={cargarGrupos}
-        >
+        <Button startIcon={<RefreshIcon />} size="small" disabled={cargando} onClick={cargarGrupos}>
           Actualizar grupos
         </Button>
       </Box>
@@ -432,7 +433,9 @@ export default function VistaEducador() {
                     ))}
                     {registrosAsistencia.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={2}>No hay registros de asistencia para esta sesión.</TableCell>
+                        <TableCell colSpan={2}>
+                          No hay registros de asistencia para esta sesión.
+                        </TableCell>
                       </TableRow>
                     )}
                   </TableBody>

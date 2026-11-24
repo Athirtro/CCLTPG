@@ -140,11 +140,7 @@ export default function SideDrawer({ user, onLogout, onClose, isMobile }: Props)
       <List>
         {items.map((item) => (
           <ListItem key={item.path} disablePadding>
-            <ListItemButton
-              component={Link}
-              to={item.path}
-              onClick={handleMenuItemClick}
-            >
+            <ListItemButton component={Link} to={item.path} onClick={handleMenuItemClick}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.label} />
             </ListItemButton>

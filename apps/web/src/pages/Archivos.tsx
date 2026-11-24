@@ -64,15 +64,16 @@ export default function Archivos() {
       const formData = new FormData();
       formData.append('file', archivoSeleccionado);
 
-      const result = await postWithIdempotency(
-        '/files',
-        { body: formData, idempotencyKey: idempotencyKey.trim() || undefined },
-      );
+      const result = await postWithIdempotency('/files', {
+        body: formData,
+        idempotencyKey: idempotencyKey.trim() || undefined,
+      });
 
       if (result.error || result.response?.status !== 200) {
-        const detalle = result.error && typeof result.error === 'object' && 'detail' in result.error
-          ? (result.error as { detail?: string }).detail
-          : undefined;
+        const detalle =
+          result.error && typeof result.error === 'object' && 'detail' in result.error
+            ? (result.error as { detail?: string }).detail
+            : undefined;
         setError(detalle || 'Error al subir el archivo');
         return;
       }
