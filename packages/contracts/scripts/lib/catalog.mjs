@@ -52,10 +52,20 @@ export function readCatalogWithAmendments(
   const amendments = [];
 
   if (existsSync(directory)) {
+    const baseEvents = new Set(events);
+
     for (const file of readdirSync(directory)
       .filter((name) => name.endsWith('.md'))
       .sort()) {
-      const added = readCatalogEvents(join(directory, file));
+      const parsed = readCatalogEvents(join(directory, file));
+      // El directorio también aloja enmiendas que no tocan el catálogo (p. ej.
+      // la CSP de C7). Solo se registran como enmiendas de eventos las que añaden
+      // eventos nuevos; el resto no debe alterar `events.json` (R-031).
+      const added = parsed.filter((event) => !baseEvents.has(event));
+      if (added.length === 0) {
+        continue;
+      }
+
       amendments.push({ file: `${amendmentsDirectory}/${file}`, events: added });
       for (const event of added) {
         events.add(event);

@@ -95,4 +95,4 @@ La orden «empieza entonces la iteración» se registró como ratificación de D
 3. RB1-43 a RB1-48: entorno con TLS, CI, Docker y PostgreSQL de preproducción para producir actas de rotación, alerta, carga y restauración.
 4. Solo con esas actas y la demo se propone `release-2.0-rc` (D88).
 
-**Publicación:** la orden «continuemos subiendo la iteración 6 y hagamos lo que se pueda de la 6» autorizó el `git commit` y `git push` de C6 a `origin/main` con mensaje `iteracion 6 b`. La firma formal de la compuerta y la etiqueta `release-2.0-rc` siguen pendientes (D88); C7/C8 no se publican. Cualquier publicación posterior requiere autorización expresa.
+**Publicación:** la orden «continuemos subiendo la iteración 6 y hagamos lo que se pueda de la 6» autorizó el `git commit` y `git push` de C6 a `origin/main` con mensaje `iteracion 6 b` (`0ecbe32`, verificado en `origin/main`). La firma formal de la compuerta y la etiqueta `release-2.0-rc` siguen pendientes (D88); C7/C8 no se publican. Cualquier publicación posterior requiere autorización expresa.

@@ -186,3 +186,14 @@ test('la enmienda C6 amplía el catálogo sin editar el documento congelado', ()
     ),
   );
 });
+
+test('una enmienda sin eventos nuevos no altera el catálogo (C7/CSP)', () => {
+  const root = resolve(import.meta.dirname, '..', '..', '..');
+  const merged = readCatalogWithAmendments(root);
+
+  assert.equal(merged.events.length, 64);
+  assert.deepEqual(
+    merged.amendments.map((entry) => entry.file),
+    ['docs/contratos/cambios/cambio-eventos-c6.md'],
+  );
+});

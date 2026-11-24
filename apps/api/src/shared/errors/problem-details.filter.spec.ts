@@ -91,13 +91,21 @@ describe('ProblemDetailsFilter', () => {
     const response = createResponse();
     const request = { method: 'GET', originalUrl: '/api/v1/x', id: 'req-3' };
 
-    filter.catch(new Error('SELECT * FROM usuarios; password=abc'), createHost(request, response));
+    filter.catch(
+      new Error('SELECT * FROM usuarios; password=abc <script> persona@example.org'),
+      createHost(request, response),
+    );
 
     const body = capturedBody(response);
     expect(body.status).toBe(500);
     expect(body.code).toBe('INTERNAL_ERROR');
+    expect(body.title).toBe('Internal Server Error');
+    expect(body.requestId).toBe('req-3');
+    expect(body.instance).toBe('/api/v1/x');
     expect(body.detail).not.toContain('SELECT');
     expect(body.detail).not.toContain('password');
+    expect(body.detail).not.toContain('<script>');
+    expect(body.detail).not.toContain('persona@example.org');
   });
 
   it('respeta un code explícito en errores 503', () => {

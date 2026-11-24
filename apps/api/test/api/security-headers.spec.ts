@@ -8,7 +8,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { AppModule } from '../../src/app.module.js';
-import { configureApp } from '../../src/bootstrap/configure-app.js';
+import { configureApp, hstsOptions } from '../../src/bootstrap/configure-app.js';
 import { DATABASE, REDIS } from '../../src/database/database.module.js';
 import type { ProblemDetails } from '../../src/shared/errors/problem-details.js';
 import { REDACT_PATHS } from '../../src/shared/observability/logger.config.js';
@@ -67,8 +67,36 @@ describe('línea base HTTP: cabeceras, CORS, límites y métricas (C-36/C-37/C-4
     expect(response.headers['referrer-policy']).toBe('no-referrer');
     expect(response.headers['cross-origin-opener-policy']).toBe('same-origin');
     expect(response.headers['cross-origin-resource-policy']).toBe('same-site');
-    expect(response.headers['content-security-policy']).toContain("default-src 'none'");
-    expect(response.headers['permissions-policy']).toContain('camera=()');
+    expect(response.headers['permissions-policy']).toBe(
+      'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+    );
+    expect(response.headers['content-security-policy']).toBe(
+      [
+        "default-src 'none'",
+        "base-uri 'none'",
+        "font-src 'self'",
+        "form-action 'none'",
+        "frame-ancestors 'none'",
+        "img-src 'self' data: blob:",
+        "object-src 'none'",
+        "script-src 'self'",
+        "script-src-attr 'none'",
+        "style-src 'self' 'unsafe-inline'",
+        'upgrade-insecure-requests',
+        "connect-src 'none'",
+      ].join(';'),
+    );
+    expect(response.headers['content-security-policy']).not.toContain('unsafe-eval');
+    expect(response.headers['strict-transport-security']).toBeUndefined();
+  });
+
+  it('configura HSTS solo en producción (C-20)', () => {
+    expect(hstsOptions(false)).toBe(false);
+    expect(hstsOptions(true)).toEqual({
+      maxAge: 31_536_000,
+      includeSubDomains: true,
+      preload: true,
+    });
   });
 
   it('acepta un Origin de la allowlist y devuelve credenciales CORS', async () => {

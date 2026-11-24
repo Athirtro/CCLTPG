@@ -10,6 +10,33 @@ import { validationExceptionFactory } from '../shared/errors/validation-exceptio
 import { getRequestId } from '../shared/http/request-id.js';
 
 /**
+ * CSP exacta de la API (C7 — PA-010/D91). La API solo sirve JSON: no carga
+ * scripts propios, por lo que `script-src 'self'` y `script-src-attr 'none'`
+ * bastan. `style-src 'unsafe-inline'` se conserva por compatibilidad con
+ * MUI/emotion; `unsafe-eval` queda prohibido. Cualquier cambio de estas
+ * directivas debe pasar por la enmienda `cambio-csp-c7.md`.
+ */
+export const CSP_DIRECTIVES = {
+  defaultSrc: ["'none'"],
+  baseUri: ["'none'"],
+  frameAncestors: ["'none'"],
+  formAction: ["'none'"],
+  objectSrc: ["'none'"],
+  scriptSrc: ["'self'"],
+  scriptSrcAttr: ["'none'"],
+  styleSrc: ["'self'", "'unsafe-inline'"],
+  imgSrc: ["'self'", 'data:', 'blob:'],
+  fontSrc: ["'self'"],
+  connectSrc: ["'none'"],
+  upgradeInsecureRequests: [],
+};
+
+/** HSTS solo en producción (C-20): verificable sin arrancar un entorno TLS. */
+export function hstsOptions(isProduction: boolean) {
+  return isProduction ? { maxAge: 31_536_000, includeSubDomains: true, preload: true } : false;
+}
+
+/**
  * Configuración HTTP común a `main.ts` y a las pruebas de contrato.
  * No escucha en un puerto ni registra hooks de apagado.
  */
@@ -68,20 +95,11 @@ export function configureApp(app: NestExpressApplication): void {
 
   app.use(
     helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'none'"],
-          baseUri: ["'none'"],
-          frameAncestors: ["'none'"],
-          formAction: ["'none'"],
-        },
-      },
+      contentSecurityPolicy: { directives: CSP_DIRECTIVES },
       crossOriginResourcePolicy: { policy: 'same-site' },
       crossOriginOpenerPolicy: { policy: 'same-origin' },
       referrerPolicy: { policy: 'no-referrer' },
-      hsts: env.isProduction
-        ? { maxAge: 31_536_000, includeSubDomains: true, preload: true }
-        : false,
+      hsts: hstsOptions(env.isProduction),
     }),
   );
 
