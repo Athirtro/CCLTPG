@@ -15,9 +15,11 @@ import { useAuth } from '../../contexts/AuthContext';
 type Props = {
   onMenuClick: () => void;
   handleLogout: () => void;
+  mobileOpen: boolean;
+  isMobile: boolean;
 };
 
-export default function TopAppBar({ onMenuClick, handleLogout }: Props) {
+export default function TopAppBar({ onMenuClick, handleLogout, mobileOpen, isMobile }: Props) {
   const { user } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -33,9 +35,17 @@ export default function TopAppBar({ onMenuClick, handleLogout }: Props) {
   return (
     <AppBar position="static" color="primary" elevation={3}>
       <Toolbar>
-        <IconButton color="inherit" edge="start" onClick={onMenuClick} sx={{ mr: 2 }}>
-          <MenuIcon />
-        </IconButton>
+        {isMobile && (
+          <IconButton
+            color="inherit"
+            edge="start"
+            onClick={onMenuClick}
+            sx={{ mr: 2 }}
+            aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
+          >
+            <MenuIcon />
+          </IconButton>
+        )}
         <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
           CCLTPG — Centro Cultural Lucy Tejada
         </Typography>

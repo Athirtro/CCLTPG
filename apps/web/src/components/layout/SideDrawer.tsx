@@ -69,7 +69,7 @@ const MENU_ITEMS = [
   },
   {
     path: '/exportaciones',
-    label: 'Exportaciones',
+    label: 'Reportes',
     icon: <FileCopyIcon />,
     requires: 'exports:report:export',
   },
@@ -99,7 +99,7 @@ const MENU_ITEMS = [
   },
   {
     path: '/reportes',
-    label: 'Reportes',
+    label: 'Catálogo de reportes',
     icon: <DescriptionIcon />,
     requires: 'exports:report:export',
   },
@@ -108,10 +108,18 @@ const MENU_ITEMS = [
 type Props = {
   user: { email?: string; fullName?: string; role?: string; profiles?: string[] } | null;
   onLogout: () => void;
+  onClose?: () => void;
+  isMobile?: boolean;
 };
 
-export default function SideDrawer({ user, onLogout }: Props) {
+export default function SideDrawer({ user, onLogout, onClose, isMobile }: Props) {
   const { hasPermission } = useAuth();
+
+  const handleMenuItemClick = () => {
+    if (isMobile && onClose) {
+      onClose();
+    }
+  };
 
   const items = MENU_ITEMS.filter((item) => {
     if (!item.requires) return true;
@@ -132,7 +140,11 @@ export default function SideDrawer({ user, onLogout }: Props) {
       <List>
         {items.map((item) => (
           <ListItem key={item.path} disablePadding>
-            <ListItemButton component={Link} to={item.path}>
+            <ListItemButton
+              component={Link}
+              to={item.path}
+              onClick={handleMenuItemClick}
+            >
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.label} />
             </ListItemButton>
@@ -142,7 +154,7 @@ export default function SideDrawer({ user, onLogout }: Props) {
       <Divider sx={{ my: 1 }} />
       <List>
         <ListItem disablePadding>
-          <ListItemButton component={Link} to="/estado">
+          <ListItemButton component={Link} to="/estado" onClick={handleMenuItemClick}>
             <ListItemIcon>
               <MonitorHeartIcon />
             </ListItemIcon>
@@ -153,7 +165,14 @@ export default function SideDrawer({ user, onLogout }: Props) {
       <Divider sx={{ my: 1 }} />
       <List>
         <ListItem disablePadding>
-          <ListItemButton onClick={onLogout}>
+          <ListItemButton
+            onClick={() => {
+              onLogout();
+              if (isMobile && onClose) {
+                onClose();
+              }
+            }}
+          >
             <ListItemIcon>🚪</ListItemIcon>
             <ListItemText primary="Cerrar sesión" />
           </ListItemButton>
