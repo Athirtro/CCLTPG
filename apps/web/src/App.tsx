@@ -23,6 +23,7 @@ import MisEvaluaciones from './pages/MisEvaluaciones';
 import VistaEducador from './pages/VistaEducador';
 import Kpis from './pages/Kpis';
 import Reportes from './pages/Reportes';
+import Health from './pages/Health';
 import NotFound from './pages/NotFound';
 
 const theme = createTheme({
@@ -64,6 +65,7 @@ export default function App() {
               <Route path="/vista-educador" element={<VistaEducador />} />
               <Route path="/kpis" element={<Kpis />} />
               <Route path="/reportes" element={<Reportes />} />
+              <Route path="/estado" element={<Health />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

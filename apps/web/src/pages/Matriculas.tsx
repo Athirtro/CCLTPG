@@ -15,6 +15,8 @@ import {
   CircularProgress,
   Select,
   MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { Assignment as AssignmentIcon } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
@@ -154,20 +156,23 @@ export default function Matriculas() {
           </Typography>
           <form noValidate>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
-              <Box component="label" sx={{ fontWeight: 'medium', mb: 1 }}>
-                Grupo abierto
-              </Box>
-              <Select
-                value={grupoSeleccionado}
-                onChange={(e) => setGrupoSeleccionado(e.target.value)}
-              >
-                <MenuItem value="">Selecciona un grupo abierto</MenuItem>
-                {gruposDisponibles.map((g) => (
-                  <MenuItem key={g.id} value={g.id}>
-                    {g.codigo} — {g.periodo}
-                  </MenuItem>
-                ))}
-              </Select>
+              <FormControl fullWidth>
+                <InputLabel id="grupo-seleccion-label">Grupo abierto</InputLabel>
+                <Select
+                  labelId="grupo-seleccion-label"
+                  id="grupo-seleccion"
+                  label="Grupo abierto"
+                  value={grupoSeleccionado}
+                  onChange={(e) => setGrupoSeleccionado(e.target.value)}
+                >
+                  <MenuItem value="">Selecciona un grupo abierto</MenuItem>
+                  {gruposDisponibles.map((g) => (
+                    <MenuItem key={g.id} value={g.id}>
+                      {g.codigo} — {g.periodo}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Box>
             <Button
               type="submit"

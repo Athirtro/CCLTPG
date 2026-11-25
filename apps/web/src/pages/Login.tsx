@@ -1,6 +1,5 @@
 ﻿import { useState } from 'react';
 import { Box, Button, CssBaseline, Paper, TextField, Typography, Alert } from '@mui/material';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
 
@@ -76,7 +75,7 @@ export default function Login() {
         </form>
         <Box sx={{ mt: 2, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">
-            ¿No tienes cuenta? <Link to="/registro">Regístrate</Link>
+            Las cuentas son asignadas por el administrador del sistema.
           </Typography>
         </Box>
       </Paper>

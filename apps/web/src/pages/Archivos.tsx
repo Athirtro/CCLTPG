@@ -113,7 +113,7 @@ export default function Archivos() {
 
       {puedeSubir && (
         <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+          <Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
             Subir archivo
           </Typography>
           {error && (

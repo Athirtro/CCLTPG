@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+﻿import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { apiClient, type MeResponseDto } from '../api/client';
 
 export type User = {
@@ -32,46 +32,74 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({
-  children,
-  initialUser,
-}: {
+const mapToUser = (dto: MeResponseDto): User => ({
+  id: dto.userId,
+  email: dto.email,
+  fullName: dto.nombre,
+  role: dto.activeProfile ?? '',
+  profiles: dto.profiles.map((p) => p.codigo),
+  permissions: dto.permissions,
+  mfaEnabled: dto.mfaEnabled,
+  mustChangePassword: dto.mustChangePassword,
+});
+
+type AuthProviderProps = {
   children: ReactNode;
+  /** Solo para pruebas: evita la llamada real a `/me` al montar. */
   initialUser?: User;
-}) {
+  /** Solo para pruebas: token de verificación MFA en memoria. */
+  initialSessionToken?: string;
+};
+
+export function AuthProvider({ children, initialUser, initialSessionToken }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(initialUser ?? null);
   const [isLoading, setIsLoading] = useState(false);
   const [authStatus, setAuthStatus] = useState<AuthContextType['authStatus']>(
     initialUser ? 'authenticated' : null,
   );
-  const [sessionToken, setSessionToken] = useState<string | null>(() =>
-    localStorage.getItem('ccltpg_session_token'),
-  );
-
-  const mapToUser = (dto: MeResponseDto): User => ({
-    id: dto.userId,
-    email: dto.email,
-    fullName: dto.nombre,
-    role: dto.activeProfile ?? '',
-    profiles: dto.profiles.map((p) => p.codigo),
-    permissions: dto.permissions,
-    mfaEnabled: dto.mfaEnabled,
-    mustChangePassword: dto.mustChangePassword,
-  });
+  // El token de verificación MFA vive solo en memoria (diseño §15 / ADR-0002).
+  const [sessionToken, setSessionToken] = useState<string | null>(initialSessionToken ?? null);
 
   const hasPermission = useCallback(
-    (permission: string) => {
-      return user?.permissions.includes(permission) ?? false;
-    },
+    (permission: string) => user?.permissions.includes(permission) ?? false,
     [user],
   );
 
   const hasProfile = useCallback(
-    (profile: string) => {
-      return user?.profiles.includes(profile) ?? false;
-    },
+    (profile: string) => user?.profiles.includes(profile) ?? false,
     [user],
   );
+
+  const logout = useCallback(async () => {
+    try {
+      await apiClient.POST('/auth/logout');
+    } catch {
+      // Ignorar errores de red en logout; siempre limpiamos el estado local.
+    }
+    setUser(null);
+    setAuthStatus(null);
+    setSessionToken(null);
+  }, []);
+
+  const loadMe = useCallback(async () => {
+    try {
+      const { data, error } = await apiClient.GET('/me');
+      if (!error && data) {
+        setUser(mapToUser(data));
+        setAuthStatus('authenticated');
+      } else {
+        await logout();
+      }
+    } catch {
+      await logout();
+    }
+  }, [logout]);
+
+  // Al recargar la página derivamos usuario y permisos desde `/me` (AC-SEC-21).
+  useEffect(() => {
+    if (initialUser) return;
+    void loadMe();
+  }, [initialUser, loadMe]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -86,11 +114,6 @@ export function AuthProvider({
 
       setAuthStatus(data.status);
       setSessionToken(data.sessionToken ?? null);
-      if (data.sessionToken) {
-        localStorage.setItem('ccltpg_session_token', data.sessionToken);
-      } else {
-        localStorage.removeItem('ccltpg_session_token');
-      }
 
       if (data.status === 'authenticated') {
         await loadMe();
@@ -113,11 +136,6 @@ export function AuthProvider({
 
       setAuthStatus(data.status);
       setSessionToken(data.sessionToken ?? null);
-      if (data.sessionToken) {
-        localStorage.setItem('ccltpg_session_token', data.sessionToken);
-      } else {
-        localStorage.removeItem('ccltpg_session_token');
-      }
 
       if (data.status === 'authenticated') {
         await loadMe();
@@ -125,32 +143,6 @@ export function AuthProvider({
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const loadMe = async () => {
-    try {
-      const { data, error } = await apiClient.GET('/me');
-      if (!error && data) {
-        setUser(mapToUser(data));
-        setAuthStatus('authenticated');
-      } else {
-        await logout();
-      }
-    } catch {
-      await logout();
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await apiClient.POST('/auth/logout');
-    } catch {
-      // Ignorar errores de red en logout; siempre limpiamos localmente
-    }
-    setUser(null);
-    setAuthStatus(null);
-    setSessionToken(null);
-    localStorage.removeItem('ccltpg_session_token');
   };
 
   const value: AuthContextType = {
