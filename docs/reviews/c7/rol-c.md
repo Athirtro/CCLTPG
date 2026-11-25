@@ -111,8 +111,9 @@ La enmienda `docs/contratos/cambios/cambio-csp-c7.md` fija la CSP de la **API**.
 | `pnpm test:architecture` | ✅ 3/3 |
 | `pnpm test:security` | ✅ 6/6 |
 | `pnpm test:contracts` | ✅ 14/14 |
+| CI de GitHub (run #24, commit `7d0cec2`) | ✅ `success` en los 4 jobs: calidad, contratos, integración PostgreSQL/Redis y seguridad |
 
-La regresión local no sustituye la evidencia externa: CI de GitHub (se verifica tras el push), TLS/preproducción, k6, Docker/MinIO y simulacro de respaldo/restauración.
+La regresión local y el CI no sustituyen la evidencia externa: TLS/preproducción, k6, Docker/MinIO y simulacro de respaldo/restauración siguen pendientes.
 
 ## 10. Deuda que se arrastra
 
