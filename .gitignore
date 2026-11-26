@@ -6,9 +6,13 @@ coverage/
 *.tsbuildinfo
 .vite/
 .pnpm-store/
+# Secretos y configuración local (solo los ejemplos se versionan)
 .env
 .env.*
 !.env.example
+
+# Datos de ejecución local: almacenamiento de objetos del driver `local`
+.data/
 
 # Archivos e instrucciones locales de herramientas/agentes (no entregables del proyecto)
 AGENTS.md
