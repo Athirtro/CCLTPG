@@ -3,7 +3,7 @@ import { Box, Button, CssBaseline, Paper, TextField, Typography, Alert } from '@
 import { useNavigate } from 'react-router-dom';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type { LoginResponseDto } from '../api/client';
+import { setSessionCredentials, type LoginResponseDto } from '../api/client';
 
 export default function MfaEnroll() {
   const navigate = useNavigate();
@@ -54,6 +54,7 @@ export default function MfaEnroll() {
 
       const dto = data as LoginResponseDto & { recoveryCodes: string[] };
       if (dto.status === 'authenticated') {
+        setSessionCredentials(dto);
         await loadMe();
         setStep('done');
       } else {

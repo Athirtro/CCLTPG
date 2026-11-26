@@ -3,7 +3,7 @@ import { Box, Button, CssBaseline, Paper, TextField, Typography, Alert } from '@
 import { useNavigate } from 'react-router-dom';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type { LoginResponseDto } from '../api/client';
+import { setSessionCredentials, type LoginResponseDto } from '../api/client';
 
 export default function PasswordChange() {
   const navigate = useNavigate();
@@ -39,6 +39,7 @@ export default function PasswordChange() {
       }
 
       if (data && (data as LoginResponseDto).status === 'authenticated') {
+        setSessionCredentials(data);
         setSuccess(true);
         await loadMe();
         void navigate('/');

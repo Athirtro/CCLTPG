@@ -1,5 +1,5 @@
 ﻿import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { apiClient, type MeResponseDto } from '../api/client';
+import { apiClient, setSessionCredentials, type MeResponseDto } from '../api/client';
 
 export type User = {
   id: string;
@@ -79,6 +79,7 @@ export function AuthProvider({ children, initialUser, initialSessionToken }: Aut
     setUser(null);
     setAuthStatus(null);
     setSessionToken(null);
+    setSessionCredentials(null);
   }, []);
 
   const loadMe = useCallback(async () => {
@@ -114,6 +115,7 @@ export function AuthProvider({ children, initialUser, initialSessionToken }: Aut
 
       setAuthStatus(data.status);
       setSessionToken(data.sessionToken ?? null);
+      setSessionCredentials(data);
 
       if (data.status === 'authenticated') {
         await loadMe();
@@ -136,6 +138,7 @@ export function AuthProvider({ children, initialUser, initialSessionToken }: Aut
 
       setAuthStatus(data.status);
       setSessionToken(data.sessionToken ?? null);
+      setSessionCredentials(data);
 
       if (data.status === 'authenticated') {
         await loadMe();

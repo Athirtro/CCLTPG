@@ -1340,6 +1340,35 @@ export type Paths = {
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
+// Credenciales de la sesión en memoria (ADR-0002): nunca localStorage.
+// El refresh viaja en cookie httpOnly; el CSRF se replica como cabecera.
+let bearerToken: string | null = null;
+let csrfToken: string | null = null;
+
+export function setSessionCredentials(
+  credentials: {
+    accessToken?: string;
+    sessionToken?: string;
+    csrfToken?: string;
+  } | null,
+): void {
+  bearerToken = credentials?.accessToken ?? credentials?.sessionToken ?? null;
+  csrfToken = credentials?.csrfToken ?? null;
+}
+
 export const apiClient = createClient<Paths>({
   baseUrl: API_BASE_URL,
+  credentials: 'include',
+});
+
+apiClient.use({
+  onRequest({ request }) {
+    if (bearerToken) {
+      request.headers.set('Authorization', `Bearer ${bearerToken}`);
+    }
+    if (csrfToken && !['GET', 'HEAD', 'OPTIONS'].includes(request.method.toUpperCase())) {
+      request.headers.set('x-csrf-token', csrfToken);
+    }
+    return request;
+  },
 });
