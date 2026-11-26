@@ -21,8 +21,9 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 | 4 | Académico A: programas, grupos, estudiantes, matrícula | 1.0 | Patrón de módulo equivocado | C4 | **Ejecutada con deuda registrada** (publicada en `a5444c8`; ver `docs/reviews/c4/rol-b.md`) |
 | 5 | Académico B: asistencia, evaluación + endurecimiento | 1.0 | Rendimiento, respaldos, regresiones | C5 | **Ejecutada con deuda registrada** (publicada en `iteracion 5 b`; ver `docs/reviews/c5/rol-b.md`) |
 | 6 | Reportes, dashboards y notificaciones | 2.0 | KPIs y reportes incorrectos | C6 | **Ejecutada con deuda registrada** (publicada en `0ecbe32` (`iteracion 6 b`); ver `docs/reviews/c6/rol-b.md`) |
-| 7 | Accesibilidad y responsividad | 3.0 | Brechas de accesibilidad | C7 | **Rol B ejecutado; compuerta abierta, sin firmar ni publicar** (ver `docs/tasks/rol-b/rol-b-it7-plan.md`) |
-| 8 | Endurecimiento y aceptación final | 3.0 | Brechas no funcionales y de cumplimiento | C8 | **Rol B ejecutado; compuerta abierta, sin firmar ni publicar** (ver `docs/tasks/rol-b/rol-b-it8-plan.md`) |
+| 7 | Accesibilidad y responsividad | 3.0 | Brechas de accesibilidad | C7 | **Rol B ejecutado y commits en `origin/main`; compuerta abierta, sin firmar** (ver `docs/reviews/c7/rol-b.md` y `docs/reviews/c7/rol-c.md`) |
+| 8 | Endurecimiento y aceptación final | 3.0 | Brechas no funcionales y de cumplimiento | C8 | **Rol B ejecutado y publicado en `3df23ce`; compuerta abierta, sin firmar** (ver `docs/reviews/c8/rol-b.md`) |
+| 9 | Cierre de deuda acumulada y aceptación (extendida) | 3.0 | Deuda C0…C8 y evidencia de aceptación | C9 | **Ejecución documental parcial de Rol B; compuerta abierta, sin firmar** (ver `docs/reviews/c9/rol-b.md`). Iteración no prevista en el diseño §18; D110…D119 sin ratificar |
 
 ## 3. Contenido de cada iteración
 
@@ -78,6 +79,7 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 | 6 | Reportes, dashboards, notificaciones (Release 2.0). | Verificación manual contra datos crudos (`docs/reviews/c6/verificacion-reportes-kpis.md`); cliente Rol C pendiente. |
 | 7 | Accesibilidad (Release 3.0). | WCAG 2.1 AA. |
 | 8 | Endurecimiento final, aceptación, trazabilidad requisito-código-prueba. | Aceptación final y etiqueta `release-3.0`. |
+| 9 | Cierre de la deuda de C0…C8, actas, entorno, cliente y trazabilidad completa. | Aceptación final condicionada a D110…D119. |
 
 ## 5. Estado consolidado de compuertas
 
@@ -90,8 +92,9 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 | C4 | Patrón académico y caso de uso. | `docs/reviews/c4/rol-b.md` | **Ejecutada con deuda registrada** (publicada en `a5444c8`); firma pendiente |
 | C5 | Académico B, endurecimiento, carga y backup. | `docs/reviews/c5/rol-b.md` | **Ejecutada con deuda registrada** (publicada en `iteracion 5 b`); firma, entorno y RB1-43 pendientes |
 | C6 | Reportes/KPIs y notificaciones. | `docs/reviews/c6/rol-b.md` | **Ejecutada con deuda registrada** (publicada en `0ecbe32` (`iteracion 6 b`)); firma, Rol C y entorno pendientes |
-| C7 | Accesibilidad. | `docs/tasks/rol-b/rol-b-it7-plan.md` | **Rol B ejecutado; compuerta abierta, sin firmar ni publicar** |
-| C8 | Aceptación final. | `docs/tasks/rol-b/rol-b-it8-plan.md` | **Rol B ejecutado; compuerta abierta, sin firmar ni publicar** |
+| C7 | Accesibilidad. | `docs/reviews/c7/rol-b.md`, `docs/reviews/c7/rol-c.md` | **Rol B ejecutado; compuerta abierta, sin firmar. Rol C documenta CI en verde; lector, navegadores y demo pendientes** |
+| C8 | Aceptación final. | `docs/reviews/c8/rol-b.md` | **Rol B ejecutado y publicado en `3df23ce`; compuerta abierta, sin firmar. Calidad de Rol C corregida en C9** |
+| C9 | Cierre de deuda y aceptación (extendida). | `docs/reviews/c9/rol-b.md`, `docs/reviews/c9/trazabilidad.md` | **Ejecución documental parcial de Rol B; matriz, paquete, registro y runbook producidos; sin commit, firma ni etiqueta** |
 
 ## 6. Puntos críticos que aparecen en cada iteración
 
@@ -106,6 +109,6 @@ Regla de bloqueo: si un criterio de la compuerta no tiene evidencia, la compuert
 - `docs/requirements/seguridad.md`.
 - `docs/tasks/rol-b/rol-b-it1-plan.md`, `docs/tasks/rol-b/rol-b-it2-plan.md`, `docs/tasks/rol-b/rol-b-it3-plan.md`.
 - `docs/tasks/rol-b/rol-b-it2-registro.md`, `docs/tasks/rol-b/rol-b-it3-registro.md`.
-- `docs/tasks/rol-b/rol-b-it5-plan.md`, `docs/tasks/rol-b/rol-b-it5-registro.md`, `docs/tasks/rol-b/rol-b-it6-plan.md`, `docs/tasks/rol-b/rol-b-it8-plan.md`.
-- `docs/reviews/c1/rol-b.md`, `docs/reviews/c2/rol-b.md`, `docs/reviews/c3/rol-b.md`, `docs/reviews/c5/rol-b.md`.
+- `docs/tasks/rol-b/rol-b-it5-plan.md`, `docs/tasks/rol-b/rol-b-it5-registro.md`, `docs/tasks/rol-b/rol-b-it6-plan.md`, `docs/tasks/rol-b/rol-b-it8-plan.md`, `docs/tasks/rol-b/rol-b-it8-registro.md`, `docs/tasks/rol-b/rol-b-it9-plan.md`, `docs/tasks/rol-b/rol-b-it9-registro.md`.
+- `docs/reviews/c1/rol-b.md`, `docs/reviews/c2/rol-b.md`, `docs/reviews/c3/rol-b.md`, `docs/reviews/c5/rol-b.md`, `docs/reviews/c7/rol-b.md`, `docs/reviews/c7/rol-c.md`, `docs/reviews/c8/rol-b.md`, `docs/reviews/c9/rol-b.md`, `docs/reviews/c9/trazabilidad.md`.
 - `docs/open-questions.md`, `docs/assumptions.md`.
