@@ -1,49 +1,81 @@
-﻿import { useState, useCallback } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  Alert,
   Box,
   Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-  Alert,
-  Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Select,
-  MenuItem,
   FormControl,
+  FormHelperText,
   InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Typography,
 } from '@mui/material';
-import { Group as GroupIcon, Lock as LockIcon, Add as AddIcon } from '@mui/icons-material';
-import { useAuth, apiClient } from '../contexts/AuthContext';
+import {
+  Add as AddIcon,
+  Group as GroupIcon,
+  Lock as LockIcon,
+  Refresh as RefreshIcon,
+} from '@mui/icons-material';
+import { apiClient, useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type { GrupoDto, CrearGrupoDto, ProgramaDto, ProblemDetailsDto } from '../api/client';
+import type { CrearGrupoDto, GrupoDto, ProgramaDto } from '../api/client';
+import PageHeader from '../components/common/PageHeader';
+import SectionCard from '../components/common/SectionCard';
+import StatCard from '../components/common/StatCard';
+import DataTable, { type DataTableColumn } from '../components/common/DataTable';
+import SearchToolbar from '../components/common/SearchToolbar';
+import StatusChip from '../components/common/StatusChip';
+import EmptyState from '../components/common/EmptyState';
+import LoadingState from '../components/common/LoadingState';
+import ErrorState from '../components/common/ErrorState';
+import ConfirmDialog from '../components/common/ConfirmDialog';
+
+type EstadoFiltro = 'todos' | GrupoDto['estado'];
+type Formulario = {
+  codigo: string;
+  programaId: string;
+  educadorId: string;
+  salon: string;
+  periodo: string;
+  cupoMaximo: string;
+};
+
+const FORMULARIO_VACIO: Formulario = {
+  codigo: '',
+  programaId: '',
+  educadorId: '',
+  salon: '',
+  periodo: '',
+  cupoMaximo: '',
+};
 
 export default function Grupos() {
   const { hasPermission } = useAuth();
+  const puedeGestionar = hasPermission('academic:group:manage');
+
   const [grupos, setGrupos] = useState<GrupoDto[]>([]);
   const [programas, setProgramas] = useState<ProgramaDto[]>([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
-  const [abiertoDialogo, setAbiertoDialogo] = useState(false);
-  const [codigoNuevo, setCodigoNuevo] = useState('');
-  const [programaIdNuevo, setProgramaIdNuevo] = useState('');
-  const [educadorIdNuevo, setEducadorIdNuevo] = useState('');
-  const [periodoNuevo, setPeriodoNuevo] = useState('');
-  const [cupoNuevo, setCupoNuevo] = useState('');
+  const [busqueda, setBusqueda] = useState('');
+  const [filtro, setFiltro] = useState<EstadoFiltro>('todos');
+  const [pagina, setPagina] = useState(0);
+  const [tamanoPagina, setTamanoPagina] = useState(10);
 
-  const puedeGestionar = hasPermission('academic:group:manage');
+  const [abiertoDialogo, setAbiertoDialogo] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [formulario, setFormulario] = useState<Formulario>(FORMULARIO_VACIO);
+  const [errores, setErrores] = useState<Partial<Record<keyof Formulario, string>>>({});
+
+  const [grupoTransicion, setGrupoTransicion] = useState<GrupoDto | null>(null);
+  const [procesandoTransicion, setProcesandoTransicion] = useState(false);
 
   const cargarGrupos = useCallback(async () => {
     if (!puedeGestionar) return;
@@ -55,123 +87,262 @@ export default function Grupos() {
         apiClient.GET('/academic/programs'),
       ]);
       if (resGrupos.error || !resGrupos.data) {
-        setError('No se pudieron cargar los grupos');
+        setError('No se pudieron cargar los grupos.');
         return;
       }
       if (resProgramas.error || !resProgramas.data) {
-        setError('No se pudieron cargar los programas');
+        setError('No se pudieron cargar los programas asociados.');
         return;
       }
       setGrupos(resGrupos.data.data);
       setProgramas(resProgramas.data.data);
     } catch (err) {
-      setError(getErrorMessage(err) || 'Error al cargar grupos');
+      setError(getErrorMessage(err) || 'Error al cargar grupos.');
     } finally {
       setCargando(false);
     }
   }, [puedeGestionar]);
 
-  const manejarCrear = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (
-      !codigoNuevo.trim() ||
-      !programaIdNuevo.trim() ||
-      !educadorIdNuevo.trim() ||
-      !periodoNuevo.trim() ||
-      !cupoNuevo.trim()
-    ) {
-      setError('Todos los campos son obligatorios');
-      return;
+  useEffect(() => {
+    void cargarGrupos();
+  }, [cargarGrupos]);
+
+  const nombrePrograma = useMemo(() => {
+    return new Map(programas.map((programa) => [programa.id, programa.nombre]));
+  }, [programas]);
+
+  const filtrados = useMemo(() => {
+    const texto = busqueda.trim().toLocaleLowerCase('es');
+    return grupos
+      .filter((grupo) => {
+        const coincide =
+          !texto ||
+          [
+            grupo.codigo,
+            nombrePrograma.get(grupo.programaId) ?? '',
+            grupo.periodo,
+            grupo.educadorId,
+            grupo.salon ?? '',
+          ]
+            .join(' ')
+            .toLocaleLowerCase('es')
+            .includes(texto);
+        return coincide && (filtro === 'todos' || grupo.estado === filtro);
+      })
+      .sort((a, b) => a.codigo.localeCompare(b.codigo, 'es'));
+  }, [grupos, busqueda, filtro, nombrePrograma]);
+
+  useEffect(() => {
+    setPagina(0);
+  }, [busqueda, filtro, tamanoPagina]);
+
+  const gruposPagina = filtrados.slice(pagina * tamanoPagina, (pagina + 1) * tamanoPagina);
+
+  const abiertos = grupos.filter((grupo) => grupo.estado === 'abierto').length;
+  const cerrados = grupos.filter((grupo) => grupo.estado === 'cerrado').length;
+
+  const actualizarCampo = (campo: keyof Formulario, valor: string) => {
+    setFormulario((prev) => ({ ...prev, [campo]: valor }));
+    setErrores((prev) => ({ ...prev, [campo]: undefined }));
+  };
+
+  const validar = (): boolean => {
+    const nuevosErrores: Partial<Record<keyof Formulario, string>> = {};
+    if (!formulario.codigo.trim()) nuevosErrores.codigo = 'Ingresa el código del grupo.';
+    if (!formulario.programaId) nuevosErrores.programaId = 'Selecciona un programa.';
+    if (!formulario.educadorId.trim()) nuevosErrores.educadorId = 'Ingresa el ID del educador.';
+    if (!formulario.periodo.trim()) nuevosErrores.periodo = 'Ingresa el periodo.';
+    const cupo = Number(formulario.cupoMaximo.trim());
+    if (!formulario.cupoMaximo.trim() || !Number.isInteger(cupo) || cupo <= 0) {
+      nuevosErrores.cupoMaximo = 'Ingresa un cupo entero mayor que cero.';
     }
-    setCargando(true);
+    setErrores(nuevosErrores);
+    return Object.keys(nuevosErrores).length === 0;
+  };
+
+  const cerrarDialogo = () => {
+    if (enviando) return;
+    setAbiertoDialogo(false);
+    setFormulario(FORMULARIO_VACIO);
+    setErrores({});
+  };
+
+  const manejarCrear = async () => {
+    if (!validar()) return;
+    setEnviando(true);
+    setError(null);
+    setExito(null);
     try {
       const payload: CrearGrupoDto = {
-        codigo: codigoNuevo.trim(),
-        programaId: programaIdNuevo.trim(),
-        educadorId: educadorIdNuevo.trim(),
-        periodo: periodoNuevo.trim(),
-        cupoMaximo: parseInt(cupoNuevo, 10),
+        codigo: formulario.codigo.trim(),
+        programaId: formulario.programaId,
+        educadorId: formulario.educadorId.trim(),
+        salon: formulario.salon.trim() || null,
+        periodo: formulario.periodo.trim(),
+        cupoMaximo: Number(formulario.cupoMaximo.trim()),
       };
-      const {
-        data,
-        error: apiError,
-        response,
-      } = await apiClient.POST('/academic/groups', { body: payload });
-      if (apiError || response?.status !== 201) {
-        const problema = apiError as ProblemDetailsDto;
-        setError(problema?.detail || 'Error al crear el grupo');
+      const { data, error: apiError, response } = await apiClient.POST('/academic/groups', {
+        body: payload,
+      });
+      if (apiError || response?.status !== 201 || !data) {
+        const problema = apiError;
+        setError(problema?.detail || 'No se pudo crear el grupo.');
         return;
       }
-      const dto = data;
-      setExito(`Grupo "${dto.codigo}" creado correctamente`);
-      setCodigoNuevo('');
-      setProgramaIdNuevo('');
-      setEducadorIdNuevo('');
-      setPeriodoNuevo('');
-      setCupoNuevo('');
-      setAbiertoDialogo(false);
+      setExito(`Grupo "${data.codigo}" creado correctamente.`);
+      cerrarDialogo();
       await cargarGrupos();
     } catch (err) {
-      setError(getErrorMessage(err) || 'Error inesperado al crear grupo');
+      setError(getErrorMessage(err) || 'Error inesperado al crear el grupo.');
     } finally {
-      setCargando(false);
+      setEnviando(false);
     }
   };
 
-  const manejarTransicion = async (grupo: GrupoDto, to: 'abierto' | 'cerrado') => {
-    setCargando(true);
+  const cerrarGrupo = async () => {
+    if (!grupoTransicion) return;
+    setProcesandoTransicion(true);
     setError(null);
+    setExito(null);
     try {
       const { error: apiError, response } = await apiClient.POST(
         '/academic/groups/{id}/transitions',
-        { params: { path: { id: grupo.id } }, body: { to } },
+        { params: { path: { id: grupoTransicion.id } }, body: { to: 'cerrado' } },
       );
       if (apiError || response?.status !== 200) {
-        const problema = apiError as ProblemDetailsDto;
-        setError(problema?.detail || 'Error al cambiar el estado');
+        const problema = apiError;
+        setError(problema?.detail || 'No se pudo cerrar el grupo.');
         return;
       }
-      setExito(`Estado del grupo "${grupo.codigo}" cambiado a ${to}`);
+      setExito(`Grupo "${grupoTransicion.codigo}" cerrado correctamente.`);
+      setGrupoTransicion(null);
       await cargarGrupos();
     } catch (err) {
-      setError(getErrorMessage(err) || 'Error al cambiar el estado');
+      setError(getErrorMessage(err) || 'Error al cerrar el grupo.');
     } finally {
-      setCargando(false);
+      setProcesandoTransicion(false);
     }
   };
 
   if (!puedeGestionar) {
     return (
-      <Box
-        sx={{
-          p: 3,
-          minHeight: '60vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <GroupIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
-          <Typography variant="h6">Administración de Grupos</Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-            No tienes permiso para gestionar grupos.
-          </Typography>
-        </Paper>
+      <Box>
+        <PageHeader
+          title="Grupos"
+          description="No tienes acceso a la gestión de grupos."
+          icon={<GroupIcon />}
+          breadcrumbs={[
+            { label: 'Inicio', to: '/' },
+            { label: 'Gestión académica' },
+            { label: 'Grupos' },
+          ]}
+        />
+        <EmptyState
+          title="Sin permisos"
+          description="No tienes permiso para gestionar grupos."
+          icon={<GroupIcon />}
+        />
       </Box>
     );
   }
 
+  const columnas: DataTableColumn<GrupoDto>[] = [
+    {
+      id: 'codigo',
+      label: 'Código',
+      minWidth: 120,
+      render: (grupo) => (
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {grupo.codigo}
+        </Typography>
+      ),
+    },
+    {
+      id: 'programa',
+      label: 'Programa',
+      minWidth: 180,
+      render: (grupo) => nombrePrograma.get(grupo.programaId) ?? '—',
+    },
+    { id: 'periodo', label: 'Periodo', minWidth: 110, render: (grupo) => grupo.periodo },
+    {
+      id: 'cupoMaximo',
+      label: 'Cupo máximo',
+      minWidth: 120,
+      align: 'right',
+      render: (grupo) => grupo.cupoMaximo,
+    },
+    {
+      id: 'salon',
+      label: 'Salón',
+      minWidth: 110,
+      render: (grupo) => grupo.salon ?? '—',
+    },
+    {
+      id: 'educadorId',
+      label: 'ID del educador',
+      minWidth: 220,
+      render: (grupo) => (
+        <Typography variant="caption" color="text.secondary">
+          {grupo.educadorId}
+        </Typography>
+      ),
+    },
+    {
+      id: 'estado',
+      label: 'Estado',
+      minWidth: 120,
+      render: (grupo) => <StatusChip status={grupo.estado} />,
+    },
+    {
+      id: 'acciones',
+      label: 'Acciones',
+      align: 'right',
+      minWidth: 110,
+      render: (grupo) =>
+        grupo.estado === 'abierto' ? (
+          <Button
+            size="small"
+            startIcon={<LockIcon fontSize="small" />}
+            onClick={() => setGrupoTransicion(grupo)}
+            disabled={procesandoTransicion || cargando}
+          >
+            Cerrar
+          </Button>
+        ) : null,
+    },
+  ];
+
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h1">Administración de Grupos</Typography>
-        <Button startIcon={<AddIcon />} variant="contained" onClick={() => setAbiertoDialogo(true)}>
-          Nuevo grupo
-        </Button>
-      </Box>
+    <Box>
+      <PageHeader
+        title="Grupos"
+        description="Administración de los grupos por programa, periodo, cupo y educador asignado."
+        icon={<GroupIcon />}
+        breadcrumbs={[
+          { label: 'Inicio', to: '/' },
+          { label: 'Gestión académica' },
+          { label: 'Grupos' },
+        ]}
+        actions={
+          <>
+            <Button
+              startIcon={<RefreshIcon />}
+              onClick={() => void cargarGrupos()}
+              disabled={cargando || procesandoTransicion}
+            >
+              Actualizar
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setAbiertoDialogo(true)}
+              disabled={cargando}
+            >
+              Nuevo grupo
+            </Button>
+          </>
+        }
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -184,139 +355,197 @@ export default function Grupos() {
         </Alert>
       )}
 
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
-          Listado de grupos
-        </Typography>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Código</TableCell>
-                <TableCell>Programa</TableCell>
-                <TableCell>Periodo</TableCell>
-                <TableCell>Cupo máximo</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell>Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {grupos.map((g) => {
-                const programa = programas.find((p) => p.id === g.programaId);
-                return (
-                  <TableRow key={g.id}>
-                    <TableCell sx={{ fontWeight: 'medium' }}>{g.codigo}</TableCell>
-                    <TableCell>{programa?.nombre || '-'}</TableCell>
-                    <TableCell>{g.periodo}</TableCell>
-                    <TableCell>{g.cupoMaximo}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={g.estado}
-                        size="small"
-                        color={g.estado === 'abierto' ? 'success' : 'default'}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {g.estado === 'abierto' && (
-                        <Button
-                          size="small"
-                          startIcon={<LockIcon fontSize="small" />}
-                          onClick={() => void manejarTransicion(g, 'cerrado')}
-                          disabled={cargando}
-                        >
-                          Cerrar
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              {grupos.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6}>No hay grupos registrados.</TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 2,
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
+          mb: 3,
+        }}
+      >
+        <StatCard
+          label="Total de grupos"
+          value={grupos.length}
+          icon={<GroupIcon />}
+          description="Registros consultados"
+        />
+        <StatCard
+          label="Abiertos"
+          value={abiertos}
+          icon={<GroupIcon />}
+          description="Disponibles para matrícula"
+        />
+        <StatCard
+          label="Cerrados"
+          value={cerrados}
+          icon={<LockIcon />}
+          description="Sin nuevas matrículas"
+        />
+      </Box>
 
-      <Dialog open={abiertoDialogo} onClose={() => setAbiertoDialogo(false)} maxWidth="sm">
-        <DialogTitle>Crear grupo</DialogTitle>
-        <DialogContent>
+      <SectionCard
+        title="Listado de grupos"
+        subtitle="Consulta, filtra y cierra los grupos registrados"
+      >
+        {error && grupos.length === 0 ? (
+          <ErrorState message={error} onRetry={() => void cargarGrupos()} />
+        ) : cargando && grupos.length === 0 ? (
+          <LoadingState label="Cargando grupos…" />
+        ) : (
+          <>
+            <SearchToolbar
+              value={busqueda}
+              onChange={setBusqueda}
+              label="Buscar grupo"
+              placeholder="Código, programa, periodo, salón o ID del educador"
+              resultCount={filtrados.length}
+              filters={
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <InputLabel id="filtro-estado-grupo-label">Estado</InputLabel>
+                  <Select
+                    labelId="filtro-estado-grupo-label"
+                    label="Estado"
+                    value={filtro}
+                    onChange={(event) => setFiltro(event.target.value)}
+                  >
+                    <MenuItem value="todos">Todos</MenuItem>
+                    <MenuItem value="abierto">Abierto</MenuItem>
+                    <MenuItem value="cerrado">Cerrado</MenuItem>
+                  </Select>
+                </FormControl>
+              }
+            />
+            {filtrados.length === 0 && !cargando ? (
+              <EmptyState
+                title={grupos.length === 0 ? 'Sin grupos registrados' : 'Sin coincidencias'}
+                description={
+                  grupos.length === 0
+                    ? 'Cuando registres un grupo aparecerá en este listado.'
+                    : 'Prueba con otro código, programa o periodo.'
+                }
+                minHeight={180}
+              />
+            ) : (
+              <DataTable
+                ariaLabel="Listado de grupos"
+                columns={columnas}
+                rows={gruposPagina}
+                rowKey={(grupo) => grupo.id}
+                loading={cargando}
+                page={pagina}
+                pageSize={tamanoPagina}
+                total={filtrados.length}
+                onPageChange={setPagina}
+                onPageSizeChange={setTamanoPagina}
+                emptyMessage="No hay grupos para mostrar."
+              />
+            )}
+          </>
+        )}
+      </SectionCard>
+
+      <Dialog
+        open={abiertoDialogo}
+        onClose={cerrarDialogo}
+        maxWidth="sm"
+        fullWidth
+        aria-labelledby="titulo-crear-grupo"
+      >
+        <DialogTitle id="titulo-crear-grupo">Nuevo grupo</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <DialogContentText>Asigna el grupo a un programa existente.</DialogContentText>
           <TextField
-            autoFocus
-            margin="dense"
             id="codigo-grupo"
             label="Código del grupo (ej. G-01)"
-            type="text"
+            value={formulario.codigo}
+            onChange={(event) => actualizarCampo('codigo', event.target.value)}
+            error={Boolean(errores.codigo)}
+            helperText={errores.codigo}
+            required
             fullWidth
-            value={codigoNuevo}
-            onChange={(e) => setCodigoNuevo(e.target.value)}
           />
-          <FormControl margin="dense" fullWidth>
-            <InputLabel id="label-programa">Programa</InputLabel>
+          <FormControl fullWidth error={Boolean(errores.programaId)}>
+            <InputLabel id="programa-grupo-label">Programa</InputLabel>
             <Select
-              labelId="label-programa"
-              id="select-programa"
+              labelId="programa-grupo-label"
               label="Programa"
-              value={programaIdNuevo}
-              onChange={(e) => setProgramaIdNuevo(e.target.value)}
+              value={formulario.programaId}
+              onChange={(event) => actualizarCampo('programaId', event.target.value)}
             >
               <MenuItem value="">Selecciona un programa</MenuItem>
-              {programas.map((p) => (
-                <MenuItem key={p.id} value={p.id}>
-                  {p.nombre}
+              {programas.map((programa) => (
+                <MenuItem key={programa.id} value={programa.id}>
+                  {programa.nombre}
                 </MenuItem>
               ))}
             </Select>
+            {errores.programaId && <FormHelperText>{errores.programaId}</FormHelperText>}
           </FormControl>
           <TextField
-            margin="dense"
             id="educador-grupo"
             label="ID del educador (UUID)"
-            type="text"
+            value={formulario.educadorId}
+            onChange={(event) => actualizarCampo('educadorId', event.target.value)}
+            error={Boolean(errores.educadorId)}
+            helperText={errores.educadorId}
+            required
             fullWidth
-            value={educadorIdNuevo}
-            onChange={(e) => setEducadorIdNuevo(e.target.value)}
           />
           <TextField
-            margin="dense"
             id="periodo-grupo"
             label="Periodo (ej. 2026-1)"
-            type="text"
+            value={formulario.periodo}
+            onChange={(event) => actualizarCampo('periodo', event.target.value)}
+            error={Boolean(errores.periodo)}
+            helperText={errores.periodo}
+            required
             fullWidth
-            value={periodoNuevo}
-            onChange={(e) => setPeriodoNuevo(e.target.value)}
           />
           <TextField
-            margin="dense"
+            id="salon-grupo"
+            label="Salón (opcional)"
+            value={formulario.salon}
+            onChange={(event) => actualizarCampo('salon', event.target.value)}
+            fullWidth
+          />
+          <TextField
             id="cupo-grupo"
             label="Cupo máximo"
             type="number"
+            value={formulario.cupoMaximo}
+            onChange={(event) => actualizarCampo('cupoMaximo', event.target.value)}
+            error={Boolean(errores.cupoMaximo)}
+            helperText={errores.cupoMaximo ?? 'Debe ser un número entero mayor que cero.'}
+            required
             fullWidth
-            value={cupoNuevo}
-            onChange={(e) => setCupoNuevo(e.target.value)}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAbiertoDialogo(false)}>Cancelar</Button>
-          <Button
-            onClick={manejarCrear}
-            disabled={
-              cargando ||
-              !codigoNuevo.trim() ||
-              !programaIdNuevo.trim() ||
-              !educadorIdNuevo.trim() ||
-              !periodoNuevo.trim() ||
-              !cupoNuevo.trim()
-            }
-          >
-            {cargando ? <CircularProgress size={20} /> : 'Crear'}
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={cerrarDialogo} disabled={enviando}>
+            Cancelar
+          </Button>
+          <Button variant="contained" onClick={() => void manejarCrear()} disabled={enviando}>
+            {enviando ? 'Creando…' : 'Crear grupo'}
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={Boolean(grupoTransicion)}
+        title="Cerrar grupo"
+        description={
+          grupoTransicion
+            ? `¿Cerrar el grupo "${grupoTransicion.codigo}"? No aceptará nuevas matrículas.`
+            : ''
+        }
+        confirmLabel="Cerrar grupo"
+        destructive
+        loading={procesandoTransicion}
+        onConfirm={() => void cerrarGrupo()}
+        onCancel={() => {
+          if (!procesandoTransicion) setGrupoTransicion(null);
+        }}
+      />
     </Box>
   );
 }

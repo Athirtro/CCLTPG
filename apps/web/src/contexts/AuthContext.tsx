@@ -1,5 +1,21 @@
-﻿import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { apiClient, setSessionCredentials, type MeResponseDto } from '../api/client';
+﻿import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import {
+  apiClient,
+  getCsrfCookie,
+  hasSessionMarker,
+  setSessionCredentials,
+  setSessionCsrf,
+  type MeResponseDto,
+  type ProblemDetailsDto,
+} from '../api/client';
 
 export type User = {
   id: string;
@@ -15,6 +31,7 @@ export type User = {
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
+  isRestoring: boolean;
   authStatus:
     | 'authenticated'
     | 'password_change_required'
@@ -31,6 +48,21 @@ type AuthContextType = {
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+function describeAuthError(
+  error: ProblemDetailsDto | string | undefined,
+  response: Response | undefined,
+  fallback: string,
+): Error {
+  if (response?.status === 429) {
+    return new Error('Demasiados intentos. Espera unos minutos antes de volver a intentarlo.');
+  }
+  if (response && response.status >= 500) {
+    return new Error('El servidor no está disponible. Intenta de nuevo más tarde.');
+  }
+  const detail = typeof error === 'object' ? error?.detail : undefined;
+  return new Error(detail || fallback);
+}
 
 const mapToUser = (dto: MeResponseDto): User => ({
   id: dto.userId,
@@ -54,6 +86,9 @@ type AuthProviderProps = {
 export function AuthProvider({ children, initialUser, initialSessionToken }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(initialUser ?? null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(
+    () => !initialUser && hasSessionMarker() && getCsrfCookie() !== null,
+  );
   const [authStatus, setAuthStatus] = useState<AuthContextType['authStatus']>(
     initialUser ? 'authenticated' : null,
   );
@@ -96,10 +131,36 @@ export function AuthProvider({ children, initialUser, initialSessionToken }: Aut
     }
   }, [logout]);
 
-  // Al recargar la página derivamos usuario y permisos desde `/me` (AC-SEC-21).
+  // Al recargar, el access token vive solo en memoria: se restaura desde la
+  // cookie de refresh (AC-SEC-21) y solo entonces se consulta `/me`.
+  const restoreAttempted = useRef(false);
   useEffect(() => {
-    if (initialUser) return;
-    void loadMe();
+    if (initialUser || restoreAttempted.current) return;
+    restoreAttempted.current = true;
+
+    const csrf = getCsrfCookie();
+    if (!hasSessionMarker() || !csrf) {
+      setIsRestoring(false);
+      return;
+    }
+
+    setSessionCsrf(csrf);
+    void (async () => {
+      try {
+        const { data, error, response } = await apiClient.POST('/auth/refresh');
+        if (error || !data || response?.status !== 200) {
+          setSessionCredentials(null);
+          return;
+        }
+        setSessionCredentials(data);
+        setAuthStatus('authenticated');
+        await loadMe();
+      } catch {
+        setSessionCredentials(null);
+      } finally {
+        setIsRestoring(false);
+      }
+    })();
   }, [initialUser, loadMe]);
 
   const login = async (email: string, password: string) => {
@@ -110,7 +171,7 @@ export function AuthProvider({ children, initialUser, initialSessionToken }: Aut
       });
 
       if (error || !data || response?.status !== 200) {
-        throw new Error('Credenciales inválidas o error del servidor');
+        throw describeAuthError(error, response, 'Credenciales inválidas');
       }
 
       setAuthStatus(data.status);
@@ -133,7 +194,7 @@ export function AuthProvider({ children, initialUser, initialSessionToken }: Aut
       });
 
       if (error || !data || response?.status !== 200) {
-        throw new Error('Código MFA inválido');
+        throw describeAuthError(error, response, 'Código MFA inválido');
       }
 
       setAuthStatus(data.status);
@@ -151,6 +212,7 @@ export function AuthProvider({ children, initialUser, initialSessionToken }: Aut
   const value: AuthContextType = {
     user,
     isLoading,
+    isRestoring,
     authStatus,
     sessionToken,
     login,

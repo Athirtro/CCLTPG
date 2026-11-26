@@ -1,5 +1,6 @@
-﻿import { useState } from 'react';
-import { Box, Button, CssBaseline, Paper, TextField, Typography, Alert } from '@mui/material';
+﻿import { useState, type FormEvent } from 'react';
+import { Alert, Box, Button, TextField } from '@mui/material';
+import AuthShell from '../components/common/AuthShell';
 import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
 
@@ -9,7 +10,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     try {
@@ -25,60 +26,55 @@ export default function Login() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: '#f5f5f5',
-      }}
+    <AuthShell
+      title="Iniciar sesión"
+      subtitle="Ingresa tus credenciales para acceder al sistema."
+      footnote="Las cuentas son asignadas por el administrador del sistema."
     >
-      <CssBaseline />
-      <Paper elevation={3} sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}>
-        <Typography component="h1" variant="h5" align="center" gutterBottom sx={{ mb: 3 }}>
-          CCLTPG — Iniciar sesión
-        </Typography>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-        <form onSubmit={handleSubmit} noValidate>
-          <TextField
-            required
-            fullWidth
-            id="email"
-            label="Correo electrónico"
-            name="email"
-            autoComplete="email"
-            autoFocus
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            required
-            fullWidth
-            name="password"
-            label="Contraseña"
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            sx={{ mb: 3 }}
-          />
-          <Button type="submit" fullWidth variant="contained" size="large" disabled={isLoading}>
-            {isLoading ? 'Entrando…' : 'Iniciar sesión'}
-          </Button>
-        </form>
-        <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            Las cuentas son asignadas por el administrador del sistema.
-          </Typography>
-        </Box>
-      </Paper>
-    </Box>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        noValidate
+        sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+      >
+        <TextField
+          required
+          fullWidth
+          id="email"
+          label="Correo electrónico"
+          name="email"
+          autoComplete="email"
+          autoFocus
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <TextField
+          required
+          fullWidth
+          name="password"
+          label="Contraseña"
+          type="password"
+          id="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          size="large"
+          disabled={isLoading}
+          sx={{ mt: 1 }}
+        >
+          {isLoading ? 'Entrando…' : 'Iniciar sesión'}
+        </Button>
+      </Box>
+    </AuthShell>
   );
 }

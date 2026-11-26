@@ -1,10 +1,30 @@
-import { useState } from 'react';
-import { Box, Button, Paper, TextField, Typography, Alert } from '@mui/material';
-import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
+import { useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
+import {
+  Alert,
+  Box,
+  Button,
+  LinearProgress,
+  TextField,
+  Typography,
+} from '@mui/material';
+import {
+  CloudUpload as CloudUploadIcon,
+  Home as HomeIcon,
+} from '@mui/icons-material';
+import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type { SubirArchivoResponseDto } from '../api/client';
+import type {
+  FileResponseDto,
+  SubirArchivoResponseDto,
+  ProblemDetailsDto,
+} from '../api/client';
 import { postWithIdempotency } from '../api/idempotent-client';
+import PageHeader from '../components/common/PageHeader';
+import SectionCard from '../components/common/SectionCard';
+import StatusChip from '../components/common/StatusChip';
+import EmptyState from '../components/common/EmptyState';
+import LoadingState from '../components/common/LoadingState';
 
 const LISTA_BLANCA_MIME = [
   'application/pdf',
@@ -15,44 +35,72 @@ const LISTA_BLANCA_MIME = [
 ];
 const MAX_TAMANO_MB = 10;
 
+function formatearTamano(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function formatearFecha(iso: string): string {
+  const fecha = new Date(iso);
+  return Number.isNaN(fecha.getTime()) ? '—' : fecha.toLocaleString('es-CO');
+}
+
+function Metadato({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+      <Typography variant="caption" color="text.secondary">
+        {label}
+      </Typography>
+      <Box sx={{ mt: 0.5, minWidth: 0 }}>{children}</Box>
+    </Box>
+  );
+}
+
 export default function Archivos() {
   const { hasPermission } = useAuth();
   const [archivoSeleccionado, setArchivoSeleccionado] = useState<File | null>(null);
-  const [nombreArchivo, setNombreArchivo] = useState('');
+  const [idempotencyKey, setIdempotencyKey] = useState('');
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
-  const [idempotencyKey, setIdempotencyKey] = useState('');
+  const [advertencia, setAdvertencia] = useState<string | null>(null);
+  const [resultado, setResultado] = useState<FileResponseDto | null>(null);
+
+  const puedeSubir = hasPermission('files:document:create');
 
   const validarAntesDeSubir = (file: File): string | null => {
-    if (!file) return 'Selecciona un archivo';
     if (file.size > MAX_TAMANO_MB * 1024 * 1024) {
-      return `El archivo supera los ${MAX_TAMANO_MB} MB`;
+      return `El archivo supera los ${MAX_TAMANO_MB} MB.`;
     }
     if (!LISTA_BLANCA_MIME.includes(file.type)) {
-      return 'Tipo de archivo no permitido (pdf, png, jpg, docx, xlsx)';
+      return 'Tipo de archivo no permitido. Usa PDF, PNG, JPG, DOCX o XLSX.';
     }
     return null;
   };
 
-  const manejarSeleccionArchivo = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    setArchivoSeleccionado(file);
-    setNombreArchivo(file?.name ?? '');
+  const manejarSeleccionArchivo = (event: ChangeEvent<HTMLInputElement>) => {
+    setArchivoSeleccionado(event.target.files?.[0] ?? null);
     setError(null);
     setExito(null);
+    setAdvertencia(null);
+    setResultado(null);
   };
 
-  const manejarSubida = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const manejarSubida = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setError(null);
     setExito(null);
+    setAdvertencia(null);
 
-    if (!archivoSeleccionado) {
-      setError('Selecciona un archivo');
+    if (!puedeSubir) {
+      setError('No tienes permiso para subir archivos.');
       return;
     }
-
+    if (!archivoSeleccionado) {
+      setError('Selecciona un archivo.');
+      return;
+    }
     const errorValidacion = validarAntesDeSubir(archivoSeleccionado);
     if (errorValidacion) {
       setError(errorValidacion);
@@ -60,6 +108,7 @@ export default function Archivos() {
     }
 
     setSubiendo(true);
+    setResultado(null);
     try {
       const formData = new FormData();
       formData.append('file', archivoSeleccionado);
@@ -70,52 +119,58 @@ export default function Archivos() {
       });
 
       if (result.error || result.response?.status !== 200) {
-        const detalle =
-          result.error && typeof result.error === 'object' && 'detail' in result.error
-            ? (result.error as { detail?: string }).detail
-            : undefined;
-        setError(detalle || 'Error al subir el archivo');
+        const problema = result.error as ProblemDetailsDto | null;
+        setError(problema?.detail || 'No se pudo subir el archivo.');
+        return;
+      }
+      if (!result.data || typeof result.data !== 'object' || !('archivo' in result.data)) {
+        setError('El servicio no devolvió los metadatos del archivo.');
         return;
       }
 
-      if (!result.data || typeof result.data !== 'object' || !('archivo' in result.data)) {
-        setError('Error al subir el archivo');
-        return;
-      }
       const dto = result.data as SubirArchivoResponseDto;
-      setExito(`Archivo "${dto.archivo.nombreOriginal}" subido correctamente`);
+      setResultado(dto.archivo);
+      setExito(`Archivo "${dto.archivo.nombreOriginal}" subido correctamente.`);
+      if (dto.advertencia) {
+        setAdvertencia(dto.advertencia);
+      }
       setArchivoSeleccionado(null);
-      setNombreArchivo('');
       setIdempotencyKey('');
+      const input = document.getElementById('archivo-input') as HTMLInputElement | null;
+      if (input) input.value = '';
     } catch (err) {
-      setError(getErrorMessage(err) || 'Error inesperado al subir');
+      setError(getErrorMessage(err) || 'Error inesperado al subir el archivo.');
     } finally {
       setSubiendo(false);
     }
   };
 
-  const puedeSubir = hasPermission('files:document:create');
+  const cabecera = (
+    <PageHeader
+      title="Gestión de archivos"
+      description="Carga documentos con validación de tipo y tamaño, y con clave de idempotencia opcional."
+      icon={<CloudUploadIcon />}
+      breadcrumbs={[{ label: 'Inicio', to: '/' }, { label: 'Operaciones' }, { label: 'Archivos' }]}
+      actions={
+        <Button component={RouterLink} to="/" startIcon={<HomeIcon />}>
+          Ir al inicio
+        </Button>
+      }
+    />
+  );
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4">Gestión de Archivos</Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Carga archivos con validación de tipo, tamaño ({MAX_TAMANO_MB} MB) e idempotencia. La
-        descarga y el listado se habilitarán cuando el Rol B implemente los endpoints
-        correspondientes.
-      </Typography>
+    <Box>
+      {cabecera}
 
-      {!puedeSubir && (
-        <Alert severity="warning">
-          No tienes permiso para subir archivos. Contacta al administrador.
-        </Alert>
-      )}
-
-      {puedeSubir && (
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
-            Subir archivo
-          </Typography>
+      {!puedeSubir ? (
+        <EmptyState
+          title="Sin permisos"
+          description="No tienes permiso para subir archivos (files:document:create)."
+          icon={<CloudUploadIcon />}
+        />
+      ) : (
+        <>
           {error && (
             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
               {error}
@@ -126,58 +181,141 @@ export default function Archivos() {
               {exito}
             </Alert>
           )}
-          <form onSubmit={manejarSubida} noValidate>
-            <Box sx={{ mb: 2 }}>
+          {advertencia && (
+            <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setAdvertencia(null)}>
+              {advertencia}
+            </Alert>
+          )}
+
+          <SectionCard title="Subir archivo" subtitle="PDF, PNG, JPG, DOCX o XLSX · Máximo 10 MB">
+            <Box component="form" noValidate onSubmit={(event) => void manejarSubida(event)}>
               <input
                 type="file"
                 accept=".pdf, .png, .jpg, .jpeg, .docx, .xlsx"
                 onChange={manejarSeleccionArchivo}
+                id="archivo-input"
                 style={{ display: 'none' }}
-                id="file-input"
               />
               <Box
                 component="label"
-                htmlFor="file-input"
+                htmlFor="archivo-input"
                 sx={{
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 1,
-                  p: 1,
+                  gap: 1.5,
+                  p: 2,
                   border: '1px dashed',
-                  borderRadius: 1,
-                  bgcolor: 'background.paper',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  bgcolor: 'background.default',
+                  '&:hover': { bgcolor: 'action.hover' },
                 }}
               >
-                <CloudUploadIcon fontSize="medium" />
-                {nombreArchivo || 'Seleccionar archivo'}
+                <CloudUploadIcon fontSize="medium" color="primary" />
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {archivoSeleccionado ? archivoSeleccionado.name : 'Seleccionar archivo'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {archivoSeleccionado
+                      ? formatearTamano(archivoSeleccionado.size)
+                      : 'Haz clic para elegir un archivo'}
+                  </Typography>
+                </Box>
               </Box>
-            </Box>
-            <Box sx={{ mb: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                Límite: {MAX_TAMANO_MB} MB · Tipos: PDF, PNG, JPG, DOCX, XLSX
+
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, mb: 2 }}>
+                Límite: {MAX_TAMANO_MB} MB · Tipos permitidos: PDF, PNG, JPG, DOCX, XLSX
               </Typography>
+
+              <TextField
+                fullWidth
+                id="archivo-idempotencia"
+                label="Idempotency-Key (opcional)"
+                placeholder="Clave para evitar duplicados"
+                value={idempotencyKey}
+                onChange={(event) => setIdempotencyKey(event.target.value)}
+                helperText="Si se repite la misma clave con el mismo cuerpo, se devuelve el resultado original."
+                sx={{ mb: 2 }}
+              />
+
+              {subiendo && <LinearProgress sx={{ mb: 2 }} aria-label="Subiendo archivo" />}
+
+              <Button
+                type="submit"
+                variant="contained"
+                startIcon={<CloudUploadIcon />}
+                disabled={subiendo || !archivoSeleccionado}
+              >
+                {subiendo ? 'Subiendo…' : 'Subir archivo'}
+              </Button>
             </Box>
-            <TextField
-              fullWidth
-              label="Idempotency-Key (opcional)"
-              placeholder="Clave para evitar duplicados"
-              value={idempotencyKey}
-              onChange={(e) => setIdempotencyKey(e.target.value)}
-              helperText="Si se repite la misma clave con el mismo cuerpo, se devuelve el resultado original"
-              sx={{ mb: 3 }}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              startIcon={<CloudUploadIcon />}
-              disabled={subiendo || !archivoSeleccionado}
-            >
-              {subiendo ? 'Subiendo…' : 'Subir archivo'}
-            </Button>
-          </form>
-        </Paper>
+          </SectionCard>
+
+          <SectionCard
+            title="Resultado de la última carga"
+            subtitle="Metadatos devueltos por el servicio de archivos"
+            sx={{ mt: 3 }}
+          >
+            {subiendo ? (
+              <LoadingState label="Subiendo archivo…" minHeight={160} />
+            ) : resultado ? (
+              <>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gap: 2,
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: 'repeat(2, minmax(0, 1fr))',
+                      lg: 'repeat(3, minmax(0, 1fr))',
+                    },
+                  }}
+                >
+                  <Metadato label="Identificador">
+                    <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
+                      {resultado.id}
+                    </Typography>
+                  </Metadato>
+                  <Metadato label="Nombre original">
+                    <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
+                      {resultado.nombreOriginal}
+                    </Typography>
+                  </Metadato>
+                  <Metadato label="Tipo MIME">
+                    <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
+                      {resultado.mime}
+                    </Typography>
+                  </Metadato>
+                  <Metadato label="Tamaño">
+                    <Typography variant="body2">
+                      {formatearTamano(resultado.tamano)} ({resultado.tamano} bytes)
+                    </Typography>
+                  </Metadato>
+                  <Metadato label="Estado del escaneo">
+                    <StatusChip status={resultado.estadoEscaneo} />
+                  </Metadato>
+                  <Metadato label="Creado en">
+                    <Typography variant="body2">{formatearFecha(resultado.creadoEn)}</Typography>
+                  </Metadato>
+                </Box>
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-all' }}>
+                    SHA-256: {resultado.hashSha256}
+                  </Typography>
+                </Box>
+              </>
+            ) : (
+              <EmptyState
+                title="Sin cargas recientes"
+                description="El contrato no dispone de un endpoint para listar archivos. Tras subir uno, aquí se mostrarán sus metadatos reales."
+                icon={<CloudUploadIcon />}
+                minHeight={160}
+              />
+            )}
+          </SectionCard>
+        </>
       )}
     </Box>
   );

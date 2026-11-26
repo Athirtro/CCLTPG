@@ -2,7 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
 import axe from 'axe-core';
+import { theme } from '../theme/theme';
 import { AuthProvider, type User } from '../contexts/AuthContext';
 import Home from '../pages/Home';
 import Login from '../pages/Login';
@@ -98,9 +100,11 @@ const mockAdmin: User = {
 
 function renderWithProviders(ui: React.ReactElement, user?: User, sessionToken?: string) {
   return render(
-    <AuthProvider initialUser={user ?? mockEstudiante} initialSessionToken={sessionToken}>
-      <BrowserRouter>{ui}</BrowserRouter>
-    </AuthProvider>,
+    <ThemeProvider theme={theme}>
+      <AuthProvider initialUser={user ?? mockEstudiante} initialSessionToken={sessionToken}>
+        <BrowserRouter>{ui}</BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>,
   );
 }
 

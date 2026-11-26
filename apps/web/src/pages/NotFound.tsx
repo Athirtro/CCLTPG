@@ -1,27 +1,30 @@
 ﻿import { Box, Button, Paper, Typography } from '@mui/material';
+import { Home as HomeIcon } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 
 export default function NotFound() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '60vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: '#f5f5f5',
       }}
     >
-      <Paper sx={{ p: 6, textAlign: 'center' }}>
-        <Typography variant="h4">404</Typography>
-        <Typography variant="body1" sx={{ mb: 3 }}>
-          La página que buscas no existe.
+      <Paper elevation={0} sx={{ p: { xs: 3, sm: 5 }, maxWidth: 520, textAlign: 'center' }}>
+        <Typography variant="h1" component="h1">
+          Página no encontrada
         </Typography>
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <Button component={Link} to="/" variant="contained">
-            Volver al inicio
-          </Button>
-        </Box>
+        <Typography variant="h2" color="primary.main" sx={{ mt: 1 }}>
+          404
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 3 }}>
+          La página que buscas no existe o ya no está disponible.
+        </Typography>
+        <Button component={Link} to="/" variant="contained" startIcon={<HomeIcon />}>
+          Volver al inicio
+        </Button>
       </Paper>
     </Box>
   );

@@ -1,72 +1,55 @@
-﻿import {
-  Box,
-  Paper,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-} from '@mui/material';
+﻿import { Box, Button } from '@mui/material';
+import {
+  AdminPanelSettings as AdminPanelSettingsIcon,
+  Home as HomeIcon,
+  People as PeopleIcon,
+} from '@mui/icons-material';
+import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-
-const usuarios = [
-  { id: 'U-001', nombre: 'Admin Principal', email: 'admin@ccltpg.edu.co', rol: 'Administrador' },
-  { id: 'U-002', nombre: 'Prof. Carlos Ruiz', email: 'carlos@ccltpg.edu.co', rol: 'Educador' },
-  { id: 'U-003', nombre: 'Prof. Elena Díaz', email: 'elena@ccltpg.edu.co', rol: 'Educador' },
-];
+import PageHeader from '../components/common/PageHeader';
+import SectionCard from '../components/common/SectionCard';
+import EmptyState from '../components/common/EmptyState';
 
 export default function Admin() {
   const { hasPermission } = useAuth();
+  const puedeGestionar = hasPermission('identity:user:manage');
 
-  if (!hasPermission('identity:user:manage')) {
-    return (
-      <Box
-        sx={{
-          p: 4,
-          textAlign: 'center',
-          minHeight: '60vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Typography variant="h6">No tienes permiso para ver esta sección.</Typography>
-      </Box>
-    );
-  }
+  const cabecera = (
+    <PageHeader
+      title="Administración"
+      description="Espacio reservado a la gestión de usuarios y permisos del centro cultural."
+      icon={<AdminPanelSettingsIcon />}
+      breadcrumbs={[{ label: 'Inicio', to: '/' }, { label: 'Administración' }]}
+      actions={
+        <Button component={RouterLink} to="/" startIcon={<HomeIcon />}>
+          Ir al inicio
+        </Button>
+      }
+    />
+  );
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 2 }}>
-        Administración de Usuarios
-      </Typography>
-      <Paper>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Correo</TableCell>
-                <TableCell>Rol</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {usuarios.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell>{row.id}</TableCell>
-                  <TableCell>{row.nombre}</TableCell>
-                  <TableCell>{row.email}</TableCell>
-                  <TableCell>{row.rol}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+    <Box>
+      {cabecera}
+
+      {!puedeGestionar ? (
+        <EmptyState
+          title="Sin permisos"
+          description="No tienes permiso para acceder a la administración de usuarios (identity:user:manage)."
+          icon={<AdminPanelSettingsIcon />}
+        />
+      ) : (
+        <SectionCard
+          title="Usuarios"
+          subtitle="No se muestra información de usuarios porque el contrato actual no ofrece un listado."
+        >
+          <EmptyState
+            title="El contrato actual no dispone de un endpoint para listar usuarios"
+            description="Esta sección permanecerá vacía hasta que la API publique un endpoint de consulta de usuarios. No se muestran registros inventados."
+            icon={<PeopleIcon />}
+          />
+        </SectionCard>
+      )}
     </Box>
   );
 }

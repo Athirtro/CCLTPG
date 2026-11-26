@@ -1,7 +1,7 @@
 ﻿import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { CssBaseline } from '@mui/material';
-import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from '@mui/material/styles';
+import { Box, CssBaseline } from '@mui/material';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import MainLayout from './components/layout/MainLayout';
 import AuthRedirect from './components/layout/AuthRedirect';
 import Login from './pages/Login';
@@ -25,20 +25,22 @@ import Kpis from './pages/Kpis';
 import Reportes from './pages/Reportes';
 import Health from './pages/Health';
 import NotFound from './pages/NotFound';
+import { theme } from './theme/theme';
 
-const theme = createTheme({
-  palette: {
-    primary: { main: '#1a237e' },
-    secondary: { main: '#ff4081' },
-  },
-});
+function AppRoutes() {
+  const { isRestoring } = useAuth();
 
-export default function App() {
   return (
-    <AuthProvider>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <BrowserRouter>
+    <BrowserRouter>
+      {isRestoring ? (
+        <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
+          Restaurando sesión…
+        </Box>
+      ) : (
+        <>
+          {/* Debe estar montado también en las rutas públicas: tras login/MFA
+              el estado cambia en /login o /mfa-verify y hay que navegar. */}
+          <AuthRedirect />
           <Routes>
             {/* Rutas públicas (sin layout de sidebar) */}
             <Route path="/login" element={<Login />} />
@@ -70,7 +72,18 @@ export default function App() {
 
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
+        </>
+      )}
+    </BrowserRouter>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AppRoutes />
       </ThemeProvider>
     </AuthProvider>
   );

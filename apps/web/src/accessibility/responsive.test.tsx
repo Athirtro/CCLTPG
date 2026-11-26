@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
 import { AuthProvider, type User } from '../contexts/AuthContext';
-import MainLayout from '../components/layout/MainLayout';
+import MainLayout, { DRAWER_COLLAPSED_WIDTH, DRAWER_WIDTH } from '../components/layout/MainLayout';
+import { theme } from '../theme/theme';
 
 const usuario: User = {
   id: 'U-001',
@@ -38,11 +40,13 @@ function simularAncho(width: number) {
 
 function renderLayout() {
   return render(
-    <MemoryRouter>
-      <AuthProvider initialUser={usuario}>
-        <MainLayout />
-      </AuthProvider>
-    </MemoryRouter>,
+    <ThemeProvider theme={theme}>
+      <MemoryRouter>
+        <AuthProvider initialUser={usuario}>
+          <MainLayout />
+        </AuthProvider>
+      </MemoryRouter>
+    </ThemeProvider>,
   );
 }
 
@@ -76,5 +80,41 @@ describe('Responsividad del layout (ON-1)', () => {
 
     expect(screen.queryByRole('button', { name: /menú/i })).not.toBeInTheDocument();
     expect(screen.getByText('CCLTPG')).toBeInTheDocument();
+  });
+
+  it('el drawer permanente precede al contenido y no solapa el área principal', () => {
+    simularAncho(1440);
+    const { container } = renderLayout();
+    const drawer = container.querySelector('.MuiDrawer-root');
+    const main = container.querySelector('main');
+
+    expect(drawer).toBeInTheDocument();
+    expect(main).toBeInTheDocument();
+    expect(drawer!.compareDocumentPosition(main!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(window.getComputedStyle(main!).width).not.toContain('calc');
+    expect(window.getComputedStyle(main!).marginLeft).toBe('0px');
+  });
+
+  it('el ancho del drawer sigue al estado expandido y contraído', () => {
+    simularAncho(1440);
+    const { container } = renderLayout();
+    const drawer = container.querySelector('.MuiDrawer-root') as HTMLElement;
+    const paper = container.querySelector('.MuiDrawer-paper') as HTMLElement;
+
+    expect(window.getComputedStyle(drawer).width).toBe(`${DRAWER_WIDTH}px`);
+    expect(window.getComputedStyle(paper).width).toBe(`${DRAWER_WIDTH}px`);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Contraer navegación' }));
+
+    expect(window.getComputedStyle(drawer).width).toBe(`${DRAWER_COLLAPSED_WIDTH}px`);
+    expect(window.getComputedStyle(paper).width).toBe(`${DRAWER_COLLAPSED_WIDTH}px`);
+  });
+
+  it('el drawer temporal cerrado no deja una columna reservada', () => {
+    simularAncho(360);
+    const { container } = renderLayout();
+
+    expect(container.querySelector('.MuiDrawer-root')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Abrir menú' })).toBeInTheDocument();
   });
 });

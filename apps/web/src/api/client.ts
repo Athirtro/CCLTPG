@@ -1347,6 +1347,40 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 let bearerToken: string | null = null;
 let csrfToken: string | null = null;
 
+/**
+ * Marca legible por JS de que este navegador inició una sesión completa.
+ * No es credencial: solo evita llamar a `/auth/refresh` cuando no hay sesión
+ * (la cookie httpOnly de refresh no se puede inspeccionar desde el cliente).
+ */
+const SESSION_MARKER = 'ccltpg_session';
+const SESSION_MARKER_MAX_AGE = 604_800; // REFRESH_TOKEN_TTL_SECONDS por defecto.
+
+function readCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const entry = document.cookie
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${name}=`));
+  if (!entry) return null;
+  const value = entry.slice(name.length + 1);
+  return value ? decodeURIComponent(value) : null;
+}
+
+function setSessionMarker(): void {
+  if (typeof document === 'undefined') return;
+  const secure = typeof location !== 'undefined' && location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `${SESSION_MARKER}=1; Path=/; Max-Age=${SESSION_MARKER_MAX_AGE}; SameSite=Strict${secure}`;
+}
+
+function clearSessionMarker(): void {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${SESSION_MARKER}=; Path=/; Max-Age=0; SameSite=Strict`;
+}
+
+export function hasSessionMarker(): boolean {
+  return readCookie(SESSION_MARKER) === '1';
+}
+
 export function setSessionCredentials(
   credentials: {
     accessToken?: string;
@@ -1355,6 +1389,32 @@ export function setSessionCredentials(
 ): void {
   bearerToken = credentials?.accessToken ?? null;
   csrfToken = credentials?.csrfToken ?? null;
+  if (credentials?.accessToken) setSessionMarker();
+  else clearSessionMarker();
+}
+
+/**
+ * Prepara la cabecera CSRF del refresh sin tocar el marcador: así se conserva
+ * hasta que sepamos si la sesión sigue siendo válida.
+ */
+export function setSessionCsrf(csrf: string | null): void {
+  csrfToken = csrf;
+}
+
+/**
+ * El CSRF viaja en cookie legible por JS (doble envío). Junto con el marcador
+ * de sesión, indica si vale la pena intentar `/auth/refresh`; si falta alguno,
+ * el cliente no llama al backend y no produce 401 al cargar.
+ */
+export function getCsrfCookie(): string | null {
+  if (typeof document === 'undefined') return null;
+  const entry = document.cookie
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith('__Host-ccltpg_csrf='));
+  if (!entry) return null;
+  const value = entry.slice('__Host-ccltpg_csrf='.length);
+  return value ? decodeURIComponent(value) : null;
 }
 
 export const apiClient = createClient<Paths>({

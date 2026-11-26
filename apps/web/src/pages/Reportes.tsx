@@ -1,42 +1,60 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
+  Alert,
   Box,
   Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-  Alert,
-  Chip,
-  CircularProgress,
-  Select,
-  MenuItem,
   FormControl,
   InputLabel,
+  MenuItem,
+  Select,
   TextField,
+  Typography,
 } from '@mui/material';
 import {
   Description as DescriptionIcon,
   FileDownload as FileDownloadIcon,
+  Home as HomeIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
+import { Link as RouterLink } from 'react-router-dom';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type { ReportCatalogItemDto, ExportacionDto } from '../api/client';
+import type { ReportCatalogItemDto, ExportacionDto, ProblemDetailsDto } from '../api/client';
 import { postWithIdempotency } from '../api/idempotent-client';
+import PageHeader from '../components/common/PageHeader';
+import SectionCard from '../components/common/SectionCard';
+import DataTable, { type DataTableColumn } from '../components/common/DataTable';
+import SearchToolbar from '../components/common/SearchToolbar';
+import StatusChip from '../components/common/StatusChip';
+import EmptyState from '../components/common/EmptyState';
+import LoadingState from '../components/common/LoadingState';
+import ErrorState from '../components/common/ErrorState';
+
+function Metadato({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+      <Typography variant="caption" color="text.secondary">
+        {label}
+      </Typography>
+      <Box sx={{ mt: 0.5 }}>{children}</Box>
+    </Box>
+  );
+}
 
 export default function Reportes() {
   const { hasPermission } = useAuth();
   const [catalogo, setCatalogo] = useState<ReportCatalogItemDto[]>([]);
+  const [cargando, setCargando] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
+  const [pagina, setPagina] = useState(0);
+  const [tamanoPagina, setTamanoPagina] = useState(5);
   const [reporteSeleccionado, setReporteSeleccionado] = useState<ReportCatalogItemDto | null>(null);
-  const [formatoSeleccionado, setFormatoSeleccionado] = useState<string>('');
+  const [formatoSeleccionado, setFormatoSeleccionado] = useState('');
   const [parametrosJson, setParametrosJson] = useState('{}');
+  const [errorParametros, setErrorParametros] = useState<string | null>(null);
   const [generando, setGenerando] = useState(false);
   const [resultado, setResultado] = useState<ExportacionDto | null>(null);
+  const [generadoEn, setGeneradoEn] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
 
@@ -45,16 +63,19 @@ export default function Reportes() {
 
   const cargarCatalogo = useCallback(async () => {
     if (!puedeExportar && !puedeCrear) return;
+    setCargando(true);
     setError(null);
     try {
       const { data, error: apiError } = await apiClient.GET('/reports/catalog');
       if (apiError || !data) {
-        setError('No se pudo cargar el catálogo de reportes');
+        setError('No se pudo cargar el catálogo de reportes.');
         return;
       }
       setCatalogo(data.items);
     } catch (err) {
-      setError(getErrorMessage(err) || 'Error al cargar catálogo de reportes');
+      setError(getErrorMessage(err) || 'Error al cargar el catálogo de reportes.');
+    } finally {
+      setCargando(false);
     }
   }, [puedeExportar, puedeCrear]);
 
@@ -62,30 +83,51 @@ export default function Reportes() {
     void cargarCatalogo();
   }, [cargarCatalogo]);
 
+  useEffect(() => {
+    setPagina(0);
+  }, [busqueda]);
+
+  const catalogoFiltrado = useMemo(() => {
+    const texto = busqueda.trim().toLocaleLowerCase('es');
+    if (!texto) return catalogo;
+    return catalogo.filter((reporte) =>
+      `${reporte.nombre} ${reporte.descripcion} ${reporte.code}`.toLocaleLowerCase('es').includes(texto),
+    );
+  }, [catalogo, busqueda]);
+
   const seleccionarReporte = (reporte: ReportCatalogItemDto) => {
     setReporteSeleccionado(reporte);
     setFormatoSeleccionado(reporte.formatos[0] ?? '');
     setParametrosJson('{}');
+    setErrorParametros(null);
     setResultado(null);
+    setGeneradoEn(null);
     setError(null);
     setExito(null);
   };
 
   const manejarGenerar = async () => {
     if (!reporteSeleccionado || !formatoSeleccionado) {
-      setError('Selecciona un reporte y un formato');
+      setError('Selecciona un reporte y un formato.');
       return;
     }
     if (!puedeExportar) {
-      setError('No tienes permiso para generar reportes');
+      setError('No tienes permiso para generar reportes.');
       return;
     }
 
+    setError(null);
     let parametros: Record<string, unknown>;
     try {
-      parametros = JSON.parse(parametrosJson || '{}') as Record<string, unknown>;
+      const parseado: unknown = JSON.parse(parametrosJson || '{}');
+      if (typeof parseado !== 'object' || parseado === null || Array.isArray(parseado)) {
+        setErrorParametros('Los parámetros deben ser un objeto JSON, por ejemplo {"periodo": "2026-1"}.');
+        return;
+      }
+      parametros = parseado as Record<string, unknown>;
+      setErrorParametros(null);
     } catch {
-      setError('El JSON de parámetros no es válido');
+      setErrorParametros('JSON no válido: revisa las comillas y las comas.');
       return;
     }
 
@@ -93,6 +135,7 @@ export default function Reportes() {
     setError(null);
     setExito(null);
     setResultado(null);
+    setGeneradoEn(null);
     try {
       const result = await postWithIdempotency(`/reports/${reporteSeleccionado.code}/generate`, {
         body: {
@@ -103,23 +146,20 @@ export default function Reportes() {
       });
 
       if (result.error || result.response?.status !== 201) {
-        const detalle =
-          result.error && typeof result.error === 'object' && 'detail' in result.error
-            ? (result.error as { detail?: string }).detail
-            : undefined;
-        setError(detalle || 'Error al generar el reporte');
+        const problema = result.error as ProblemDetailsDto | null;
+        setError(problema?.detail || 'No se pudo generar el reporte.');
         return;
       }
-
       if (!result.data || typeof result.data !== 'object' || !('archivoId' in result.data)) {
-        setError('Error al generar el reporte');
+        setError('El servicio no devolvió un archivo de reporte.');
         return;
       }
       const dto = result.data as ExportacionDto;
       setResultado(dto);
-      setExito(`Reporte "${dto.nombre}" generado correctamente`);
+      setGeneradoEn(new Date());
+      setExito(`Reporte "${dto.nombre}" generado correctamente.`);
     } catch (err) {
-      setError(getErrorMessage(err) || 'Error inesperado al generar el reporte');
+      setError(getErrorMessage(err) || 'Error inesperado al generar el reporte.');
     } finally {
       setGenerando(false);
     }
@@ -127,45 +167,100 @@ export default function Reportes() {
 
   const descargarResultado = () => {
     if (!resultado?.descargaUrl) return;
-    window.open(resultado.descargaUrl, '_blank');
+    window.open(resultado.descargaUrl, '_blank', 'noopener,noreferrer');
   };
+
+  const columnas: DataTableColumn<ReportCatalogItemDto>[] = [
+    {
+      id: 'nombre',
+      label: 'Reporte',
+      minWidth: 240,
+      render: (reporte) => (
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            {reporte.nombre}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {reporte.descripcion}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      id: 'formatos',
+      label: 'Formatos',
+      minWidth: 170,
+      render: (reporte) => (
+        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+          {reporte.formatos.map((formato) => (
+            <StatusChip key={formato} status="primary" label={formato.toUpperCase()} />
+          ))}
+        </Box>
+      ),
+    },
+    {
+      id: 'columnas',
+      label: 'Columnas',
+      minWidth: 180,
+      render: (reporte) => (
+        <Typography variant="caption" color="text.secondary">
+          {reporte.columnas.map((columna) => columna.nombre).join(', ') || '—'}
+        </Typography>
+      ),
+    },
+    {
+      id: 'accion',
+      label: 'Acción',
+      align: 'right',
+      minWidth: 130,
+      render: (reporte) => (
+        <Button size="small" onClick={() => seleccionarReporte(reporte)}>
+          {reporteSeleccionado?.code === reporte.code ? 'Seleccionado' : 'Seleccionar'}
+        </Button>
+      ),
+    },
+  ];
+
+  const cabecera = (
+    <PageHeader
+      title="Reportes"
+      description="Selecciona un reporte del catálogo, ajusta sus parámetros y descarga el archivo generado."
+      icon={<DescriptionIcon />}
+      breadcrumbs={[{ label: 'Inicio', to: '/' }, { label: 'Reportes y exportaciones' }, { label: 'Reportes' }]}
+      actions={
+        puedeExportar || puedeCrear ? (
+          <Button
+            startIcon={<RefreshIcon />}
+            onClick={() => void cargarCatalogo()}
+            disabled={cargando || generando}
+          >
+            Actualizar
+          </Button>
+        ) : (
+          <Button component={RouterLink} to="/" startIcon={<HomeIcon />}>
+            Ir al inicio
+          </Button>
+        )
+      }
+    />
+  );
 
   if (!puedeExportar && !puedeCrear) {
     return (
-      <Box
-        sx={{
-          p: 3,
-          minHeight: '60vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <DescriptionIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
-          <Typography variant="h6">Reportes</Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-            No tienes permiso para ver reportes.
-          </Typography>
-        </Paper>
+      <Box>
+        {cabecera}
+        <EmptyState
+          title="Sin permisos"
+          description="No tienes permiso para consultar reportes (exports:report:export o exports:report:create)."
+          icon={<DescriptionIcon />}
+        />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h1">Reportes y exportaciones</Typography>
-        <Button
-          startIcon={<RefreshIcon />}
-          size="small"
-          disabled={generando}
-          onClick={cargarCatalogo}
-        >
-          {generando ? <CircularProgress size={20} /> : 'Actualizar'}
-        </Button>
-      </Box>
+    <Box>
+      {cabecera}
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -178,89 +273,65 @@ export default function Reportes() {
         </Alert>
       )}
 
-      {catalogo.length === 0 && !generando && (
-        <Paper
-          sx={{
-            p: 4,
-            textAlign: 'center',
-            minHeight: '40vh',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <DescriptionIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
-          <Typography variant="body1">No hay reportes disponibles.</Typography>
-        </Paper>
-      )}
+      <SectionCard title="Catálogo de reportes" subtitle="Reportes disponibles según el contrato de la API">
+        {cargando && catalogo.length === 0 ? (
+          <LoadingState label="Cargando catálogo…" />
+        ) : error && catalogo.length === 0 ? (
+          <ErrorState message={error} onRetry={() => void cargarCatalogo()} />
+        ) : catalogo.length === 0 ? (
+          <EmptyState
+            title="Sin reportes disponibles"
+            description="El catálogo no devolvió reportes para mostrar."
+            icon={<DescriptionIcon />}
+          />
+        ) : (
+          <>
+            <SearchToolbar
+              value={busqueda}
+              onChange={setBusqueda}
+              label="Buscar reporte"
+              placeholder="Nombre, descripción o código"
+              resultCount={catalogoFiltrado.length}
+            />
+            <DataTable
+              ariaLabel="Catálogo de reportes"
+              columns={columnas}
+              rows={catalogoFiltrado.slice(pagina * tamanoPagina, (pagina + 1) * tamanoPagina)}
+              rowKey={(reporte) => reporte.code}
+              loading={cargando}
+              page={pagina}
+              pageSize={tamanoPagina}
+              total={catalogoFiltrado.length}
+              onPageChange={setPagina}
+              onPageSizeChange={setTamanoPagina}
+            />
+          </>
+        )}
+      </SectionCard>
 
-      <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-        {/* Catálogo de reportes */}
-        <Paper sx={{ p: 3, flex: 1, minWidth: 300 }}>
-          <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
-            Catálogo de reportes
-          </Typography>
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Reporte</TableCell>
-                  <TableCell>Formatos</TableCell>
-                  <TableCell>Seleccionar</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {catalogo.map((r) => (
-                  <TableRow
-                    key={r.code}
-                    sx={{ cursor: 'pointer' }}
-                    onClick={() => void seleccionarReporte(r)}
-                    hover
-                  >
-                    <TableCell sx={{ fontWeight: 'medium' }}>{r.nombre}</TableCell>
-                    <TableCell>{r.formatos.join(', ').toUpperCase()}</TableCell>
-                    <TableCell>
-                      {reporteSeleccionado?.code === r.code ? (
-                        <Chip label="Seleccionado" size="small" color="success" />
-                      ) : (
-                        'Abrir'
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {catalogo.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={3}>No hay reportes disponibles.</TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
-
-        {/* Formulario de generación */}
-        {reporteSeleccionado && (
-          <Paper sx={{ p: 3, flex: 1, minWidth: 300 }}>
-            <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
-              Generar: {reporteSeleccionado.nombre}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {reporteSeleccionado.descripcion}
-            </Typography>
-
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel id="label-formato">Formato</InputLabel>
+      <SectionCard
+        title={reporteSeleccionado ? `Generar: ${reporteSeleccionado.nombre}` : 'Generar reporte'}
+        subtitle={
+          reporteSeleccionado
+            ? reporteSeleccionado.descripcion
+            : 'Selecciona un reporte del catálogo para configurar la generación.'
+        }
+        sx={{ mt: 3 }}
+      >
+        {reporteSeleccionado ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 640 }}>
+            <FormControl fullWidth>
+              <InputLabel id="reporte-formato-label">Formato</InputLabel>
               <Select
-                labelId="label-formato"
-                id="select-formato"
+                labelId="reporte-formato-label"
+                id="reporte-formato"
                 label="Formato"
                 value={formatoSeleccionado}
-                onChange={(e) => setFormatoSeleccionado(e.target.value)}
+                onChange={(event) => setFormatoSeleccionado(event.target.value)}
               >
-                {reporteSeleccionado.formatos.map((f) => (
-                  <MenuItem key={f} value={f}>
-                    {f.toUpperCase()}
+                {reporteSeleccionado.formatos.map((formato) => (
+                  <MenuItem key={formato} value={formato}>
+                    {formato.toUpperCase()}
                   </MenuItem>
                 ))}
               </Select>
@@ -269,65 +340,98 @@ export default function Reportes() {
             <TextField
               fullWidth
               multiline
-              rows={4}
+              rows={5}
+              id="reporte-parametros"
               label="Parámetros (JSON)"
               placeholder='{"periodo": "2026-1"}'
               value={parametrosJson}
-              onChange={(e) => setParametrosJson(e.target.value)}
-              helperText="Parámetros de filtro para la plantilla (opcional)"
-              sx={{ mb: 3 }}
+              onChange={(event) => {
+                setParametrosJson(event.target.value);
+                setErrorParametros(null);
+              }}
+              error={Boolean(errorParametros)}
+              helperText={
+                errorParametros ??
+                'Objeto JSON con los filtros de la plantilla. Usa {} si no se requieren parámetros.'
+              }
             />
 
-            <Button
-              variant="contained"
-              startIcon={<FileDownloadIcon />}
-              disabled={generando || !formatoSeleccionado || !puedeExportar}
-              onClick={manejarGenerar}
-              fullWidth
-            >
-              {generando ? <CircularProgress size={20} /> : 'Generar reporte'}
-            </Button>
-          </Paper>
-        )}
-      </Box>
-
-      {resultado && (
-        <Paper sx={{ p: 3, mt: 3 }}>
-          <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
-            Reporte generado
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-            <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1, textAlign: 'center' }}>
-              <Typography variant="caption" color="text.secondary">
-                Nombre
-              </Typography>
-              <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
-                {resultado.nombre}
-              </Typography>
-            </Box>
-            <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1, textAlign: 'center' }}>
-              <Typography variant="caption" color="text.secondary">
-                Formato
-              </Typography>
-              <Typography variant="body2">{resultado.formato.toUpperCase()}</Typography>
-            </Box>
-            <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1, textAlign: 'center' }}>
-              <Typography variant="caption" color="text.secondary">
-                Tamaño
-              </Typography>
-              <Typography variant="body2">{resultado.tamano} bytes</Typography>
+            <Box>
+              <Button
+                variant="contained"
+                startIcon={<FileDownloadIcon />}
+                disabled={generando || !formatoSeleccionado || !puedeExportar}
+                onClick={() => void manejarGenerar()}
+              >
+                {generando ? 'Generando…' : 'Generar reporte'}
+              </Button>
+              {!puedeExportar && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                  Necesitas el permiso exports:report:export para generar reportes.
+                </Typography>
+              )}
             </Box>
           </Box>
-          <Button
-            startIcon={<FileDownloadIcon />}
-            variant="contained"
-            onClick={descargarResultado}
-            sx={{ mt: 2 }}
-          >
-            Descargar archivo
-          </Button>
-        </Paper>
-      )}
+        ) : (
+          <EmptyState
+            title="Selecciona un reporte"
+            description="Usa el botón «Seleccionar» del catálogo para cargar sus formatos y parámetros."
+            icon={<DescriptionIcon />}
+            minHeight={180}
+          />
+        )}
+      </SectionCard>
+
+      <SectionCard title="Resultado" subtitle="Último archivo generado en esta sesión" sx={{ mt: 3 }}>
+        {generando ? (
+          <LoadingState label="Generando reporte…" minHeight={160} />
+        ) : resultado ? (
+          <>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' },
+              }}
+            >
+              <Metadato label="Nombre">
+                <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
+                  {resultado.nombre}
+                </Typography>
+              </Metadato>
+              <Metadato label="Formato">
+                <StatusChip status="primary" label={resultado.formato.toUpperCase()} />
+              </Metadato>
+              <Metadato label="Tamaño">
+                <Typography variant="body2">
+                  {new Intl.NumberFormat('es-CO').format(resultado.tamano)} bytes
+                </Typography>
+              </Metadato>
+              <Metadato label="Generado">
+                <Typography variant="body2">
+                  {generadoEn ? generadoEn.toLocaleString('es-CO') : '—'}
+                </Typography>
+              </Metadato>
+            </Box>
+            <Button
+              startIcon={<FileDownloadIcon />}
+              variant="contained"
+              onClick={descargarResultado}
+              disabled={!resultado.descargaUrl}
+              sx={{ mt: 2 }}
+            >
+              Descargar archivo
+            </Button>
+          </>
+        ) : (
+          <EmptyState
+            title="Sin resultados todavía"
+            description="Genera un reporte para ver aquí sus metadatos y el enlace de descarga."
+            icon={<FileDownloadIcon />}
+            minHeight={160}
+          />
+        )}
+      </SectionCard>
     </Box>
   );
 }

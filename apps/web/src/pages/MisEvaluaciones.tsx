@@ -1,37 +1,41 @@
-import { useState, useCallback, useEffect } from 'react';
-import {
-  Box,
-  Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-  Alert,
-  Chip,
-  CircularProgress,
-} from '@mui/material';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, Box, Button, Typography } from '@mui/material';
 import { BarChart as BarChartIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
 import type { MyEvaluacionDto } from '../api/client';
+import PageHeader from '../components/common/PageHeader';
+import SectionCard from '../components/common/SectionCard';
+import StatCard from '../components/common/StatCard';
+import DataTable, { type DataTableColumn } from '../components/common/DataTable';
+import StatusChip from '../components/common/StatusChip';
+import EmptyState from '../components/common/EmptyState';
+import LoadingState from '../components/common/LoadingState';
+import ErrorState from '../components/common/ErrorState';
 
-const VALOR_LABEL: Record<string, string> = {
+type ValorEvaluacion = MyEvaluacionDto['valor'];
+type TonoValor = 'success' | 'warning' | 'error';
+
+const VALOR_LABEL: Record<ValorEvaluacion, string> = {
   excelente: 'Excelente',
   bueno: 'Bueno',
   regular: 'Regular',
   deficiente: 'Deficiente',
 };
 
-const VALOR_COLOR: Record<string, 'success' | 'warning' | 'default' | 'error'> = {
+const VALOR_TONO: Record<ValorEvaluacion, TonoValor> = {
   excelente: 'success',
   bueno: 'success',
   regular: 'warning',
   deficiente: 'error',
 };
+
+const BREADCRUMBS = [{ label: 'Inicio', to: '/' }, { label: 'Mis evaluaciones' }];
+
+const DESCRIPCION = 'Consulta las valoraciones cualitativas registradas sobre tu desempeño.';
+
+const formatearFecha = (valor: string) =>
+  valor ? new Date(valor).toLocaleDateString('es-CO') : 'No disponible';
 
 export default function MisEvaluaciones() {
   const { hasPermission } = useAuth();
@@ -63,46 +67,93 @@ export default function MisEvaluaciones() {
     void cargarEvaluaciones();
   }, [cargarEvaluaciones]);
 
+  const ultimaEvaluacion = useMemo(
+    () =>
+      [...evaluaciones].sort((a, b) => b.evaluadoEn.localeCompare(a.evaluadoEn))[0] ?? null,
+    [evaluaciones],
+  );
+
+  const columnas: DataTableColumn<MyEvaluacionDto>[] = [
+    {
+      id: 'indicador',
+      label: 'Indicador',
+      minWidth: 180,
+      render: (evaluacion) => (
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {evaluacion.indicadorNombre}
+        </Typography>
+      ),
+    },
+    { id: 'programa', label: 'Programa', minWidth: 180, render: (e) => e.programaNombre },
+    { id: 'grupo', label: 'Grupo', minWidth: 110, render: (e) => e.grupoCodigo },
+    { id: 'periodo', label: 'Periodo', minWidth: 110, render: (e) => e.periodo },
+    {
+      id: 'valor',
+      label: 'Valoración',
+      minWidth: 140,
+      render: (evaluacion) => (
+        <StatusChip
+          status={VALOR_TONO[evaluacion.valor]}
+          label={VALOR_LABEL[evaluacion.valor]}
+        />
+      ),
+    },
+    {
+      id: 'observacion',
+      label: 'Observación',
+      minWidth: 220,
+      render: (evaluacion) =>
+        evaluacion.observacion ? (
+          <Typography variant="body2">{evaluacion.observacion}</Typography>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            No disponible
+          </Typography>
+        ),
+    },
+    {
+      id: 'fecha',
+      label: 'Fecha',
+      minWidth: 120,
+      render: (evaluacion) => formatearFecha(evaluacion.evaluadoEn),
+    },
+  ];
+
   if (!puedeLeer) {
     return (
-      <Box
-        sx={{
-          p: 3,
-          minHeight: '60vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <BarChartIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
-          <Typography variant="h6">Mis evaluaciones</Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-            No tienes permiso para ver tus evaluaciones.
-          </Typography>
-        </Paper>
+      <Box>
+        <PageHeader
+          title="Mis evaluaciones"
+          description={DESCRIPCION}
+          icon={<BarChartIcon />}
+          breadcrumbs={BREADCRUMBS}
+        />
+        <EmptyState
+          title="Sin permisos"
+          description="No tienes permiso para ver tus evaluaciones."
+          icon={<BarChartIcon />}
+        />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h1">Mis evaluaciones</Typography>
-        <Button
-          startIcon={<RefreshIcon />}
-          size="small"
-          disabled={cargando}
-          onClick={cargarEvaluaciones}
-        >
-          {cargando ? (
-            <CircularProgress size={20} aria-label="Cargando evaluaciones" />
-          ) : (
-            'Actualizar'
-          )}
-        </Button>
-      </Box>
+    <Box>
+      <PageHeader
+        title="Mis evaluaciones"
+        description={DESCRIPCION}
+        icon={<BarChartIcon />}
+        breadcrumbs={BREADCRUMBS}
+        actions={
+          <Button
+            startIcon={<RefreshIcon />}
+            onClick={() => void cargarEvaluaciones()}
+            disabled={cargando}
+          >
+            {cargando ? 'Actualizando…' : 'Actualizar evaluaciones'}
+          </Button>
+        }
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -110,79 +161,60 @@ export default function MisEvaluaciones() {
         </Alert>
       )}
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
-          Resumen
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 3 }}>
-          <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1, textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary">
-              Evaluaciones registradas
-            </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-              {evaluaciones.length}
-            </Typography>
-          </Box>
-          <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1, textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary">
-              Último indicador
-            </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-              {evaluaciones.length > 0 ? VALOR_LABEL[evaluaciones[0].valor] : '—'}
-            </Typography>
-          </Box>
-        </Box>
-      </Paper>
-
-      {evaluaciones.length === 0 && !cargando && (
-        <Paper
+      {evaluaciones.length > 0 && ultimaEvaluacion && (
+        <Box
           sx={{
-            p: 4,
-            textAlign: 'center',
-            minHeight: '40vh',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+            mb: 2,
           }}
         >
-          <BarChartIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
-          <Typography variant="body1">No tienes evaluaciones registradas.</Typography>
-        </Paper>
+          <StatCard
+            label="Total de evaluaciones"
+            value={evaluaciones.length}
+            icon={<BarChartIcon />}
+            description="Registros consultados"
+          />
+          <StatCard
+            label="Última valoración"
+            value={VALOR_LABEL[ultimaEvaluacion.valor]}
+            icon={<BarChartIcon />}
+            description={`Registrada el ${formatearFecha(ultimaEvaluacion.evaluadoEn)}`}
+            status={{
+              label: 'Valoración registrada',
+              tone: VALOR_TONO[ultimaEvaluacion.valor],
+            }}
+          />
+        </Box>
       )}
 
-      {evaluaciones.length > 0 && (
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Grupo</TableCell>
-                <TableCell>Programa</TableCell>
-                <TableCell>Indicador</TableCell>
-                <TableCell>Periodo</TableCell>
-                <TableCell>Valor</TableCell>
-                <TableCell>Fecha</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {evaluaciones.map((e) => (
-                <TableRow key={e.id}>
-                  <TableCell sx={{ fontWeight: 'medium' }}>{e.grupoCodigo}</TableCell>
-                  <TableCell>{e.programaNombre}</TableCell>
-                  <TableCell>{e.indicadorNombre}</TableCell>
-                  <TableCell>{e.periodo}</TableCell>
-                  <TableCell>
-                    <Chip label={VALOR_LABEL[e.valor]} size="small" color={VALOR_COLOR[e.valor]} />
-                  </TableCell>
-                  <TableCell>
-                    {e.evaluadoEn ? new Date(e.evaluadoEn).toLocaleDateString('es-CO') : '-'}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+      <SectionCard
+        title="Historial de evaluaciones"
+        subtitle="Detalle de cada valoración registrada."
+      >
+        {error && evaluaciones.length === 0 ? (
+          <ErrorState message={error} onRetry={() => void cargarEvaluaciones()} minHeight={200} />
+        ) : cargando && evaluaciones.length === 0 ? (
+          <LoadingState label="Cargando evaluaciones…" minHeight={200} />
+        ) : evaluaciones.length === 0 ? (
+          <EmptyState
+            title="Sin evaluaciones registradas"
+            description="Cuando registres evaluaciones aparecerán aquí."
+            icon={<BarChartIcon />}
+            minHeight={200}
+          />
+        ) : (
+          <DataTable
+            ariaLabel="Historial de evaluaciones"
+            columns={columnas}
+            rows={evaluaciones}
+            rowKey={(evaluacion) => evaluacion.id}
+            loading={cargando}
+            emptyMessage="No hay evaluaciones para mostrar."
+          />
+        )}
+      </SectionCard>
     </Box>
   );
 }

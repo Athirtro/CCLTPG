@@ -1,23 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Typography,
-} from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
+import { Alert, Box, Button, Typography } from '@mui/material';
+import { MonitorHeart as MonitorHeartIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 
 import { API_BASE_URL, apiClient, type ProblemDetails, type ReadinessReport } from '../api/client';
-import { summarize, toHealthRows } from '../api/health';
+import { summarize, toHealthRows, type HealthRow } from '../api/health';
+import PageHeader from '../components/common/PageHeader';
+import SectionCard from '../components/common/SectionCard';
+import StatCard from '../components/common/StatCard';
+import DataTable, { type DataTableColumn } from '../components/common/DataTable';
+import StatusChip from '../components/common/StatusChip';
+import EmptyState from '../components/common/EmptyState';
+import LoadingState from '../components/common/LoadingState';
+import ErrorState from '../components/common/ErrorState';
 
 function fallbackProblem(detail: string): ProblemDetails {
   return {
@@ -30,6 +24,11 @@ function fallbackProblem(detail: string): ProblemDetails {
     requestId: '',
     errors: [],
   };
+}
+
+function formatearFecha(iso: string): string {
+  const fecha = new Date(iso);
+  return Number.isNaN(fecha.getTime()) ? '—' : fecha.toLocaleString('es-CO');
 }
 
 export default function Health() {
@@ -67,18 +66,52 @@ export default function Health() {
   }, [load]);
 
   const summary = report ? summarize(report) : null;
+  const filas = report ? toHealthRows(report) : [];
+
+  const columnas: DataTableColumn<HealthRow>[] = [
+    {
+      id: 'dependencia',
+      label: 'Dependencia',
+      minWidth: 180,
+      render: (fila) => (
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            {fila.label}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {fila.name}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      id: 'estado',
+      label: 'Estado',
+      minWidth: 180,
+      render: (fila) => (
+        <StatusChip
+          status={fila.status === 'up' ? 'success' : 'error'}
+          label={`${fila.status.toUpperCase()} · ${fila.status === 'up' ? 'Disponible' : 'Caída'}`}
+        />
+      ),
+    },
+    {
+      id: 'latencia',
+      label: 'Latencia',
+      align: 'right',
+      minWidth: 110,
+      render: (fila) => `${fila.latencyMs} ms`,
+    },
+  ];
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Estado del sistema
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Comprobación de disponibilidad de la API ({API_BASE_URL}) y sus dependencias.
-      </Typography>
-
-      <Paper sx={{ p: 3 }} aria-live="polite">
-        <Stack direction="row" spacing={2} sx={{ mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+    <Box>
+      <PageHeader
+        title="Estado del sistema"
+        description={`Comprobación de disponibilidad de la API (${API_BASE_URL}) y sus dependencias.`}
+        icon={<MonitorHeartIcon />}
+        breadcrumbs={[{ label: 'Inicio', to: '/' }, { label: 'Estado del sistema' }]}
+        actions={
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}
@@ -87,59 +120,95 @@ export default function Health() {
           >
             Actualizar
           </Button>
-          {loading && <CircularProgress size={20} aria-label="Comprobando estado" />}
-          {summary && <Chip label={summary.label} color={summary.severity} />}
-          {lastChecked && (
-            <Typography variant="body2" color="text.secondary">
-              Última comprobación: {lastChecked.toLocaleTimeString('es-CO')}
-            </Typography>
-          )}
-        </Stack>
+        }
+      />
 
-        {problem && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {problem.detail}
-            {problem.code && (
-              <Typography variant="body2" component="span" sx={{ display: 'block' }}>
-                Código: {problem.code}
-                {problem.requestId ? ` · requestId: ${problem.requestId}` : ''}
+      <SectionCard
+        title="Disponibilidad"
+        subtitle="El estado se consulta automáticamente cada 15 segundos"
+        action={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+            {summary && <StatusChip status={summary.severity} label={summary.label} />}
+            {lastChecked && (
+              <Typography variant="caption" color="text.secondary">
+                Última comprobación local: {lastChecked.toLocaleTimeString('es-CO')}
               </Typography>
             )}
-          </Alert>
-        )}
+          </Box>
+        }
+      >
+        <Box aria-live="polite">
+          {loading && !report && !problem ? (
+            <LoadingState label="Comprobando disponibilidad…" />
+          ) : problem ? (
+            <>
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {problem.detail}
+                {problem.code && (
+                  <Typography variant="body2" component="span" sx={{ display: 'block' }}>
+                    Código: {problem.code}
+                    {problem.requestId ? ` · requestId: ${problem.requestId}` : ''}
+                  </Typography>
+                )}
+              </Alert>
+              <ErrorState message={problem.detail} onRetry={() => void load()} minHeight={180} />
+            </>
+          ) : report ? (
+            <>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gap: 2,
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+                  mb: 3,
+                }}
+              >
+                <StatCard
+                  label="Estado general"
+                  value={summary?.label ?? report.status}
+                  icon={<MonitorHeartIcon />}
+                  description={`status del contrato: ${report.status}`}
+                  status={{
+                    label: report.status.toUpperCase(),
+                    tone: summary?.severity ?? 'neutral',
+                  }}
+                />
+                <StatCard
+                  label="Comprobado en (servidor)"
+                  value={formatearFecha(report.checkedAt)}
+                  icon={<MonitorHeartIcon />}
+                  description="checkedAt devuelto por /health/ready"
+                />
+              </Box>
 
-        {report && (
-          <>
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              Comprobado en: {new Date(report.checkedAt).toLocaleString('es-CO')}
-            </Typography>
-            <Table size="small" aria-label="Estado de las dependencias">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Dependencia</TableCell>
-                  <TableCell>Estado</TableCell>
-                  <TableCell align="right">Latencia</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {toHealthRows(report).map((row) => (
-                  <TableRow key={row.name}>
-                    <TableCell>{row.label}</TableCell>
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        label={row.status === 'up' ? 'Disponible' : 'Caída'}
-                        color={row.status === 'up' ? 'success' : 'error'}
-                      />
-                    </TableCell>
-                    <TableCell align="right">{row.latencyMs} ms</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </>
-        )}
-      </Paper>
+              <Typography variant="h4" component="h3" sx={{ mb: 1 }}>
+                Dependencias
+              </Typography>
+              {filas.length === 0 ? (
+                <EmptyState
+                  title="Sin comprobaciones"
+                  description="El informe de disponibilidad no incluye dependencias."
+                  minHeight={160}
+                />
+              ) : (
+                <DataTable
+                  ariaLabel="Estado de las dependencias"
+                  columns={columnas}
+                  rows={filas}
+                  rowKey={(fila) => fila.name}
+                  loading={loading}
+                />
+              )}
+            </>
+          ) : (
+            <EmptyState
+              title="Sin información de estado"
+              description="No hay un informe de disponibilidad para mostrar."
+              minHeight={160}
+            />
+          )}
+        </Box>
+      </SectionCard>
     </Box>
   );
 }

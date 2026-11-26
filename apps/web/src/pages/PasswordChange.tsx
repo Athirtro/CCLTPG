@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Box, Button, CssBaseline, Paper, TextField, Typography, Alert } from '@mui/material';
+import { useState, type FormEvent } from 'react';
+import { Alert, Box, Button, TextField } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import AuthShell from '../components/common/AuthShell';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
 import { setSessionCredentials, type LoginResponseDto } from '../api/client';
@@ -10,13 +11,21 @@ export default function PasswordChange() {
   const { user, loadMe, isLoading } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(false);
+    // Validación solo de UI: el cuerpo enviado sigue siendo { currentPassword, newPassword }.
+    if (confirmPassword && confirmPassword !== newPassword) {
+      setConfirmError('Las contraseñas no coinciden.');
+      return;
+    }
+    setConfirmError(null);
     try {
       const {
         data,
@@ -53,89 +62,92 @@ export default function PasswordChange() {
 
   if (success) {
     return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          bgcolor: '#f5f5f5',
-        }}
+      <AuthShell
+        title="Contraseña actualizada"
+        subtitle="Tu contraseña se ha cambiado correctamente."
+        footnote="Ya puedes continuar con el uso del sistema."
       >
-        <CssBaseline />
-        <Paper
-          elevation={3}
-          sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2, textAlign: 'center' }}
-        >
-          <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-            Contraseña actualizada
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 3 }}>
-            Tu contraseña se ha cambiado correctamente.
-          </Typography>
-          <Button fullWidth variant="contained" onClick={() => navigate('/')}>
-            Volver al inicio
-          </Button>
-        </Paper>
-      </Box>
+        <Button fullWidth variant="contained" onClick={() => navigate('/')}>
+          Volver al inicio
+        </Button>
+      </AuthShell>
     );
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: '#f5f5f5',
-      }}
+    <AuthShell
+      title="Cambio de contraseña"
+      subtitle={
+        user
+          ? `Cambiando contraseña para ${user.email}`
+          : 'Define una nueva contraseña para tu cuenta.'
+      }
+      footnote="La nueva contraseña debe cumplir la política de seguridad del sistema."
     >
-      <CssBaseline />
-      <Paper elevation={3} sx={{ p: 4, width: 400, maxWidth: '100%', borderRadius: 2 }}>
-        <Typography component="h1" variant="h5" align="center" gutterBottom sx={{ mb: 3 }}>
-          Cambio de contraseña
-        </Typography>
-        {user && (
-          <Typography variant="body2" align="center" sx={{ mb: 3, color: 'text.secondary' }}>
-            Cambiando contraseña para {user.email}
-          </Typography>
-        )}
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-        <form onSubmit={handleSubmit} noValidate>
-          <TextField
-            required
-            fullWidth
-            id="current-password"
-            label="Contraseña actual"
-            name="currentPassword"
-            type="password"
-            autoComplete="current-password"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            required
-            fullWidth
-            id="new-password"
-            label="Nueva contraseña"
-            name="newPassword"
-            type="password"
-            autoComplete="new-password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            sx={{ mb: 3 }}
-          />
-          <Button type="submit" fullWidth variant="contained" size="large" disabled={isLoading}>
-            {isLoading ? 'Cambiando…' : 'Cambiar contraseña'}
-          </Button>
-        </form>
-      </Paper>
-    </Box>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        noValidate
+        sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+      >
+        <TextField
+          required
+          fullWidth
+          id="current-password"
+          label="Contraseña actual"
+          name="currentPassword"
+          type="password"
+          autoComplete="current-password"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+        />
+        <TextField
+          required
+          fullWidth
+          id="new-password"
+          label="Nueva contraseña"
+          name="newPassword"
+          type="password"
+          autoComplete="new-password"
+          value={newPassword}
+          onChange={(e) => {
+            setNewPassword(e.target.value);
+            setConfirmError(null);
+          }}
+          helperText="Debe cumplir la política de seguridad del sistema."
+        />
+        <TextField
+          required
+          fullWidth
+          id="confirm-password"
+          label="Confirmar contraseña"
+          name="confirmPassword"
+          type="password"
+          autoComplete="new-password"
+          value={confirmPassword}
+          onChange={(e) => {
+            setConfirmPassword(e.target.value);
+            setConfirmError(null);
+          }}
+          error={Boolean(confirmError)}
+          helperText={confirmError ?? undefined}
+        />
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          size="large"
+          disabled={isLoading}
+          sx={{ mt: 1 }}
+        >
+          {isLoading ? 'Cambiando…' : 'Cambiar contraseña'}
+        </Button>
+      </Box>
+    </AuthShell>
   );
 }

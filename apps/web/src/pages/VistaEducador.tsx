@@ -1,71 +1,92 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
+  Alert,
   Box,
   Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-  Alert,
-  Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
-  Select,
-  MenuItem,
   FormControl,
+  FormHelperText,
   InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
 } from '@mui/material';
 import {
-  Shield as ShieldIcon,
-  CheckCircle as CheckCircleIcon,
   Add as AddIcon,
+  CheckCircle as CheckCircleIcon,
   Refresh as RefreshIcon,
+  Shield as ShieldIcon,
 } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
 import type {
-  GrupoDto,
-  SesionDto,
-  RegistroAsistenciaDto,
   CrearEvaluacionDto,
+  GrupoDto,
   MatriculaDto,
-  ProblemDetailsDto,
+  RegistroAsistenciaDto,
+  SesionDto,
 } from '../api/client';
+import PageHeader from '../components/common/PageHeader';
+import SectionCard from '../components/common/SectionCard';
+import DataTable, { type DataTableColumn } from '../components/common/DataTable';
+import StatusChip from '../components/common/StatusChip';
+import EmptyState from '../components/common/EmptyState';
+import LoadingState from '../components/common/LoadingState';
+import ErrorState from '../components/common/ErrorState';
+
+type EstadoAsistencia = 'presente' | 'ausente' | 'tarde' | 'excusa';
+type ValorEvaluacion = 'excelente' | 'bueno' | 'regular' | 'deficiente';
+type CampoEvaluacion = 'matriculaId' | 'indicadorId' | 'periodo' | 'valor' | 'observacion';
 
 type RegistroAsistenciaView = {
   matriculaId: string;
   estudianteNombre: string;
-  estado: string;
+  estado: EstadoAsistencia;
 };
 
-const ESTADO_ASISTENCIA: Array<{
-  valor: 'presente' | 'ausente' | 'tarde' | 'excusa';
-  label: string;
-}> = [
+const ESTADO_ASISTENCIA: Array<{ valor: EstadoAsistencia; label: string }> = [
   { valor: 'presente', label: 'Presente' },
   { valor: 'ausente', label: 'Ausente' },
   { valor: 'tarde', label: 'Tarde' },
   { valor: 'excusa', label: 'Excusa' },
 ];
 
-const VALOR_EVALUACION: Array<{
-  valor: 'excelente' | 'bueno' | 'regular' | 'deficiente';
-  label: string;
-}> = [
+const ESTADOS_ASISTENCIA_VALIDOS: EstadoAsistencia[] = [
+  'presente',
+  'ausente',
+  'tarde',
+  'excusa',
+];
+
+const VALOR_EVALUACION: Array<{ valor: ValorEvaluacion; label: string }> = [
   { valor: 'excelente', label: 'Excelente' },
   { valor: 'bueno', label: 'Bueno' },
   { valor: 'regular', label: 'Regular' },
   { valor: 'deficiente', label: 'Deficiente' },
 ];
+
+const VALORES_EVALUACION_VALIDOS: ValorEvaluacion[] = [
+  'excelente',
+  'bueno',
+  'regular',
+  'deficiente',
+];
+
+const BREADCRUMBS = [
+  { label: 'Inicio', to: '/' },
+  { label: 'Gestión académica' },
+  { label: 'Vista educador' },
+];
+
+const DESCRIPCION =
+  'Selecciona un grupo y una sesión para registrar la asistencia y crear evaluaciones cualitativas.';
 
 export default function VistaEducador() {
   const { hasPermission } = useAuth();
@@ -73,25 +94,33 @@ export default function VistaEducador() {
   const [sesiones, setSesiones] = useState<SesionDto[]>([]);
   const [matriculasDelGrupo, setMatriculasDelGrupo] = useState<MatriculaDto[]>([]);
   const [registrosAsistencia, setRegistrosAsistencia] = useState<RegistroAsistenciaView[]>([]);
-  const [grupoSeleccionado, setGrupoSeleccionado] = useState<string>('');
+  const [grupoSeleccionado, setGrupoSeleccionado] = useState('');
   const [sesionSeleccionada, setSesionSeleccionada] = useState<SesionDto | null>(null);
-  const [cargando, setCargando] = useState(false);
+  const [cargandoGrupos, setCargandoGrupos] = useState(false);
   const [cargandoSesiones, setCargandoSesiones] = useState(false);
+  const [cargandoMatriculas, setCargandoMatriculas] = useState(false);
+  const [cargandoAsistencia, setCargandoAsistencia] = useState(false);
+  const [enviandoAsistencia, setEnviandoAsistencia] = useState(false);
+  const [enviandoEvaluacion, setEnviandoEvaluacion] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
+
   const [abiertoDialogoEvaluacion, setAbiertoDialogoEvaluacion] = useState(false);
   const [matriculaIdEval, setMatriculaIdEval] = useState('');
   const [indicadorIdEval, setIndicadorIdEval] = useState('');
   const [periodoEval, setPeriodoEval] = useState('');
-  const [valorEval, setValorEval] = useState<string>('bueno');
+  const [valorEval, setValorEval] = useState('bueno');
   const [observacionEval, setObservacionEval] = useState('');
+  const [erroresEvaluacion, setErroresEvaluacion] = useState<
+    Partial<Record<CampoEvaluacion, string>>
+  >({});
 
   const puedeTomarAsistencia = hasPermission('academic:attendance:create');
   const puedeCrearEvaluacion = hasPermission('academic:evaluation:create');
 
   const cargarGrupos = useCallback(async () => {
     if (!puedeTomarAsistencia && !puedeCrearEvaluacion) return;
-    setCargando(true);
+    setCargandoGrupos(true);
     setError(null);
     try {
       const { data, error: apiError } = await apiClient.GET('/academic/groups');
@@ -103,17 +132,17 @@ export default function VistaEducador() {
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al cargar grupos');
     } finally {
-      setCargando(false);
+      setCargandoGrupos(false);
     }
   }, [puedeTomarAsistencia, puedeCrearEvaluacion]);
 
-  const cargarSesiones = useCallback(async () => {
-    if (!grupoSeleccionado) return;
+  const cargarSesiones = useCallback(async (grupoId: string) => {
+    if (!grupoId) return;
     setCargandoSesiones(true);
     setError(null);
     try {
       const { data, error: apiError } = await apiClient.GET('/academic/groups/{groupId}/sessions', {
-        params: { path: { groupId: grupoSeleccionado } },
+        params: { path: { groupId: grupoId } },
       });
       if (apiError || !data) {
         setError('No se pudieron cargar las sesiones');
@@ -125,10 +154,11 @@ export default function VistaEducador() {
     } finally {
       setCargandoSesiones(false);
     }
-  }, [grupoSeleccionado]);
+  }, []);
 
-  const cargarMatriculasDelGrupo = useCallback(async () => {
-    if (!grupoSeleccionado) return;
+  const cargarMatriculasDelGrupo = useCallback(async (grupoId: string) => {
+    if (!grupoId) return;
+    setCargandoMatriculas(true);
     setError(null);
     try {
       const { data, error: apiError } = await apiClient.GET('/academic/enrollments');
@@ -136,19 +166,22 @@ export default function VistaEducador() {
         setError('No se pudieron cargar las matrículas del grupo');
         return;
       }
-      setMatriculasDelGrupo(data.data.filter((m) => m.grupoId === grupoSeleccionado));
+      setMatriculasDelGrupo(data.data.filter((m) => m.grupoId === grupoId));
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al cargar matrículas del grupo');
+    } finally {
+      setCargandoMatriculas(false);
     }
-  }, [grupoSeleccionado]);
+  }, []);
 
-  const cargarAsistencia = useCallback(async () => {
-    if (!sesionSeleccionada) return;
+  const cargarAsistencia = useCallback(async (sesionId: string, matriculas: MatriculaDto[]) => {
+    if (!sesionId) return;
+    setCargandoAsistencia(true);
     setError(null);
     try {
       const { data, error: apiError } = await apiClient.GET(
         '/academic/sessions/{sessionId}/attendance',
-        { params: { path: { sessionId: sesionSeleccionada.id } } },
+        { params: { path: { sessionId: sesionId } } },
       );
       if (apiError || !data) {
         setError('No se pudo cargar la asistencia');
@@ -156,7 +189,7 @@ export default function VistaEducador() {
       }
       setRegistrosAsistencia(
         data.registros.map((r) => {
-          const matricula = matriculasDelGrupo.find((m) => m.id === r.matriculaId);
+          const matricula = matriculas.find((m) => m.id === r.matriculaId);
           const nombreCompleto = matricula
             ? `${matricula.estudianteNombres} ${matricula.estudianteApellidos}`
             : r.matriculaId;
@@ -170,41 +203,41 @@ export default function VistaEducador() {
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al cargar asistencia');
     } finally {
-      // sin estado de carga dedicado para asistencia
+      setCargandoAsistencia(false);
     }
-  }, [sesionSeleccionada, matriculasDelGrupo]);
+  }, []);
 
   const seleccionarGrupo = (grupoId: string) => {
     setGrupoSeleccionado(grupoId);
     setSesionSeleccionada(null);
     setRegistrosAsistencia([]);
     setMatriculasDelGrupo([]);
-    void cargarSesiones();
-    void cargarMatriculasDelGrupo();
+    setSesiones([]);
+    void cargarSesiones(grupoId);
+    void cargarMatriculasDelGrupo(grupoId);
   };
 
   const seleccionarSesion = (sesion: SesionDto) => {
     setSesionSeleccionada(sesion);
-    void cargarAsistencia();
+    void cargarAsistencia(sesion.id, matriculasDelGrupo);
   };
 
-  const ESTADOS_ASISTENCIA_VALIDOS: Array<'presente' | 'ausente' | 'tarde' | 'excusa'> = [
-    'presente',
-    'ausente',
-    'tarde',
-    'excusa',
-  ];
+  const actualizarEstadoAsistencia = (matriculaId: string, estado: EstadoAsistencia) => {
+    setRegistrosAsistencia((registros) =>
+      registros.map((registro) =>
+        registro.matriculaId === matriculaId ? { ...registro, estado } : registro,
+      ),
+    );
+  };
 
   const manejarTomarAsistencia = async () => {
     if (!sesionSeleccionada) return;
-    setCargando(true);
+    setEnviandoAsistencia(true);
     setError(null);
+    setExito(null);
     try {
       const estadosInvalidos = registrosAsistencia.filter(
-        (r) =>
-          !ESTADOS_ASISTENCIA_VALIDOS.includes(
-            r.estado as 'presente' | 'ausente' | 'tarde' | 'excusa',
-          ),
+        (r) => !ESTADOS_ASISTENCIA_VALIDOS.includes(r.estado),
       );
       if (estadosInvalidos.length > 0) {
         setError('Algunos estados de asistencia no son válidos');
@@ -212,7 +245,7 @@ export default function VistaEducador() {
       }
       const registros: RegistroAsistenciaDto[] = registrosAsistencia.map((r) => ({
         matriculaId: r.matriculaId,
-        estado: r.estado as 'presente' | 'ausente' | 'tarde' | 'excusa',
+        estado: r.estado,
       }));
       const { error: apiError, response } = await apiClient.PUT(
         '/academic/sessions/{sessionId}/attendance',
@@ -222,7 +255,7 @@ export default function VistaEducador() {
         },
       );
       if (apiError || response?.status !== 200) {
-        const problema = apiError as ProblemDetailsDto;
+        const problema = apiError;
         setError(problema?.detail || 'Error al registrar asistencia');
         return;
       }
@@ -232,26 +265,48 @@ export default function VistaEducador() {
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al registrar asistencia');
     } finally {
-      setCargando(false);
+      setEnviandoAsistencia(false);
     }
   };
 
-  const manejarCrearEvaluacion = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const actualizarCampoEvaluacion = (campo: CampoEvaluacion, valor: string) => {
+    if (campo === 'matriculaId') setMatriculaIdEval(valor);
+    if (campo === 'indicadorId') setIndicadorIdEval(valor);
+    if (campo === 'periodo') setPeriodoEval(valor);
+    if (campo === 'valor') setValorEval(valor);
+    if (campo === 'observacion') setObservacionEval(valor);
+    setErroresEvaluacion((previos) => ({ ...previos, [campo]: undefined }));
+  };
+
+  const validarEvaluacion = (): boolean => {
+    const nuevosErrores: Partial<Record<CampoEvaluacion, string>> = {};
+    if (!matriculaIdEval.trim())
+      nuevosErrores.matriculaId = 'Selecciona al estudiante o indica el ID de su matrícula.';
+    if (!indicadorIdEval.trim()) nuevosErrores.indicadorId = 'Ingresa el ID del indicador.';
+    if (!periodoEval.trim()) nuevosErrores.periodo = 'Ingresa el periodo.';
+    setErroresEvaluacion(nuevosErrores);
+    return Object.keys(nuevosErrores).length === 0;
+  };
+
+  const cerrarDialogoEvaluacion = () => {
+    if (enviandoEvaluacion) return;
+    setAbiertoDialogoEvaluacion(false);
+    setMatriculaIdEval('');
+    setIndicadorIdEval('');
+    setPeriodoEval('');
+    setValorEval('bueno');
+    setObservacionEval('');
+    setErroresEvaluacion({});
+  };
+
+  const manejarCrearEvaluacion = async (evento: FormEvent<HTMLFormElement>) => {
+    evento.preventDefault();
+    if (!validarEvaluacion()) return;
+    setEnviandoEvaluacion(true);
     setError(null);
-    if (!matriculaIdEval.trim() || !indicadorIdEval.trim() || !periodoEval.trim()) {
-      setError('Todos los campos son obligatorios');
-      return;
-    }
-    setCargando(true);
+    setExito(null);
     try {
-      const VALORES_EVALUACION_VALIDOS: Array<'excelente' | 'bueno' | 'regular' | 'deficiente'> = [
-        'excelente',
-        'bueno',
-        'regular',
-        'deficiente',
-      ];
-      const valorValido = VALORES_EVALUACION_VALIDOS.find((v) => v === valorEval);
+      const valorValido = VALORES_EVALUACION_VALIDOS.find((valor) => valor === valorEval);
       if (!valorValido) {
         setError('Valor de evaluación no válido');
         return;
@@ -267,21 +322,16 @@ export default function VistaEducador() {
         body: payload,
       });
       if (apiError || response?.status !== 201) {
-        const problema = apiError as ProblemDetailsDto;
+        const problema = apiError;
         setError(problema?.detail || 'Error al crear la evaluación');
         return;
       }
       setExito('Evaluación creada correctamente');
-      setMatriculaIdEval('');
-      setIndicadorIdEval('');
-      setPeriodoEval('');
-      setValorEval('bueno');
-      setObservacionEval('');
-      setAbiertoDialogoEvaluacion(false);
+      cerrarDialogoEvaluacion();
     } catch (err) {
       setError(getErrorMessage(err) || 'Error inesperado al crear evaluación');
     } finally {
-      setCargando(false);
+      setEnviandoEvaluacion(false);
     }
   };
 
@@ -289,37 +339,109 @@ export default function VistaEducador() {
     void cargarGrupos();
   }, [cargarGrupos]);
 
+  const conteosAsistencia = useMemo(
+    () =>
+      ESTADO_ASISTENCIA.map(({ valor, label }) => ({
+        valor,
+        label,
+        total: registrosAsistencia.filter((registro) => registro.estado === valor).length,
+      })),
+    [registrosAsistencia],
+  );
+
+  const columnasAsistencia: DataTableColumn<RegistroAsistenciaView>[] = [
+    {
+      id: 'estudiante',
+      label: 'Estudiante',
+      minWidth: 200,
+      render: (registro) => (
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {registro.estudianteNombre}
+        </Typography>
+      ),
+    },
+    {
+      id: 'matricula',
+      label: 'Matrícula',
+      minWidth: 160,
+      render: (registro) => (
+        <Typography variant="caption" color="text.secondary">
+          {registro.matriculaId}
+        </Typography>
+      ),
+    },
+    {
+      id: 'estado',
+      label: 'Estado registrado',
+      minWidth: 140,
+      render: (registro) => <StatusChip status={registro.estado} />,
+    },
+    {
+      id: 'registrar',
+      label: 'Registrar estado',
+      minWidth: 360,
+      render: (registro) => (
+        <ToggleButtonGroup
+          size="small"
+          exclusive
+          value={registro.estado}
+          aria-label={`Estado de asistencia de ${registro.estudianteNombre}`}
+          onChange={(_event, nuevo: EstadoAsistencia | null) => {
+            if (nuevo) actualizarEstadoAsistencia(registro.matriculaId, nuevo);
+          }}
+          sx={{ flexWrap: 'wrap', gap: 0.5 }}
+        >
+          {ESTADO_ASISTENCIA.map((opcion) => (
+            <ToggleButton
+              key={opcion.valor}
+              value={opcion.valor}
+              aria-label={`${opcion.label} para ${registro.estudianteNombre}`}
+              aria-pressed={registro.estado === opcion.valor}
+              sx={{ px: 1, py: 0.5 }}
+            >
+              {opcion.label}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+      ),
+    },
+  ];
+
   if (!puedeTomarAsistencia && !puedeCrearEvaluacion) {
     return (
-      <Box
-        sx={{
-          p: 3,
-          minHeight: '60vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <ShieldIcon fontSize="large" sx={{ mb: 2, color: 'action.disabled' }} />
-          <Typography variant="h6">Vista del educador</Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-            No tienes permiso para gestionar asistencia o evaluaciones.
-          </Typography>
-        </Paper>
+      <Box>
+        <PageHeader
+          title="Vista del educador"
+          description={DESCRIPCION}
+          icon={<ShieldIcon />}
+          breadcrumbs={BREADCRUMBS}
+        />
+        <EmptyState
+          title="Sin permisos"
+          description="No tienes permiso para gestionar asistencia ni evaluaciones."
+          icon={<ShieldIcon />}
+        />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h1">Vista del educador</Typography>
-        <Button startIcon={<RefreshIcon />} size="small" disabled={cargando} onClick={cargarGrupos}>
-          Actualizar grupos
-        </Button>
-      </Box>
+    <Box>
+      <PageHeader
+        title="Vista del educador"
+        description={DESCRIPCION}
+        icon={<ShieldIcon />}
+        breadcrumbs={BREADCRUMBS}
+        actions={
+          <Button
+            startIcon={<RefreshIcon />}
+            onClick={() => void cargarGrupos()}
+            disabled={cargandoGrupos}
+          >
+            {cargandoGrupos ? 'Actualizando…' : 'Actualizar grupos'}
+          </Button>
+        }
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -333,222 +455,320 @@ export default function VistaEducador() {
       )}
 
       {puedeTomarAsistencia && (
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
-            Tomar asistencia
-          </Typography>
-
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h3" sx={{ mb: 1 }}>
-              Seleccionar grupo
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              {grupos.map((g) => (
-                <Chip
-                  key={g.id}
-                  label={`${g.codigo} — ${g.periodo}`}
-                  onClick={() => void seleccionarGrupo(g.id)}
-                  color={grupoSeleccionado === g.id ? 'primary' : 'default'}
-                  variant={grupoSeleccionado === g.id ? 'filled' : 'outlined'}
-                  clickable
-                  sx={{ cursor: 'pointer' }}
-                />
-              ))}
-              {grupos.length === 0 && (
-                <Typography variant="body2" color="text.secondary">
-                  No hay grupos disponibles.
-                </Typography>
-              )}
-            </Box>
-          </Box>
+        <>
+          <SectionCard
+            title="1. Selecciona un grupo"
+            subtitle="Elige el grupo con el que vas a trabajar."
+            sx={{ mb: 2 }}
+          >
+            {error && grupos.length === 0 ? (
+              <ErrorState message={error} onRetry={() => void cargarGrupos()} minHeight={160} />
+            ) : cargandoGrupos && grupos.length === 0 ? (
+              <LoadingState label="Cargando grupos…" minHeight={160} />
+            ) : grupos.length === 0 ? (
+              <EmptyState
+                title="Sin grupos disponibles"
+                description="Cuando tengas grupos asignados aparecerán aquí."
+                minHeight={160}
+              />
+            ) : (
+              <ToggleButtonGroup
+                exclusive
+                value={grupoSeleccionado}
+                aria-label="Seleccionar grupo"
+                onChange={(_event, grupoId: string | null) => {
+                  if (grupoId) seleccionarGrupo(grupoId);
+                }}
+                sx={{ flexWrap: 'wrap', gap: 1 }}
+              >
+                {grupos.map((grupo) => (
+                  <ToggleButton
+                    key={grupo.id}
+                    value={grupo.id}
+                    aria-label={`Grupo ${grupo.codigo}, periodo ${grupo.periodo}`}
+                    aria-pressed={grupoSeleccionado === grupo.id}
+                    sx={{ px: 1.5, py: 1 }}
+                  >
+                    <Stack spacing={0.5} sx={{ textAlign: 'left' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {grupo.codigo}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {grupo.periodo}
+                      </Typography>
+                    </Stack>
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            )}
+          </SectionCard>
 
           {grupoSeleccionado && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h3" sx={{ mb: 1 }}>
-                Sesiones del grupo
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                {sesiones.map((s) => (
-                  <Chip
-                    key={s.id}
-                    label={`${s.fecha} ${s.estado}`}
-                    onClick={() => void seleccionarSesion(s)}
-                    color={sesionSeleccionada?.id === s.id ? 'primary' : 'default'}
-                    variant={sesionSeleccionada?.id === s.id ? 'filled' : 'outlined'}
-                    clickable
-                    sx={{ cursor: 'pointer' }}
-                  />
-                ))}
-                {sesiones.length === 0 && cargandoSesiones === false && (
-                  <Typography variant="body2" color="text.secondary">
-                    No hay sesiones programadas.
-                  </Typography>
-                )}
-              </Box>
-            </Box>
+            <SectionCard
+              title="2. Selecciona una sesión"
+              subtitle="Elige la sesión cuya asistencia vas a registrar."
+              sx={{ mb: 2 }}
+            >
+              {error && sesiones.length === 0 ? (
+                <ErrorState
+                  message={error}
+                  onRetry={() => void cargarSesiones(grupoSeleccionado)}
+                  minHeight={160}
+                />
+              ) : (cargandoSesiones || cargandoMatriculas) && sesiones.length === 0 ? (
+                <LoadingState label="Cargando sesiones del grupo…" minHeight={160} />
+              ) : sesiones.length === 0 ? (
+                <EmptyState
+                  title="Sin sesiones programadas"
+                  description="Este grupo no tiene sesiones disponibles."
+                  minHeight={160}
+                />
+              ) : (
+                <ToggleButtonGroup
+                  exclusive
+                  value={sesionSeleccionada?.id ?? ''}
+                  aria-label="Seleccionar sesión"
+                  onChange={(_event, sesionId: string | null) => {
+                    const sesion = sesiones.find((s) => s.id === sesionId);
+                    if (sesion) seleccionarSesion(sesion);
+                  }}
+                  sx={{ flexWrap: 'wrap', gap: 1 }}
+                >
+                  {sesiones.map((sesion) => (
+                    <ToggleButton
+                      key={sesion.id}
+                      value={sesion.id}
+                      aria-label={`Sesión del ${sesion.fecha}, estado ${sesion.estado}`}
+                      aria-pressed={sesionSeleccionada?.id === sesion.id}
+                      sx={{ px: 1.5, py: 1 }}
+                    >
+                      <Stack spacing={0.5} sx={{ textAlign: 'left' }}>
+                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {sesion.fecha}
+                          </Typography>
+                          <StatusChip status={sesion.estado} />
+                        </Stack>
+                        {sesion.tema && (
+                          <Typography variant="caption" color="text.secondary">
+                            {sesion.tema}
+                          </Typography>
+                        )}
+                      </Stack>
+                    </ToggleButton>
+                  ))}
+                </ToggleButtonGroup>
+              )}
+            </SectionCard>
           )}
 
           {sesionSeleccionada && (
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="h3" sx={{ mb: 1 }}>
-                Asistencia — {sesionSeleccionada.id}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 2 }}>
-                Grupo: {sesionSeleccionada.grupoId} · Fecha: {sesionSeleccionada.fecha}
-              </Typography>
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Matrícula</TableCell>
-                      <TableCell>Estado</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {registrosAsistencia.map((r) => (
-                      <TableRow key={r.matriculaId}>
-                        <TableCell sx={{ fontWeight: 'medium' }}>{r.matriculaId}</TableCell>
-                        <TableCell sx={{ textAlign: 'center' }}>
-                          <Select
-                            value={r.estado}
-                            onChange={(e) =>
-                              setRegistrosAsistencia(
-                                registrosAsistencia.map((x) =>
-                                  x.matriculaId === r.matriculaId
-                                    ? { ...x, estado: e.target.value }
-                                    : x,
-                                ),
-                              )
-                            }
-                            displayEmpty
-                          >
-                            {ESTADO_ASISTENCIA.map((ea) => (
-                              <MenuItem key={ea.valor} value={ea.valor}>
-                                {ea.label}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {registrosAsistencia.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={2}>
-                          No hay registros de asistencia para esta sesión.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              <Button
-                variant="contained"
-                startIcon={<CheckCircleIcon />}
-                disabled={cargando}
-                onClick={manejarTomarAsistencia}
-                sx={{ mt: 2 }}
+            <>
+              <SectionCard
+                title="3. Estudiantes de la sesión"
+                subtitle={`Sesión del ${sesionSeleccionada.fecha} · grupo ${sesionSeleccionada.grupoId}`}
+                sx={{ mb: 2 }}
               >
-                {cargando ? <CircularProgress size={20} /> : 'Registrar asistencia'}
-              </Button>
-            </Box>
+                {error && registrosAsistencia.length === 0 ? (
+                  <ErrorState
+                    message={error}
+                    onRetry={() => void cargarAsistencia(sesionSeleccionada.id, matriculasDelGrupo)}
+                    minHeight={160}
+                  />
+                ) : cargandoAsistencia && registrosAsistencia.length === 0 ? (
+                  <LoadingState label="Cargando asistencia…" minHeight={160} />
+                ) : registrosAsistencia.length === 0 ? (
+                  <EmptyState
+                    title="Sin estudiantes registrados"
+                    description="No hay registros de asistencia para esta sesión."
+                    minHeight={160}
+                  />
+                ) : (
+                  <DataTable
+                    ariaLabel="Estudiantes de la sesión"
+                    columns={columnasAsistencia}
+                    rows={registrosAsistencia}
+                    rowKey={(registro) => registro.matriculaId}
+                    loading={cargandoAsistencia}
+                    emptyMessage="No hay estudiantes para mostrar."
+                  />
+                )}
+              </SectionCard>
+
+              {registrosAsistencia.length > 0 && (
+                <SectionCard
+                  title="4. Registrar asistencia"
+                  subtitle="Revisa los estados seleccionados y guarda el registro de la sesión."
+                  sx={{ mb: 2 }}
+                >
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                    {conteosAsistencia.map((conteo) => (
+                      <StatusChip
+                        key={conteo.valor}
+                        status={conteo.valor}
+                        label={`${conteo.label}: ${conteo.total}`}
+                      />
+                    ))}
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Cambia el estado de cada estudiante en la tabla anterior y guarda los cambios.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<CheckCircleIcon />}
+                    onClick={() => void manejarTomarAsistencia()}
+                    disabled={enviandoAsistencia || cargandoAsistencia}
+                  >
+                    {enviandoAsistencia ? 'Guardando…' : 'Guardar asistencia'}
+                  </Button>
+                </SectionCard>
+              )}
+            </>
           )}
-        </Paper>
+        </>
       )}
 
       {puedeCrearEvaluacion && (
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h2" gutterBottom sx={{ mb: 2 }}>
-            Crear evaluación cualitativa
+        <SectionCard
+          title="Evaluaciones"
+          subtitle="Registra una valoración cualitativa para un estudiante."
+          action={
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setAbiertoDialogoEvaluacion(true)}
+            >
+              Nueva evaluación
+            </Button>
+          }
+        >
+          <Typography variant="body2" color="text.secondary">
+            Indica el estudiante, el indicador, el periodo y la valoración observada.
           </Typography>
-          <Dialog
-            open={abiertoDialogoEvaluacion}
-            onClose={() => setAbiertoDialogoEvaluacion(false)}
-            maxWidth="sm"
-          >
-            <DialogTitle>Nueva evaluación</DialogTitle>
-            <DialogContent>
-              <DialogContentText>
-                Registra una evaluación para un estudiante de tu grupo.
-              </DialogContentText>
-              <form noValidate>
-                <TextField
-                  autoFocus
-                  margin="dense"
-                  id="matricula-id-eval"
-                  label="ID de matrícula (UUID)"
-                  type="text"
-                  fullWidth
-                  value={matriculaIdEval}
-                  onChange={(e) => setMatriculaIdEval(e.target.value)}
-                />
-                <TextField
-                  margin="dense"
-                  id="indicador-id-eval"
-                  label="ID de indicador (UUID)"
-                  type="text"
-                  fullWidth
-                  value={indicadorIdEval}
-                  onChange={(e) => setIndicadorIdEval(e.target.value)}
-                />
-                <TextField
-                  margin="dense"
-                  id="periodo-eval"
-                  label="Periodo (ej. 2026-1)"
-                  type="text"
-                  fullWidth
-                  value={periodoEval}
-                  onChange={(e) => setPeriodoEval(e.target.value)}
-                />
-                <FormControl margin="dense" fullWidth>
-                  <InputLabel id="label-valor-eval">Valor</InputLabel>
+        </SectionCard>
+      )}
+
+      {puedeCrearEvaluacion && (
+        <Dialog
+          open={abiertoDialogoEvaluacion}
+          onClose={cerrarDialogoEvaluacion}
+          maxWidth="sm"
+          fullWidth
+          aria-labelledby="titulo-nueva-evaluacion"
+        >
+          <DialogTitle id="titulo-nueva-evaluacion">Nueva evaluación</DialogTitle>
+          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Typography variant="h3" sx={{ mt: 1 }}>
+              Datos de la evaluación
+            </Typography>
+            <Box
+              component="form"
+              id="formulario-evaluacion"
+              noValidate
+              onSubmit={(evento) => void manejarCrearEvaluacion(evento)}
+              sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+            >
+              {matriculasDelGrupo.length > 0 ? (
+                <FormControl fullWidth error={Boolean(erroresEvaluacion.matriculaId)}>
+                  <InputLabel id="evaluacion-matricula-label">Estudiante</InputLabel>
                   <Select
-                    labelId="label-valor-eval"
-                    id="select-valor-eval"
-                    label="Valor"
-                    value={valorEval}
-                    onChange={(e) => setValorEval(e.target.value)}
+                    labelId="evaluacion-matricula-label"
+                    label="Estudiante"
+                    value={matriculaIdEval}
+                    onChange={(evento) =>
+                      actualizarCampoEvaluacion('matriculaId', evento.target.value)
+                    }
                   >
-                    {VALOR_EVALUACION.map((v) => (
-                      <MenuItem key={v.valor} value={v.valor}>
-                        {v.label}
+                    <MenuItem value="">Selecciona un estudiante</MenuItem>
+                    {matriculasDelGrupo.map((matricula) => (
+                      <MenuItem key={matricula.id} value={matricula.id}>
+                        {`${matricula.estudianteNombres} ${matricula.estudianteApellidos} · ${matricula.grupoCodigo}`}
                       </MenuItem>
                     ))}
                   </Select>
+                  {erroresEvaluacion.matriculaId && (
+                    <FormHelperText>{erroresEvaluacion.matriculaId}</FormHelperText>
+                  )}
                 </FormControl>
+              ) : (
                 <TextField
-                  margin="dense"
-                  id="observacion-eval"
-                  label="Observación (opcional)"
-                  type="text"
+                  id="matricula-id-eval"
+                  label="Estudiante (ID de matrícula)"
+                  helperText={
+                    erroresEvaluacion.matriculaId ?? 'Identificador de la matrícula del estudiante.'
+                  }
+                  error={Boolean(erroresEvaluacion.matriculaId)}
+                  value={matriculaIdEval}
+                  onChange={(evento) =>
+                    actualizarCampoEvaluacion('matriculaId', evento.target.value)
+                  }
+                  required
                   fullWidth
-                  value={observacionEval}
-                  onChange={(e) => setObservacionEval(e.target.value)}
                 />
-              </form>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setAbiertoDialogoEvaluacion(false)}>Cancelar</Button>
-              <Button
-                onClick={manejarCrearEvaluacion}
-                disabled={
-                  cargando ||
-                  !matriculaIdEval.trim() ||
-                  !indicadorIdEval.trim() ||
-                  !periodoEval.trim()
+              )}
+              <TextField
+                id="indicador-id-eval"
+                label="Indicador (ID)"
+                helperText={erroresEvaluacion.indicadorId ?? 'Identificador del indicador evaluado.'}
+                error={Boolean(erroresEvaluacion.indicadorId)}
+                value={indicadorIdEval}
+                onChange={(evento) =>
+                  actualizarCampoEvaluacion('indicadorId', evento.target.value)
                 }
-              >
-                {cargando ? <CircularProgress size={20} /> : 'Guardar'}
-              </Button>
-            </DialogActions>
-          </Dialog>
-          <Button
-            startIcon={<AddIcon />}
-            variant="outlined"
-            onClick={() => setAbiertoDialogoEvaluacion(true)}
-          >
-            Nueva evaluación
-          </Button>
-        </Paper>
+                required
+                fullWidth
+              />
+              <TextField
+                id="periodo-eval"
+                label="Periodo (ej. 2026-1)"
+                helperText={erroresEvaluacion.periodo}
+                error={Boolean(erroresEvaluacion.periodo)}
+                value={periodoEval}
+                onChange={(evento) => actualizarCampoEvaluacion('periodo', evento.target.value)}
+                required
+                fullWidth
+              />
+              <FormControl fullWidth>
+                <InputLabel id="label-valor-eval">Valoración</InputLabel>
+                <Select
+                  labelId="label-valor-eval"
+                  id="select-valor-eval"
+                  label="Valoración"
+                  value={valorEval}
+                  onChange={(evento) => actualizarCampoEvaluacion('valor', evento.target.value)}
+                >
+                  {VALOR_EVALUACION.map((opcion) => (
+                    <MenuItem key={opcion.valor} value={opcion.valor}>
+                      {opcion.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                id="observacion-eval"
+                label="Observación (opcional)"
+                value={observacionEval}
+                onChange={(evento) => actualizarCampoEvaluacion('observacion', evento.target.value)}
+                multiline
+                minRows={2}
+                fullWidth
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={cerrarDialogoEvaluacion} disabled={enviandoEvaluacion}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              form="formulario-evaluacion"
+              variant="contained"
+              disabled={enviandoEvaluacion}
+            >
+              {enviandoEvaluacion ? 'Guardando…' : 'Guardar evaluación'}
+            </Button>
+          </DialogActions>
+        </Dialog>
       )}
     </Box>
   );
