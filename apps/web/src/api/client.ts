@@ -1342,17 +1342,18 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 // Credenciales de la sesión en memoria (ADR-0002): nunca localStorage.
 // El refresh viaja en cookie httpOnly; el CSRF se replica como cabecera.
+// El token *parcial* NO se usa como Bearer: los flujos de MFA lo leen del cuerpo
+// y el guard prioriza la cabecera, así que enviarlo en ambas posiciones los rompe.
 let bearerToken: string | null = null;
 let csrfToken: string | null = null;
 
 export function setSessionCredentials(
   credentials: {
     accessToken?: string;
-    sessionToken?: string;
     csrfToken?: string;
   } | null,
 ): void {
-  bearerToken = credentials?.accessToken ?? credentials?.sessionToken ?? null;
+  bearerToken = credentials?.accessToken ?? null;
   csrfToken = credentials?.csrfToken ?? null;
 }
 
