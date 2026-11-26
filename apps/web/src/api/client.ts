@@ -1368,7 +1368,8 @@ function readCookie(name: string): string | null {
 
 function setSessionMarker(): void {
   if (typeof document === 'undefined') return;
-  const secure = typeof location !== 'undefined' && location.protocol === 'https:' ? '; Secure' : '';
+  const secure =
+    typeof location !== 'undefined' && location.protocol === 'https:' ? '; Secure' : '';
   document.cookie = `${SESSION_MARKER}=1; Path=/; Max-Age=${SESSION_MARKER_MAX_AGE}; SameSite=Strict${secure}`;
 }
 

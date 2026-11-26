@@ -41,7 +41,8 @@ type Props = {
 export default function StatusChip({ status, label }: Props) {
   const clave = status.trim().toLowerCase();
   const configuracion = ESTADOS[clave];
-  const tono: StatusTone = configuracion?.tone ?? (statusTones[clave as StatusTone] ? (clave as StatusTone) : 'neutral');
+  const tono: StatusTone =
+    configuracion?.tone ?? (statusTones[clave as StatusTone] ? (clave as StatusTone) : 'neutral');
   const texto = label ?? configuracion?.label ?? status;
   const colors = statusTones[tono];
 

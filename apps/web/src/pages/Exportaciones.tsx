@@ -18,11 +18,7 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type {
-  CrearExportacionDto,
-  ExportacionDto,
-  ProblemDetailsDto,
-} from '../api/client';
+import type { CrearExportacionDto, ExportacionDto, ProblemDetailsDto } from '../api/client';
 import PageHeader from '../components/common/PageHeader';
 import SectionCard from '../components/common/SectionCard';
 import StatusChip from '../components/common/StatusChip';
@@ -97,7 +93,9 @@ export default function Exportaciones() {
     try {
       const parseado: unknown = JSON.parse(entradaJson || '{}');
       if (typeof parseado !== 'object' || parseado === null || Array.isArray(parseado)) {
-        setErrorParametros('Los parámetros deben ser un objeto JSON, por ejemplo {"periodo": "2026-1"}.');
+        setErrorParametros(
+          'Los parámetros deben ser un objeto JSON, por ejemplo {"periodo": "2026-1"}.',
+        );
         return;
       }
       entrada = parseado as Record<string, unknown>;
@@ -128,7 +126,9 @@ export default function Exportaciones() {
 
       setResultado(data);
       setGeneradoEn(new Date());
-      setExito(`Exportación "${data.nombre}" generada correctamente (${data.formato.toUpperCase()}).`);
+      setExito(
+        `Exportación "${data.nombre}" generada correctamente (${data.formato.toUpperCase()}).`,
+      );
       setEntradaJson('{}');
     } catch (err) {
       setError(getErrorMessage(err) || 'Error inesperado al generar la exportación.');
@@ -189,7 +189,10 @@ export default function Exportaciones() {
         </Alert>
       )}
 
-      <SectionCard title="Nueva exportación" subtitle="Configura la plantilla, el formato y los parámetros">
+      <SectionCard
+        title="Nueva exportación"
+        subtitle="Configura la plantilla, el formato y los parámetros"
+      >
         <Box component="form" noValidate onSubmit={(event) => event.preventDefault()}>
           <Box
             sx={{
@@ -267,7 +270,11 @@ export default function Exportaciones() {
         </Box>
       </SectionCard>
 
-      <SectionCard title="Resultado" subtitle="Última exportación generada en esta sesión" sx={{ mt: 3 }}>
+      <SectionCard
+        title="Resultado"
+        subtitle="Última exportación generada en esta sesión"
+        sx={{ mt: 3 }}
+      >
         {generando ? (
           <LoadingState label="Generando exportación…" minHeight={160} />
         ) : resultado ? (
@@ -276,7 +283,11 @@ export default function Exportaciones() {
               sx={{
                 display: 'grid',
                 gap: 2,
-                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' },
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, minmax(0, 1fr))',
+                  lg: 'repeat(4, minmax(0, 1fr))',
+                },
               }}
             >
               <Metadato label="Nombre">

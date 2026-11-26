@@ -18,11 +18,7 @@ export default function MainLayout() {
   const [collapsed, setCollapsed] = useState(false);
 
   // La variante temporal siempre usa el ancho completo: ignora el estado contraído.
-  const drawerWidth = isMobile
-    ? DRAWER_WIDTH
-    : collapsed
-      ? DRAWER_COLLAPSED_WIDTH
-      : DRAWER_WIDTH;
+  const drawerWidth = isMobile ? DRAWER_WIDTH : collapsed ? DRAWER_COLLAPSED_WIDTH : DRAWER_WIDTH;
 
   const handleLogout = () => {
     void logout();

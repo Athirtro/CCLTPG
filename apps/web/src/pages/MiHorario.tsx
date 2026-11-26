@@ -34,8 +34,7 @@ const DIAS_SEMANA: Record<number, string> = {
 
 const BREADCRUMBS = [{ label: 'Inicio', to: '/' }, { label: 'Mi horario' }];
 
-const DESCRIPCION =
-  'Consulta las sesiones programadas para ti, organizadas por día, hora y grupo.';
+const DESCRIPCION = 'Consulta las sesiones programadas para ti, organizadas por día, hora y grupo.';
 
 const nombreDia = (diaSemana: number) => DIAS_SEMANA[diaSemana] ?? 'No disponible';
 const noDisponible = (valor: string | null) => valor ?? 'No disponible';
@@ -83,9 +82,7 @@ export default function MiHorario() {
     () =>
       sesiones
         .filter((sesion) => filtroDia === 'todos' || sesion.diaSemana === filtroDia)
-        .sort(
-          (a, b) => a.diaSemana - b.diaSemana || a.horaInicio.localeCompare(b.horaInicio),
-        ),
+        .sort((a, b) => a.diaSemana - b.diaSemana || a.horaInicio.localeCompare(b.horaInicio)),
     [sesiones, filtroDia],
   );
 
@@ -117,7 +114,12 @@ export default function MiHorario() {
       minWidth: 140,
       render: (sesion) => `${sesion.horaInicio} – ${sesion.horaFin}`,
     },
-    { id: 'programa', label: 'Programa', minWidth: 180, render: (s) => noDisponible(s.programaNombre) },
+    {
+      id: 'programa',
+      label: 'Programa',
+      minWidth: 180,
+      render: (s) => noDisponible(s.programaNombre),
+    },
     { id: 'grupo', label: 'Grupo', minWidth: 110, render: (s) => noDisponible(s.grupoCodigo) },
     { id: 'periodo', label: 'Periodo', minWidth: 110, render: (s) => noDisponible(s.periodo) },
     { id: 'salon', label: 'Salón', minWidth: 120, render: (s) => noDisponible(s.salon) },
@@ -244,7 +246,12 @@ export default function MiHorario() {
                       {items.map((sesion) => (
                         <Box
                           key={sesion.id}
-                          sx={{ p: 2, borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+                          sx={{
+                            p: 2,
+                            borderRadius: 1,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                          }}
                         >
                           <Stack
                             direction="row"

@@ -273,7 +273,10 @@ export default function Notificaciones() {
         />
       </Box>
 
-      <SectionCard title="Bandeja de notificaciones" subtitle="Evento, canal, estado, fecha y contenido">
+      <SectionCard
+        title="Bandeja de notificaciones"
+        subtitle="Evento, canal, estado, fecha y contenido"
+      >
         {cargando && notificaciones.length === 0 ? (
           <LoadingState label="Cargando notificaciones…" />
         ) : error && notificaciones.length === 0 ? (

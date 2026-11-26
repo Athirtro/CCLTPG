@@ -89,11 +89,21 @@ export default function Home() {
     try {
       if (perfil === 'administrador') {
         const resultados = await Promise.allSettled([
-          hasPermission('academic:student:manage') ? apiClient.GET('/academic/students') : Promise.resolve(null),
-          hasPermission('academic:program:manage') ? apiClient.GET('/academic/programs') : Promise.resolve(null),
-          hasPermission('academic:group:manage') ? apiClient.GET('/academic/groups') : Promise.resolve(null),
-          hasPermission('academic:enrollment:manage') ? apiClient.GET('/academic/enrollments') : Promise.resolve(null),
-          hasPermission('analytics:kpi:read') ? apiClient.GET('/analytics/kpis') : Promise.resolve(null),
+          hasPermission('academic:student:manage')
+            ? apiClient.GET('/academic/students')
+            : Promise.resolve(null),
+          hasPermission('academic:program:manage')
+            ? apiClient.GET('/academic/programs')
+            : Promise.resolve(null),
+          hasPermission('academic:group:manage')
+            ? apiClient.GET('/academic/groups')
+            : Promise.resolve(null),
+          hasPermission('academic:enrollment:manage')
+            ? apiClient.GET('/academic/enrollments')
+            : Promise.resolve(null),
+          hasPermission('analytics:kpi:read')
+            ? apiClient.GET('/analytics/kpis')
+            : Promise.resolve(null),
         ]);
 
         const estudiantes = obtener(resultados[0]);
@@ -140,7 +150,8 @@ export default function Home() {
         const puedeVerGrupos =
           hasPermission('academic:group:manage') || hasPermission('academic:group:read_own');
         const respuestaGrupos = puedeVerGrupos ? await apiClient.GET('/academic/groups') : null;
-        const grupos = respuestaGrupos && !respuestaGrupos.error ? respuestaGrupos.data?.data ?? [] : [];
+        const grupos =
+          respuestaGrupos && !respuestaGrupos.error ? (respuestaGrupos.data?.data ?? []) : [];
         setResumen({
           grupos: grupos.filter((grupo: GrupoDto) => grupo.estado === 'abierto').length,
         });
@@ -158,7 +169,10 @@ export default function Home() {
           .flatMap((valor) => valor.data ?? []) as SesionDto[];
 
         const hoy = fechaLocal();
-        setResumen((prev) => ({ ...prev, matriculas: sesiones.filter((s) => s.fecha.slice(0, 10) === hoy).length }));
+        setResumen((prev) => ({
+          ...prev,
+          matriculas: sesiones.filter((s) => s.fecha.slice(0, 10) === hoy).length,
+        }));
         setActividad(
           [...sesiones]
             .sort((a, b) => a.fecha.localeCompare(b.fecha))
@@ -191,7 +205,9 @@ export default function Home() {
       const notificaciones = obtener(resultados[3]);
 
       setResumen({
-        matriculas: inscripciones?.data?.filter((m) => m.estado === 'activa' || m.estado === 'confirmada').length,
+        matriculas: inscripciones?.data?.filter(
+          (m) => m.estado === 'activa' || m.estado === 'confirmada',
+        ).length,
         asistencia: evaluaciones?.total,
         estudiantes: notificaciones?.items?.filter((n) => n.estado !== 'leida').length,
       });
@@ -224,50 +240,158 @@ export default function Home() {
   const accesos: Array<{ label: string; to: string; icon: ReactNode; perms?: string }> =
     perfil === 'administrador'
       ? [
-          { label: 'Estudiantes', to: '/estudiantes', icon: <PeopleIcon />, perms: 'academic:student:manage' },
-          { label: 'Programas', to: '/programas', icon: <SchoolIcon />, perms: 'academic:program:manage' },
+          {
+            label: 'Estudiantes',
+            to: '/estudiantes',
+            icon: <PeopleIcon />,
+            perms: 'academic:student:manage',
+          },
+          {
+            label: 'Programas',
+            to: '/programas',
+            icon: <SchoolIcon />,
+            perms: 'academic:program:manage',
+          },
           { label: 'Grupos', to: '/grupos', icon: <GroupIcon />, perms: 'academic:group:manage' },
-          { label: 'Matrículas', to: '/matriculas', icon: <AssignmentIcon />, perms: 'academic:enrollment:manage' },
-          { label: 'Indicadores', to: '/kpis', icon: <BarChartIcon />, perms: 'analytics:kpi:read' },
-          { label: 'Reportes', to: '/reportes', icon: <DescriptionIcon />, perms: 'exports:report:export' },
+          {
+            label: 'Matrículas',
+            to: '/matriculas',
+            icon: <AssignmentIcon />,
+            perms: 'academic:enrollment:manage',
+          },
+          {
+            label: 'Indicadores',
+            to: '/kpis',
+            icon: <BarChartIcon />,
+            perms: 'analytics:kpi:read',
+          },
+          {
+            label: 'Reportes',
+            to: '/reportes',
+            icon: <DescriptionIcon />,
+            perms: 'exports:report:export',
+          },
         ]
       : perfil === 'educador'
         ? [
-            { label: 'Vista educador', to: '/vista-educador', icon: <ShieldIcon />, perms: 'academic:attendance:create' },
-            { label: 'Mi horario', to: '/mi-horario', icon: <ScheduleIcon />, perms: 'academic:schedule:read_own' },
-            { label: 'Mis evaluaciones', to: '/mis-evaluaciones', icon: <BarChartIcon />, perms: 'academic:evaluation:read_own' },
+            {
+              label: 'Vista educador',
+              to: '/vista-educador',
+              icon: <ShieldIcon />,
+              perms: 'academic:attendance:create',
+            },
+            {
+              label: 'Mi horario',
+              to: '/mi-horario',
+              icon: <ScheduleIcon />,
+              perms: 'academic:schedule:read_own',
+            },
+            {
+              label: 'Mis evaluaciones',
+              to: '/mis-evaluaciones',
+              icon: <BarChartIcon />,
+              perms: 'academic:evaluation:read_own',
+            },
           ]
         : [
-            { label: 'Mi horario', to: '/mi-horario', icon: <ScheduleIcon />, perms: 'academic:schedule:read_own' },
-            { label: 'Mis evaluaciones', to: '/mis-evaluaciones', icon: <BarChartIcon />, perms: 'academic:evaluation:read_own' },
-            { label: 'Notificaciones', to: '/notificaciones', icon: <NotificationsIcon />, perms: 'notifications:notification:read_own' },
+            {
+              label: 'Mi horario',
+              to: '/mi-horario',
+              icon: <ScheduleIcon />,
+              perms: 'academic:schedule:read_own',
+            },
+            {
+              label: 'Mis evaluaciones',
+              to: '/mis-evaluaciones',
+              icon: <BarChartIcon />,
+              perms: 'academic:evaluation:read_own',
+            },
+            {
+              label: 'Notificaciones',
+              to: '/notificaciones',
+              icon: <NotificationsIcon />,
+              perms: 'notifications:notification:read_own',
+            },
           ];
 
   const accesosVisibles = accesos.filter((acceso) => !acceso.perms || hasPermission(acceso.perms));
 
-  const tarjetas: Array<{ label: string; value: number | string; icon: ReactNode; description: string; to?: string }> =
+  const tarjetas: Array<{
+    label: string;
+    value: number | string;
+    icon: ReactNode;
+    description: string;
+    to?: string;
+  }> =
     perfil === 'administrador'
       ? [
-          { label: 'Estudiantes registrados', value: resumen.estudiantes ?? '—', icon: <PeopleIcon />, description: 'Total en el sistema', to: '/estudiantes' },
-          { label: 'Programas publicados', value: resumen.programas ?? '—', icon: <SchoolIcon />, description: 'Disponibles actualmente', to: '/programas' },
-          { label: 'Grupos abiertos', value: resumen.grupos ?? '—', icon: <GroupIcon />, description: 'Con cupo disponible', to: '/grupos' },
-          { label: 'Matrículas', value: resumen.matriculas ?? '—', icon: <AssignmentIcon />, description: 'Registros acumulados', to: '/matriculas' },
+          {
+            label: 'Estudiantes registrados',
+            value: resumen.estudiantes ?? '—',
+            icon: <PeopleIcon />,
+            description: 'Total en el sistema',
+            to: '/estudiantes',
+          },
+          {
+            label: 'Programas publicados',
+            value: resumen.programas ?? '—',
+            icon: <SchoolIcon />,
+            description: 'Disponibles actualmente',
+            to: '/programas',
+          },
+          {
+            label: 'Grupos abiertos',
+            value: resumen.grupos ?? '—',
+            icon: <GroupIcon />,
+            description: 'Con cupo disponible',
+            to: '/grupos',
+          },
+          {
+            label: 'Matrículas',
+            value: resumen.matriculas ?? '—',
+            icon: <AssignmentIcon />,
+            description: 'Registros acumulados',
+            to: '/matriculas',
+          },
           {
             label: 'Asistencia',
             value: resumen.asistencia != null ? `${resumen.asistencia}%` : '—',
             icon: <BarChartIcon />,
-            description: resumen.asistencia != null ? 'Indicador calculado' : 'Indicador no disponible',
+            description:
+              resumen.asistencia != null ? 'Indicador calculado' : 'Indicador no disponible',
             to: '/kpis',
           },
         ]
       : perfil === 'educador'
         ? [
-            { label: 'Grupos abiertos', value: resumen.grupos ?? '—', icon: <GroupIcon />, description: 'Grupos activos consultados' },
-            { label: 'Sesiones de hoy', value: resumen.matriculas ?? '—', icon: <ScheduleIcon />, description: 'De los primeros grupos asignados' },
+            {
+              label: 'Grupos abiertos',
+              value: resumen.grupos ?? '—',
+              icon: <GroupIcon />,
+              description: 'Grupos activos consultados',
+            },
+            {
+              label: 'Sesiones de hoy',
+              value: resumen.matriculas ?? '—',
+              icon: <ScheduleIcon />,
+              description: 'De los primeros grupos asignados',
+            },
           ]
         : [
-            { label: 'Matrículas vigentes', value: resumen.matriculas ?? '—', icon: <AssignmentIcon />, description: 'Activas o confirmadas', to: '/matriculas' },
-            { label: 'Evaluaciones', value: resumen.asistencia ?? '—', icon: <BarChartIcon />, description: 'Registros disponibles', to: '/mis-evaluaciones' },
+            {
+              label: 'Matrículas vigentes',
+              value: resumen.matriculas ?? '—',
+              icon: <AssignmentIcon />,
+              description: 'Activas o confirmadas',
+              to: '/matriculas',
+            },
+            {
+              label: 'Evaluaciones',
+              value: resumen.asistencia ?? '—',
+              icon: <BarChartIcon />,
+              description: 'Registros disponibles',
+              to: '/mis-evaluaciones',
+            },
             {
               label: 'Notificaciones por leer',
               value: resumen.estudiantes ?? '—',
@@ -306,7 +430,11 @@ export default function Home() {
             sx={{
               display: 'grid',
               gap: 2,
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' },
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(2, minmax(0, 1fr))',
+                md: 'repeat(3, minmax(0, 1fr))',
+              },
               mb: 3,
             }}
           >
@@ -350,9 +478,20 @@ export default function Home() {
                     <Box
                       component="li"
                       key={`${item.titulo}-${index}`}
-                      sx={{ py: 1.25, borderBottom: index < actividad.length - 1 ? '1px solid' : 0, borderColor: 'divider' }}
+                      sx={{
+                        py: 1.25,
+                        borderBottom: index < actividad.length - 1 ? '1px solid' : 0,
+                        borderColor: 'divider',
+                      }}
                     >
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          gap: 2,
+                          flexWrap: 'wrap',
+                        }}
+                      >
                         <Box sx={{ minWidth: 0 }}>
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>
                             {item.titulo}
@@ -363,7 +502,12 @@ export default function Home() {
                         </Box>
                         {item.estado && <StatusChip status={item.estado} />}
                       </Box>
-                      <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.5 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        component="div"
+                        sx={{ mt: 0.5 }}
+                      >
                         {formatearFecha(item.fecha)}
                       </Typography>
                     </Box>
@@ -396,10 +540,12 @@ export default function Home() {
                         sx={{ py: 1, borderBottom: '1px solid', borderColor: 'divider' }}
                       >
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {DIAS[sesion.diaSemana] ?? `Día ${sesion.diaSemana}`} · {sesion.horaInicio}–{sesion.horaFin}
+                          {DIAS[sesion.diaSemana] ?? `Día ${sesion.diaSemana}`} ·{' '}
+                          {sesion.horaInicio}–{sesion.horaFin}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" component="div">
-                          {sesion.programaNombre ?? 'Programa no disponible'} · {sesion.grupoCodigo ?? sesion.grupoId}
+                          {sesion.programaNombre ?? 'Programa no disponible'} ·{' '}
+                          {sesion.grupoCodigo ?? sesion.grupoId}
                           {sesion.salon ? ` · ${sesion.salon}` : ''}
                         </Typography>
                       </Box>
@@ -453,10 +599,16 @@ export default function Home() {
                     textDecoration: 'none',
                     borderRadius: 2,
                     transition: 'border-color 150ms ease, box-shadow 150ms ease',
-                    '&:hover': { borderColor: 'primary.main', boxShadow: '0 4px 14px rgba(31, 58, 95, 0.10)' },
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      boxShadow: '0 4px 14px rgba(31, 58, 95, 0.10)',
+                    },
                   }}
                 >
-                  <Avatar variant="rounded" sx={{ bgcolor: 'primary.light', color: 'primary.main' }}>
+                  <Avatar
+                    variant="rounded"
+                    sx={{ bgcolor: 'primary.light', color: 'primary.main' }}
+                  >
                     {acceso.icon}
                   </Avatar>
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>

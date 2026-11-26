@@ -14,22 +14,23 @@ type Props = {
   sx?: SxProps<Theme>;
 };
 
-export default function PageHeader({
-  title,
-  description,
-  icon,
-  breadcrumbs,
-  actions,
-  sx,
-}: Props) {
+export default function PageHeader({ title, description, icon, breadcrumbs, actions, sx }: Props) {
   return (
     <Box sx={{ mb: 3, ...sx }}>
       {breadcrumbs && breadcrumbs.length > 0 && (
-        <Breadcrumbs aria-label="Ruta de navegación" separator="›" sx={{ mb: 1.5, fontSize: '0.8125rem' }}>
+        <Breadcrumbs
+          aria-label="Ruta de navegación"
+          separator="›"
+          sx={{ mb: 1.5, fontSize: '0.8125rem' }}
+        >
           {breadcrumbs.map((crumb, index) => {
             const esUltimo = index === breadcrumbs.length - 1;
             return esUltimo || !crumb.to ? (
-              <Typography key={`${crumb.label}-${index}`} color="text.primary" sx={{ fontSize: 'inherit' }}>
+              <Typography
+                key={`${crumb.label}-${index}`}
+                color="text.primary"
+                sx={{ fontSize: 'inherit' }}
+              >
                 {crumb.label}
               </Typography>
             ) : (

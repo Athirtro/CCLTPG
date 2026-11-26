@@ -130,11 +130,7 @@ export default function Kpis() {
       breadcrumbs={[{ label: 'Inicio', to: '/' }, { label: 'Analítica' }, { label: 'Indicadores' }]}
       actions={
         puedeLeer ? (
-          <Button
-            startIcon={<RefreshIcon />}
-            onClick={() => void cargarKpis()}
-            disabled={cargando}
-          >
+          <Button startIcon={<RefreshIcon />} onClick={() => void cargarKpis()} disabled={cargando}>
             Actualizar
           </Button>
         ) : (
@@ -241,7 +237,9 @@ export default function Kpis() {
                         <Typography variant="caption" color="text.secondary">
                           Unidad
                         </Typography>
-                        <Typography variant="body2">{UNIDAD_LABEL[kpi.unidad] ?? kpi.unidad}</Typography>
+                        <Typography variant="body2">
+                          {UNIDAD_LABEL[kpi.unidad] ?? kpi.unidad}
+                        </Typography>
                       </Box>
                       <Box>
                         <Typography variant="caption" color="text.secondary">

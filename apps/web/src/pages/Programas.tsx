@@ -175,7 +175,11 @@ export default function Programas() {
         area,
         cupoMaximo: Number(formulario.cupoMaximo.trim()),
       };
-      const { data, error: apiError, response } = await apiClient.POST('/academic/programs', {
+      const {
+        data,
+        error: apiError,
+        response,
+      } = await apiClient.POST('/academic/programs', {
         body: payload,
       });
       if (apiError || response?.status !== 201 || !data) {
@@ -208,9 +212,7 @@ export default function Programas() {
         setError(problema?.detail || 'No se pudo cambiar el estado del programa.');
         return;
       }
-      setExito(
-        `Estado del programa "${transicion.programa.nombre}" cambiado a ${transicion.to}.`,
-      );
+      setExito(`Estado del programa "${transicion.programa.nombre}" cambiado a ${transicion.to}.`);
       setTransicion(null);
       await cargarProgramas();
     } catch (err) {

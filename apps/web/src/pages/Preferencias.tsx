@@ -1,11 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  Switch,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, Switch, Typography } from '@mui/material';
 import {
   Email as EmailIcon,
   Home as HomeIcon,
@@ -17,10 +11,7 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type {
-  PreferenciaNotificacionDto,
-  ActualizarPreferenciaDto,
-} from '../api/client';
+import type { PreferenciaNotificacionDto, ActualizarPreferenciaDto } from '../api/client';
 import PageHeader from '../components/common/PageHeader';
 import SectionCard from '../components/common/SectionCard';
 import StatusChip from '../components/common/StatusChip';
@@ -210,11 +201,7 @@ export default function Preferencias() {
             title="Canales y eventos"
             subtitle={`Cargadas: ${formatearFecha(cargadoEn)} · Último guardado: ${formatearFecha(guardadoEn)}`}
             action={
-              <Button
-                size="small"
-                onClick={descartarCambios}
-                disabled={!hayCambios || guardando}
-              >
+              <Button size="small" onClick={descartarCambios} disabled={!hayCambios || guardando}>
                 Descartar cambios
               </Button>
             }
@@ -335,8 +322,13 @@ export default function Preferencias() {
                   </Button>
                 </Box>
                 {!puedeActualizar && (
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                    Solo puedes consultar tus preferencias; necesitas notifications:preference:update_own para editarlas.
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'block', mt: 1 }}
+                  >
+                    Solo puedes consultar tus preferencias; necesitas
+                    notifications:preference:update_own para editarlas.
                   </Typography>
                 )}
               </>

@@ -50,7 +50,9 @@ export default function DataTable<T>({
 
   return (
     <>
-      {loading && rows.length > 0 && <LinearProgress sx={{ mb: 1 }} aria-label="Actualizando datos" />}
+      {loading && rows.length > 0 && (
+        <LinearProgress sx={{ mb: 1 }} aria-label="Actualizando datos" />
+      )}
       <TableContainer>
         <Table size="small" aria-label={ariaLabel}>
           <TableHead>

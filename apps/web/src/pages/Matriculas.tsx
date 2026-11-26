@@ -198,11 +198,11 @@ export default function Matriculas() {
   const estudianteId = puedeGestionar ? formulario.estudianteId.trim() : (miEstudiante?.id ?? '');
   const puedeEnviar = Boolean(
     estudianteId &&
-      formulario.grupoId &&
-      !enviando &&
-      !cargandoAuxiliares &&
-      !errorAuxiliares &&
-      !miEstudianteError,
+    formulario.grupoId &&
+    !enviando &&
+    !cargandoAuxiliares &&
+    !errorAuxiliares &&
+    !miEstudianteError,
   );
 
   const actualizarCampo = (campo: keyof Formulario, valor: string) => {
@@ -245,7 +245,11 @@ export default function Matriculas() {
         grupoId: formulario.grupoId,
         periodo: formulario.periodo.trim() || null,
       };
-      const { data, error: apiError, response } = await apiClient.POST('/academic/enrollments', {
+      const {
+        data,
+        error: apiError,
+        response,
+      } = await apiClient.POST('/academic/enrollments', {
         body: payload,
       });
       if (apiError || response?.status !== 201 || !data) {

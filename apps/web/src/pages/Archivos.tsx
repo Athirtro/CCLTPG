@@ -1,24 +1,10 @@
 import { useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  LinearProgress,
-  TextField,
-  Typography,
-} from '@mui/material';
-import {
-  CloudUpload as CloudUploadIcon,
-  Home as HomeIcon,
-} from '@mui/icons-material';
+import { Alert, Box, Button, LinearProgress, TextField, Typography } from '@mui/material';
+import { CloudUpload as CloudUploadIcon, Home as HomeIcon } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type {
-  FileResponseDto,
-  SubirArchivoResponseDto,
-  ProblemDetailsDto,
-} from '../api/client';
+import type { FileResponseDto, SubirArchivoResponseDto, ProblemDetailsDto } from '../api/client';
 import { postWithIdempotency } from '../api/idempotent-client';
 import PageHeader from '../components/common/PageHeader';
 import SectionCard from '../components/common/SectionCard';
@@ -225,7 +211,11 @@ export default function Archivos() {
                 </Box>
               </Box>
 
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, mb: 2 }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mt: 1, mb: 2 }}
+              >
                 Límite: {MAX_TAMANO_MB} MB · Tipos permitidos: PDF, PNG, JPG, DOCX, XLSX
               </Typography>
 
@@ -301,7 +291,11 @@ export default function Archivos() {
                   </Metadato>
                 </Box>
                 <Box sx={{ mt: 2 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-all' }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ wordBreak: 'break-all' }}
+                  >
                     SHA-256: {resultado.hashSha256}
                   </Typography>
                 </Box>

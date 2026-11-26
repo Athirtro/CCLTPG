@@ -126,8 +126,10 @@ export default function Estudiantes() {
 
   const validar = (): boolean => {
     const nuevosErrores: Partial<Record<keyof Formulario, string>> = {};
-    if (!formulario.tipoDocumento.trim()) nuevosErrores.tipoDocumento = 'Selecciona el tipo de documento.';
-    if (!formulario.numeroDocumento.trim()) nuevosErrores.numeroDocumento = 'Ingresa el número de documento.';
+    if (!formulario.tipoDocumento.trim())
+      nuevosErrores.tipoDocumento = 'Selecciona el tipo de documento.';
+    if (!formulario.numeroDocumento.trim())
+      nuevosErrores.numeroDocumento = 'Ingresa el número de documento.';
     if (!formulario.nombres.trim()) nuevosErrores.nombres = 'Ingresa los nombres.';
     if (!formulario.apellidos.trim()) nuevosErrores.apellidos = 'Ingresa los apellidos.';
     setErrores(nuevosErrores);
@@ -154,7 +156,11 @@ export default function Estudiantes() {
         apellidos: formulario.apellidos.trim(),
         consentimientoDatos: { aceptado: formulario.consentimiento, medio: 'web' },
       };
-      const { data, error: apiError, response } = await apiClient.POST('/academic/students', {
+      const {
+        data,
+        error: apiError,
+        response,
+      } = await apiClient.POST('/academic/students', {
         body: payload,
       });
       if (apiError || response?.status !== 201 || !data) {
@@ -231,7 +237,11 @@ export default function Estudiantes() {
         title="Estudiantes"
         description="Administración y seguimiento de los estudiantes registrados en el centro cultural."
         icon={<PeopleIcon />}
-        breadcrumbs={[{ label: 'Inicio', to: '/' }, { label: 'Gestión académica' }, { label: 'Estudiantes' }]}
+        breadcrumbs={[
+          { label: 'Inicio', to: '/' },
+          { label: 'Gestión académica' },
+          { label: 'Estudiantes' },
+        ]}
         actions={
           <>
             <Button
@@ -241,7 +251,11 @@ export default function Estudiantes() {
             >
               Actualizar listado
             </Button>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAbiertoDialogo(true)}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setAbiertoDialogo(true)}
+            >
               Nuevo estudiante
             </Button>
           </>
@@ -267,7 +281,12 @@ export default function Estudiantes() {
           mb: 3,
         }}
       >
-        <StatCard label="Total de estudiantes" value={estudiantes.length} icon={<PeopleIcon />} description="Registros consultados" />
+        <StatCard
+          label="Total de estudiantes"
+          value={estudiantes.length}
+          icon={<PeopleIcon />}
+          description="Registros consultados"
+        />
         <StatCard
           label="Con consentimiento"
           value={conConsentimiento}
@@ -282,7 +301,10 @@ export default function Estudiantes() {
         />
       </Box>
 
-      <SectionCard title="Listado de estudiantes" subtitle="Consulta, filtra y actualiza los registros">
+      <SectionCard
+        title="Listado de estudiantes"
+        subtitle="Consulta, filtra y actualiza los registros"
+      >
         {error && estudiantes.length === 0 ? (
           <ErrorState message={error} onRetry={() => void cargarEstudiantes()} />
         ) : cargando && estudiantes.length === 0 ? (
@@ -327,7 +349,9 @@ export default function Estudiantes() {
             />
             {filtrados.length === 0 && !cargando ? (
               <EmptyState
-                title={estudiantes.length === 0 ? 'Sin estudiantes registrados' : 'Sin coincidencias'}
+                title={
+                  estudiantes.length === 0 ? 'Sin estudiantes registrados' : 'Sin coincidencias'
+                }
                 description={
                   estudiantes.length === 0
                     ? 'Cuando registres estudiantes aparecerán en este listado.'

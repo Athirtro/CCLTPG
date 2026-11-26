@@ -62,12 +62,20 @@ describe('Componentes comunes reutilizables', () => {
     expect(screen.getByText('Excusa')).toBeInTheDocument();
     expect(screen.getByText('estado-desconocido')).toBeInTheDocument();
     const chips = container.querySelectorAll('.MuiChip-root');
-    expect(new Set(Array.from(chips).map((chip) => getComputedStyle(chip).color)).size).toBeGreaterThan(1);
+    expect(
+      new Set(Array.from(chips).map((chip) => getComputedStyle(chip).color)).size,
+    ).toBeGreaterThan(1);
   });
 
   it('DataTable diferencia carga, vacío y datos', () => {
     const { rerender } = renderConTema(
-      <DataTable ariaLabel="Prueba" columns={columnas} rows={[]} rowKey={(fila) => fila.id} loading />,
+      <DataTable
+        ariaLabel="Prueba"
+        columns={columnas}
+        rows={[]}
+        rowKey={(fila) => fila.id}
+        loading
+      />,
     );
     expect(screen.getByRole('status')).toHaveTextContent('Cargando información');
 
@@ -83,7 +91,12 @@ describe('Componentes comunes reutilizables', () => {
     rerender(
       <ThemeProvider theme={theme}>
         <MemoryRouter>
-          <DataTable ariaLabel="Prueba" columns={columnas} rows={filas} rowKey={(fila) => fila.id} />
+          <DataTable
+            ariaLabel="Prueba"
+            columns={columnas}
+            rows={filas}
+            rowKey={(fila) => fila.id}
+          />
         </MemoryRouter>
       </ThemeProvider>,
     );
@@ -109,7 +122,10 @@ describe('Componentes comunes reutilizables', () => {
   it('StatCard enlaza con la ruta indicada', () => {
     renderConTema(<StatCard label="Estudiantes" value={12} to="/estudiantes" />);
 
-    expect(screen.getByRole('link', { name: /Estudiantes/ })).toHaveAttribute('href', '/estudiantes');
+    expect(screen.getByRole('link', { name: /Estudiantes/ })).toHaveAttribute(
+      'href',
+      '/estudiantes',
+    );
   });
 
   it('La composición de componentes comunes no tiene violaciones de accesibilidad', async () => {

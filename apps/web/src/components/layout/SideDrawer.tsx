@@ -156,7 +156,13 @@ type Props = {
   collapsed?: boolean;
 };
 
-export default function SideDrawer({ user, onLogout, onClose, isMobile, collapsed = false }: Props) {
+export default function SideDrawer({
+  user,
+  onLogout,
+  onClose,
+  isMobile,
+  collapsed = false,
+}: Props) {
   const { hasPermission } = useAuth();
   const location = useLocation();
   const compacto = collapsed && !isMobile;
@@ -236,7 +242,10 @@ export default function SideDrawer({ user, onLogout, onClose, isMobile, collapse
                       onClick={handleMenuItemClick}
                       aria-label={compacto ? item.label : undefined}
                       aria-current={seleccionado ? 'page' : undefined}
-                      sx={{ justifyContent: compacto ? 'center' : 'flex-start', px: compacto ? 0 : 1.5 }}
+                      sx={{
+                        justifyContent: compacto ? 'center' : 'flex-start',
+                        px: compacto ? 0 : 1.5,
+                      }}
                     >
                       <ListItemIcon sx={{ minWidth: compacto ? 0 : 36 }}>{item.icon}</ListItemIcon>
                       {!compacto && <ListItemText primary={item.label} />}

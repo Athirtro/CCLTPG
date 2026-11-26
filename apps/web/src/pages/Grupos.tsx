@@ -181,7 +181,11 @@ export default function Grupos() {
         periodo: formulario.periodo.trim(),
         cupoMaximo: Number(formulario.cupoMaximo.trim()),
       };
-      const { data, error: apiError, response } = await apiClient.POST('/academic/groups', {
+      const {
+        data,
+        error: apiError,
+        response,
+      } = await apiClient.POST('/academic/groups', {
         body: payload,
       });
       if (apiError || response?.status !== 201 || !data) {

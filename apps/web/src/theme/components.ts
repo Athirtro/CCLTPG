@@ -150,7 +150,10 @@ export const components: Components = {
   },
   MuiLink: {
     styleOverrides: {
-      root: { textDecorationColor: tokens.divider, '&:hover': { textDecorationColor: 'currentColor' } },
+      root: {
+        textDecorationColor: tokens.divider,
+        '&:hover': { textDecorationColor: 'currentColor' },
+      },
     },
   },
 };

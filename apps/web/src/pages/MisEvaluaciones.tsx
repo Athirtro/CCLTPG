@@ -68,8 +68,7 @@ export default function MisEvaluaciones() {
   }, [cargarEvaluaciones]);
 
   const ultimaEvaluacion = useMemo(
-    () =>
-      [...evaluaciones].sort((a, b) => b.evaluadoEn.localeCompare(a.evaluadoEn))[0] ?? null,
+    () => [...evaluaciones].sort((a, b) => b.evaluadoEn.localeCompare(a.evaluadoEn))[0] ?? null,
     [evaluaciones],
   );
 
@@ -92,10 +91,7 @@ export default function MisEvaluaciones() {
       label: 'Valoración',
       minWidth: 140,
       render: (evaluacion) => (
-        <StatusChip
-          status={VALOR_TONO[evaluacion.valor]}
-          label={VALOR_LABEL[evaluacion.valor]}
-        />
+        <StatusChip status={VALOR_TONO[evaluacion.valor]} label={VALOR_LABEL[evaluacion.valor]} />
       ),
     },
     {

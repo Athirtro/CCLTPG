@@ -58,12 +58,7 @@ const ESTADO_ASISTENCIA: Array<{ valor: EstadoAsistencia; label: string }> = [
   { valor: 'excusa', label: 'Excusa' },
 ];
 
-const ESTADOS_ASISTENCIA_VALIDOS: EstadoAsistencia[] = [
-  'presente',
-  'ausente',
-  'tarde',
-  'excusa',
-];
+const ESTADOS_ASISTENCIA_VALIDOS: EstadoAsistencia[] = ['presente', 'ausente', 'tarde', 'excusa'];
 
 const VALOR_EVALUACION: Array<{ valor: ValorEvaluacion; label: string }> = [
   { valor: 'excelente', label: 'Excelente' },
@@ -709,12 +704,12 @@ export default function VistaEducador() {
               <TextField
                 id="indicador-id-eval"
                 label="Indicador (ID)"
-                helperText={erroresEvaluacion.indicadorId ?? 'Identificador del indicador evaluado.'}
+                helperText={
+                  erroresEvaluacion.indicadorId ?? 'Identificador del indicador evaluado.'
+                }
                 error={Boolean(erroresEvaluacion.indicadorId)}
                 value={indicadorIdEval}
-                onChange={(evento) =>
-                  actualizarCampoEvaluacion('indicadorId', evento.target.value)
-                }
+                onChange={(evento) => actualizarCampoEvaluacion('indicadorId', evento.target.value)}
                 required
                 fullWidth
               />

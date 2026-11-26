@@ -91,7 +91,9 @@ export default function Reportes() {
     const texto = busqueda.trim().toLocaleLowerCase('es');
     if (!texto) return catalogo;
     return catalogo.filter((reporte) =>
-      `${reporte.nombre} ${reporte.descripcion} ${reporte.code}`.toLocaleLowerCase('es').includes(texto),
+      `${reporte.nombre} ${reporte.descripcion} ${reporte.code}`
+        .toLocaleLowerCase('es')
+        .includes(texto),
     );
   }, [catalogo, busqueda]);
 
@@ -121,7 +123,9 @@ export default function Reportes() {
     try {
       const parseado: unknown = JSON.parse(parametrosJson || '{}');
       if (typeof parseado !== 'object' || parseado === null || Array.isArray(parseado)) {
-        setErrorParametros('Los parámetros deben ser un objeto JSON, por ejemplo {"periodo": "2026-1"}.');
+        setErrorParametros(
+          'Los parámetros deben ser un objeto JSON, por ejemplo {"periodo": "2026-1"}.',
+        );
         return;
       }
       parametros = parseado as Record<string, unknown>;
@@ -226,7 +230,11 @@ export default function Reportes() {
       title="Reportes"
       description="Selecciona un reporte del catálogo, ajusta sus parámetros y descarga el archivo generado."
       icon={<DescriptionIcon />}
-      breadcrumbs={[{ label: 'Inicio', to: '/' }, { label: 'Reportes y exportaciones' }, { label: 'Reportes' }]}
+      breadcrumbs={[
+        { label: 'Inicio', to: '/' },
+        { label: 'Reportes y exportaciones' },
+        { label: 'Reportes' },
+      ]}
       actions={
         puedeExportar || puedeCrear ? (
           <Button
@@ -273,7 +281,10 @@ export default function Reportes() {
         </Alert>
       )}
 
-      <SectionCard title="Catálogo de reportes" subtitle="Reportes disponibles según el contrato de la API">
+      <SectionCard
+        title="Catálogo de reportes"
+        subtitle="Reportes disponibles según el contrato de la API"
+      >
         {cargando && catalogo.length === 0 ? (
           <LoadingState label="Cargando catálogo…" />
         ) : error && catalogo.length === 0 ? (
@@ -366,7 +377,11 @@ export default function Reportes() {
                 {generando ? 'Generando…' : 'Generar reporte'}
               </Button>
               {!puedeExportar && (
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mt: 1 }}
+                >
                   Necesitas el permiso exports:report:export para generar reportes.
                 </Typography>
               )}
@@ -382,7 +397,11 @@ export default function Reportes() {
         )}
       </SectionCard>
 
-      <SectionCard title="Resultado" subtitle="Último archivo generado en esta sesión" sx={{ mt: 3 }}>
+      <SectionCard
+        title="Resultado"
+        subtitle="Último archivo generado en esta sesión"
+        sx={{ mt: 3 }}
+      >
         {generando ? (
           <LoadingState label="Generando reporte…" minHeight={160} />
         ) : resultado ? (
@@ -391,7 +410,11 @@ export default function Reportes() {
               sx={{
                 display: 'grid',
                 gap: 2,
-                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' },
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, minmax(0, 1fr))',
+                  lg: 'repeat(4, minmax(0, 1fr))',
+                },
               }}
             >
               <Metadato label="Nombre">
