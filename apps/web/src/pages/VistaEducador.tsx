@@ -21,13 +21,17 @@ import {
 import {
   Add as AddIcon,
   CheckCircle as CheckCircleIcon,
+  Edit as EditIcon,
   Refresh as RefreshIcon,
   Shield as ShieldIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
 import type {
+  ActualizarEvaluacionDto,
   CrearEvaluacionDto,
+  EvaluacionDto,
   GrupoDto,
   MatriculaDto,
   RegistroAsistenciaDto,
@@ -100,6 +104,10 @@ export default function VistaEducador() {
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
 
+  const [evaluaciones, setEvaluaciones] = useState<EvaluacionDto[]>([]);
+  const [cargandoEvaluaciones, setCargandoEvaluaciones] = useState(false);
+  const [evaluacionEditando, setEvaluacionEditando] = useState<EvaluacionDto | null>(null);
+
   const [abiertoDialogoEvaluacion, setAbiertoDialogoEvaluacion] = useState(false);
   const [matriculaIdEval, setMatriculaIdEval] = useState('');
   const [indicadorIdEval, setIndicadorIdEval] = useState('');
@@ -110,11 +118,37 @@ export default function VistaEducador() {
     Partial<Record<CampoEvaluacion, string>>
   >({});
 
+  const [abiertoDialogoSesion, setAbiertoDialogoSesion] = useState(false);
+  const [fechaSesion, setFechaSesion] = useState('');
+  const [temaSesion, setTemaSesion] = useState('');
+  const [guardandoSesion, setGuardandoSesion] = useState(false);
+  const [detalleSesion, setDetalleSesion] = useState<SesionDto | null>(null);
+  const [abiertoDetalleSesion, setAbiertoDetalleSesion] = useState(false);
+  const [cargandoDetalle, setCargandoDetalle] = useState(false);
+  const [cambiandoEstado, setCambiandoEstado] = useState(false);
+
+  const puedeVerGrupos =
+    hasPermission('academic:group:manage') || hasPermission('academic:group:read_own');
+  const puedeVerAsistencia = hasPermission('academic:attendance:read');
   const puedeTomarAsistencia = hasPermission('academic:attendance:create');
+  const puedeVerMatriculas = hasPermission('academic:enrollment:read');
   const puedeCrearEvaluacion = hasPermission('academic:evaluation:create');
+  const puedeListarEvaluaciones = hasPermission('academic:evaluation:read');
+  const puedeActualizarEvaluacion = hasPermission('academic:evaluation:update');
+  const puedeCrearSesion = hasPermission('academic:session:create');
+  const puedeActualizarSesion = hasPermission('academic:session:update');
+  const tieneAcceso =
+    puedeVerGrupos ||
+    puedeVerAsistencia ||
+    puedeTomarAsistencia ||
+    puedeCrearEvaluacion ||
+    puedeListarEvaluaciones ||
+    puedeActualizarEvaluacion ||
+    puedeCrearSesion ||
+    puedeActualizarSesion;
 
   const cargarGrupos = useCallback(async () => {
-    if (!puedeTomarAsistencia && !puedeCrearEvaluacion) return;
+    if (!puedeVerGrupos) return;
     setCargandoGrupos(true);
     setError(null);
     try {
@@ -129,78 +163,110 @@ export default function VistaEducador() {
     } finally {
       setCargandoGrupos(false);
     }
-  }, [puedeTomarAsistencia, puedeCrearEvaluacion]);
+  }, [puedeVerGrupos]);
 
-  const cargarSesiones = useCallback(async (grupoId: string) => {
-    if (!grupoId) return;
-    setCargandoSesiones(true);
+  const cargarSesiones = useCallback(
+    async (grupoId: string) => {
+      if (!grupoId || !puedeVerGrupos) return;
+      setCargandoSesiones(true);
+      setError(null);
+      try {
+        const { data, error: apiError } = await apiClient.GET(
+          '/academic/groups/{groupId}/sessions',
+          {
+            params: { path: { groupId: grupoId } },
+          },
+        );
+        if (apiError || !data) {
+          setError('No se pudieron cargar las sesiones');
+          return;
+        }
+        setSesiones(data.data);
+      } catch (err) {
+        setError(getErrorMessage(err) || 'Error al cargar sesiones');
+      } finally {
+        setCargandoSesiones(false);
+      }
+    },
+    [puedeVerGrupos],
+  );
+
+  const cargarMatriculasDelGrupo = useCallback(
+    async (grupoId: string) => {
+      if (!grupoId || !puedeVerMatriculas) return;
+      setCargandoMatriculas(true);
+      setError(null);
+      try {
+        const { data, error: apiError } = await apiClient.GET('/academic/enrollments');
+        if (apiError || !data) {
+          setError('No se pudieron cargar las matrículas del grupo');
+          return;
+        }
+        setMatriculasDelGrupo(data.data.filter((m) => m.grupoId === grupoId));
+      } catch (err) {
+        setError(getErrorMessage(err) || 'Error al cargar matrículas del grupo');
+      } finally {
+        setCargandoMatriculas(false);
+      }
+    },
+    [puedeVerMatriculas],
+  );
+
+  const cargarAsistencia = useCallback(
+    async (sesionId: string, matriculas: MatriculaDto[]) => {
+      if (!sesionId || !puedeVerAsistencia) return;
+      setCargandoAsistencia(true);
+      setError(null);
+      try {
+        const { data, error: apiError } = await apiClient.GET(
+          '/academic/sessions/{sessionId}/attendance',
+          { params: { path: { sessionId: sesionId } } },
+        );
+        if (apiError || !data) {
+          setError('No se pudo cargar la asistencia');
+          return;
+        }
+        setRegistrosAsistencia(
+          data.registros.map((r) => {
+            const matricula = matriculas.find((m) => m.id === r.matriculaId);
+            const nombreCompleto = matricula
+              ? `${matricula.estudianteNombres} ${matricula.estudianteApellidos}`
+              : r.matriculaId;
+            return {
+              matriculaId: r.matriculaId,
+              estudianteNombre: nombreCompleto,
+              estado: r.estado,
+            };
+          }),
+        );
+      } catch (err) {
+        setError(getErrorMessage(err) || 'Error al cargar asistencia');
+      } finally {
+        setCargandoAsistencia(false);
+      }
+    },
+    [puedeVerAsistencia],
+  );
+
+  const cargarEvaluaciones = useCallback(async () => {
+    if (!puedeListarEvaluaciones) return;
+    setCargandoEvaluaciones(true);
     setError(null);
     try {
-      const { data, error: apiError } = await apiClient.GET('/academic/groups/{groupId}/sessions', {
-        params: { path: { groupId: grupoId } },
+      const { data, error: apiError } = await apiClient.GET('/academic/evaluations', {
+        params: { query: { page: 1, pageSize: 20 } },
       });
       if (apiError || !data) {
-        setError('No se pudieron cargar las sesiones');
+        setError('No se pudieron cargar las evaluaciones registradas.');
         return;
       }
-      setSesiones(data.data);
+      setEvaluaciones(data.data);
     } catch (err) {
-      setError(getErrorMessage(err) || 'Error al cargar sesiones');
+      setError(getErrorMessage(err) || 'Error al cargar evaluaciones');
     } finally {
-      setCargandoSesiones(false);
+      setCargandoEvaluaciones(false);
     }
-  }, []);
-
-  const cargarMatriculasDelGrupo = useCallback(async (grupoId: string) => {
-    if (!grupoId) return;
-    setCargandoMatriculas(true);
-    setError(null);
-    try {
-      const { data, error: apiError } = await apiClient.GET('/academic/enrollments');
-      if (apiError || !data) {
-        setError('No se pudieron cargar las matrículas del grupo');
-        return;
-      }
-      setMatriculasDelGrupo(data.data.filter((m) => m.grupoId === grupoId));
-    } catch (err) {
-      setError(getErrorMessage(err) || 'Error al cargar matrículas del grupo');
-    } finally {
-      setCargandoMatriculas(false);
-    }
-  }, []);
-
-  const cargarAsistencia = useCallback(async (sesionId: string, matriculas: MatriculaDto[]) => {
-    if (!sesionId) return;
-    setCargandoAsistencia(true);
-    setError(null);
-    try {
-      const { data, error: apiError } = await apiClient.GET(
-        '/academic/sessions/{sessionId}/attendance',
-        { params: { path: { sessionId: sesionId } } },
-      );
-      if (apiError || !data) {
-        setError('No se pudo cargar la asistencia');
-        return;
-      }
-      setRegistrosAsistencia(
-        data.registros.map((r) => {
-          const matricula = matriculas.find((m) => m.id === r.matriculaId);
-          const nombreCompleto = matricula
-            ? `${matricula.estudianteNombres} ${matricula.estudianteApellidos}`
-            : r.matriculaId;
-          return {
-            matriculaId: r.matriculaId,
-            estudianteNombre: nombreCompleto,
-            estado: r.estado,
-          };
-        }),
-      );
-    } catch (err) {
-      setError(getErrorMessage(err) || 'Error al cargar asistencia');
-    } finally {
-      setCargandoAsistencia(false);
-    }
-  }, []);
+  }, [puedeListarEvaluaciones]);
 
   const seleccionarGrupo = (grupoId: string) => {
     setGrupoSeleccionado(grupoId);
@@ -264,6 +330,85 @@ export default function VistaEducador() {
     }
   };
 
+  const crearSesion = async () => {
+    if (!grupoSeleccionado || !fechaSesion.trim()) return;
+    setGuardandoSesion(true);
+    setError(null);
+    setExito(null);
+    try {
+      const {
+        data,
+        error: apiError,
+        response,
+      } = await apiClient.POST('/academic/sessions', {
+        body: {
+          grupoId: grupoSeleccionado,
+          fecha: fechaSesion.trim(),
+          tema: temaSesion.trim() || null,
+        },
+        headers: { 'Idempotency-Key': crypto.randomUUID() },
+      });
+      if (apiError || response?.status !== 201 || !data) {
+        setError(apiError?.detail || 'No se pudo crear la sesión.');
+        return;
+      }
+      setExito('Sesión creada correctamente.');
+      setAbiertoDialogoSesion(false);
+      setFechaSesion('');
+      setTemaSesion('');
+      await cargarSesiones(grupoSeleccionado);
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error inesperado al crear la sesión.');
+    } finally {
+      setGuardandoSesion(false);
+    }
+  };
+
+  const consultarSesion = async (sesionId: string) => {
+    if (!puedeVerGrupos) return;
+    setCargandoDetalle(true);
+    setError(null);
+    try {
+      const { data, error: apiError } = await apiClient.GET('/academic/sessions/{id}', {
+        params: { path: { id: sesionId } },
+      });
+      if (apiError || !data) {
+        setError('No se pudo consultar el detalle de la sesión.');
+        return;
+      }
+      setDetalleSesion(data);
+      setAbiertoDetalleSesion(true);
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al consultar la sesión');
+    } finally {
+      setCargandoDetalle(false);
+    }
+  };
+
+  const cambiarEstadoSesion = async (sesionId: string, to: SesionDto['estado']) => {
+    setCambiandoEstado(true);
+    setError(null);
+    setExito(null);
+    try {
+      const { data, error: apiError } = await apiClient.POST(
+        '/academic/sessions/{id}/transitions',
+        { params: { path: { id: sesionId } }, body: { to } },
+      );
+      if (apiError || !data) {
+        setError(apiError?.detail || 'No se pudo cambiar el estado de la sesión.');
+        return;
+      }
+      setExito(`Sesión marcada como ${to}.`);
+      setDetalleSesion((prev) => (prev?.id === data.id ? data : prev));
+      setSesionSeleccionada((prev) => (prev?.id === data.id ? data : prev));
+      setSesiones((prev) => prev.map((sesion) => (sesion.id === data.id ? data : sesion)));
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al cambiar el estado de la sesión');
+    } finally {
+      setCambiandoEstado(false);
+    }
+  };
+
   const actualizarCampoEvaluacion = (campo: CampoEvaluacion, valor: string) => {
     if (campo === 'matriculaId') setMatriculaIdEval(valor);
     if (campo === 'indicadorId') setIndicadorIdEval(valor);
@@ -273,19 +418,33 @@ export default function VistaEducador() {
     setErroresEvaluacion((previos) => ({ ...previos, [campo]: undefined }));
   };
 
-  const validarEvaluacion = (): boolean => {
+  const validarEvaluacion = (editando: boolean): boolean => {
     const nuevosErrores: Partial<Record<CampoEvaluacion, string>> = {};
-    if (!matriculaIdEval.trim())
-      nuevosErrores.matriculaId = 'Selecciona al estudiante o indica el ID de su matrícula.';
-    if (!indicadorIdEval.trim()) nuevosErrores.indicadorId = 'Ingresa el ID del indicador.';
-    if (!periodoEval.trim()) nuevosErrores.periodo = 'Ingresa el periodo.';
+    if (!editando) {
+      if (!matriculaIdEval.trim())
+        nuevosErrores.matriculaId = 'Selecciona al estudiante o indica el ID de su matrícula.';
+      if (!indicadorIdEval.trim()) nuevosErrores.indicadorId = 'Ingresa el ID del indicador.';
+      if (!periodoEval.trim()) nuevosErrores.periodo = 'Ingresa el periodo.';
+    }
     setErroresEvaluacion(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
+  };
+
+  const abrirDialogoEvaluacion = (evaluacion: EvaluacionDto | null = null) => {
+    setEvaluacionEditando(evaluacion);
+    setMatriculaIdEval(evaluacion?.matriculaId ?? '');
+    setIndicadorIdEval(evaluacion?.indicadorId ?? '');
+    setPeriodoEval(evaluacion?.periodo ?? '');
+    setValorEval(evaluacion?.valor ?? 'bueno');
+    setObservacionEval(evaluacion?.observacion ?? '');
+    setErroresEvaluacion({});
+    setAbiertoDialogoEvaluacion(true);
   };
 
   const cerrarDialogoEvaluacion = () => {
     if (enviandoEvaluacion) return;
     setAbiertoDialogoEvaluacion(false);
+    setEvaluacionEditando(null);
     setMatriculaIdEval('');
     setIndicadorIdEval('');
     setPeriodoEval('');
@@ -294,9 +453,10 @@ export default function VistaEducador() {
     setErroresEvaluacion({});
   };
 
-  const manejarCrearEvaluacion = async (evento: FormEvent<HTMLFormElement>) => {
+  const manejarGuardarEvaluacion = async (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
-    if (!validarEvaluacion()) return;
+    const editando = evaluacionEditando !== null;
+    if (!validarEvaluacion(editando)) return;
     setEnviandoEvaluacion(true);
     setError(null);
     setExito(null);
@@ -306,25 +466,41 @@ export default function VistaEducador() {
         setError('Valor de evaluación no válido');
         return;
       }
-      const payload: CrearEvaluacionDto = {
-        matriculaId: matriculaIdEval.trim(),
-        indicadorId: indicadorIdEval.trim(),
-        periodo: periodoEval.trim(),
-        valor: valorValido,
-        observacion: observacionEval.trim() || null,
-      };
-      const { error: apiError, response } = await apiClient.POST('/academic/evaluations', {
-        body: payload,
-      });
-      if (apiError || response?.status !== 201) {
-        const problema = apiError;
-        setError(problema?.detail || 'Error al crear la evaluación');
-        return;
+      if (evaluacionEditando) {
+        const body: ActualizarEvaluacionDto = {
+          valor: valorValido,
+          observacion: observacionEval.trim() || null,
+        };
+        const { error: apiError, response } = await apiClient.PATCH('/academic/evaluations/{id}', {
+          params: { path: { id: evaluacionEditando.id } },
+          body,
+        });
+        if (apiError || response?.status !== 200) {
+          setError(apiError?.detail || 'Error al corregir la evaluación');
+          return;
+        }
+        setExito('Evaluación corregida correctamente');
+      } else {
+        const payload: CrearEvaluacionDto = {
+          matriculaId: matriculaIdEval.trim(),
+          indicadorId: indicadorIdEval.trim(),
+          periodo: periodoEval.trim(),
+          valor: valorValido,
+          observacion: observacionEval.trim() || null,
+        };
+        const { error: apiError, response } = await apiClient.POST('/academic/evaluations', {
+          body: payload,
+        });
+        if (apiError || response?.status !== 201) {
+          setError(apiError?.detail || 'Error al crear la evaluación');
+          return;
+        }
+        setExito('Evaluación creada correctamente');
       }
-      setExito('Evaluación creada correctamente');
       cerrarDialogoEvaluacion();
+      if (puedeListarEvaluaciones) await cargarEvaluaciones();
     } catch (err) {
-      setError(getErrorMessage(err) || 'Error inesperado al crear evaluación');
+      setError(getErrorMessage(err) || 'Error inesperado al guardar la evaluación');
     } finally {
       setEnviandoEvaluacion(false);
     }
@@ -333,6 +509,10 @@ export default function VistaEducador() {
   useEffect(() => {
     void cargarGrupos();
   }, [cargarGrupos]);
+
+  useEffect(() => {
+    void cargarEvaluaciones();
+  }, [cargarEvaluaciones]);
 
   const conteosAsistencia = useMemo(
     () =>
@@ -402,7 +582,121 @@ export default function VistaEducador() {
     },
   ];
 
-  if (!puedeTomarAsistencia && !puedeCrearEvaluacion) {
+  const columnasEvaluacion: DataTableColumn<EvaluacionDto>[] = [
+    {
+      id: 'matricula',
+      label: 'Matrícula',
+      minWidth: 160,
+      render: (evaluacion) => (
+        <Typography variant="caption" color="text.secondary">
+          {evaluacion.matriculaId}
+        </Typography>
+      ),
+    },
+    {
+      id: 'indicador',
+      label: 'Indicador',
+      minWidth: 180,
+      render: (evaluacion) => (
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {evaluacion.indicadorNombre}
+        </Typography>
+      ),
+    },
+    {
+      id: 'periodo',
+      label: 'Periodo',
+      minWidth: 100,
+      render: (evaluacion) => <Typography variant="body2">{evaluacion.periodo}</Typography>,
+    },
+    {
+      id: 'valor',
+      label: 'Valoración',
+      minWidth: 120,
+      render: (evaluacion) => <StatusChip status={evaluacion.valor} />,
+    },
+    {
+      id: 'evaluadoEn',
+      label: 'Registrada',
+      minWidth: 170,
+      render: (evaluacion) => (
+        <Typography variant="caption" color="text.secondary">
+          {new Date(evaluacion.evaluadoEn).toLocaleString()}
+        </Typography>
+      ),
+    },
+    {
+      id: 'acciones',
+      label: 'Acciones',
+      align: 'right',
+      minWidth: 130,
+      render: (evaluacion) =>
+        puedeActualizarEvaluacion ? (
+          <Button
+            size="small"
+            startIcon={<EditIcon fontSize="small" />}
+            onClick={() => abrirDialogoEvaluacion(evaluacion)}
+          >
+            Corregir
+          </Button>
+        ) : null,
+    },
+  ];
+
+  const columnasSesion: DataTableColumn<SesionDto>[] = [
+    {
+      id: 'fecha',
+      label: 'Fecha',
+      minWidth: 120,
+      render: (sesion) => <Typography variant="body2">{sesion.fecha}</Typography>,
+    },
+    {
+      id: 'tema',
+      label: 'Tema',
+      minWidth: 180,
+      render: (sesion) => (
+        <Typography variant="body2" color="text.secondary">
+          {sesion.tema ?? '—'}
+        </Typography>
+      ),
+    },
+    {
+      id: 'estado',
+      label: 'Estado',
+      minWidth: 120,
+      render: (sesion) => <StatusChip status={sesion.estado} />,
+    },
+    {
+      id: 'acciones',
+      label: 'Acciones',
+      align: 'right',
+      minWidth: 220,
+      render: (sesion) => (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+          {puedeVerGrupos && (
+            <Button
+              size="small"
+              startIcon={<VisibilityIcon fontSize="small" />}
+              onClick={() => void consultarSesion(sesion.id)}
+            >
+              Detalle
+            </Button>
+          )}
+          {puedeActualizarSesion && sesion.estado !== 'realizada' && (
+            <Button
+              size="small"
+              onClick={() => void cambiarEstadoSesion(sesion.id, 'realizada')}
+              disabled={cambiandoEstado}
+            >
+              Marcar realizada
+            </Button>
+          )}
+        </Box>
+      ),
+    },
+  ];
+
+  if (!tieneAcceso) {
     return (
       <Box>
         <PageHeader
@@ -413,7 +707,7 @@ export default function VistaEducador() {
         />
         <EmptyState
           title="Sin permisos"
-          description="No tienes permiso para gestionar asistencia ni evaluaciones."
+          description="No tienes permiso para gestionar sesiones, asistencia ni evaluaciones."
           icon={<ShieldIcon />}
         />
       </Box>
@@ -449,7 +743,7 @@ export default function VistaEducador() {
         </Alert>
       )}
 
-      {puedeTomarAsistencia && (
+      {puedeVerGrupos && (
         <>
           <SectionCard
             title="1. Selecciona un grupo"
@@ -498,9 +792,45 @@ export default function VistaEducador() {
             )}
           </SectionCard>
 
-          {grupoSeleccionado && (
+          {grupoSeleccionado && (puedeCrearSesion || puedeActualizarSesion || puedeVerGrupos) && (
             <SectionCard
-              title="2. Selecciona una sesión"
+              title="2. Sesiones del grupo"
+              subtitle="Consulta el detalle de cada sesión y gestiona su estado."
+              sx={{ mb: 2 }}
+              action={
+                puedeCrearSesion ? (
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={() => setAbiertoDialogoSesion(true)}
+                  >
+                    Nueva sesión
+                  </Button>
+                ) : null
+              }
+            >
+              {error && sesiones.length === 0 ? (
+                <ErrorState
+                  message={error}
+                  onRetry={() => void cargarSesiones(grupoSeleccionado)}
+                  minHeight={160}
+                />
+              ) : (
+                <DataTable
+                  ariaLabel="Sesiones del grupo"
+                  columns={columnasSesion}
+                  rows={sesiones}
+                  rowKey={(sesion) => sesion.id}
+                  loading={cargandoSesiones}
+                  emptyMessage="Este grupo no tiene sesiones registradas."
+                />
+              )}
+            </SectionCard>
+          )}
+
+          {(puedeVerAsistencia || puedeTomarAsistencia) && grupoSeleccionado && (
+            <SectionCard
+              title="3. Selecciona una sesión"
               subtitle="Elige la sesión cuya asistencia vas a registrar."
               sx={{ mb: 2 }}
             >
@@ -560,7 +890,7 @@ export default function VistaEducador() {
           {sesionSeleccionada && (
             <>
               <SectionCard
-                title="3. Estudiantes de la sesión"
+                title="4. Estudiantes de la sesión"
                 subtitle={`Sesión del ${sesionSeleccionada.fecha} · grupo ${sesionSeleccionada.grupoId}`}
                 sx={{ mb: 2 }}
               >
@@ -590,9 +920,9 @@ export default function VistaEducador() {
                 )}
               </SectionCard>
 
-              {registrosAsistencia.length > 0 && (
+              {registrosAsistencia.length > 0 && puedeTomarAsistencia && (
                 <SectionCard
-                  title="4. Registrar asistencia"
+                  title="5. Registrar asistencia"
                   subtitle="Revisa los estados seleccionados y guarda el registro de la sesión."
                   sx={{ mb: 2 }}
                 >
@@ -623,35 +953,49 @@ export default function VistaEducador() {
         </>
       )}
 
-      {puedeCrearEvaluacion && (
+      {(puedeListarEvaluaciones || puedeCrearEvaluacion || puedeActualizarEvaluacion) && (
         <SectionCard
           title="Evaluaciones"
-          subtitle="Registra una valoración cualitativa para un estudiante."
+          subtitle="Consulta las valoraciones registradas y corrige las que lo requieran."
+          sx={{ mt: 2 }}
           action={
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setAbiertoDialogoEvaluacion(true)}
-            >
-              Nueva evaluación
-            </Button>
+            puedeCrearEvaluacion ? (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => abrirDialogoEvaluacion()}
+              >
+                Nueva evaluación
+              </Button>
+            ) : null
           }
         >
-          <Typography variant="body2" color="text.secondary">
-            Indica el estudiante, el indicador, el periodo y la valoración observada.
-          </Typography>
+          {error && evaluaciones.length === 0 ? (
+            <ErrorState message={error} onRetry={() => void cargarEvaluaciones()} minHeight={160} />
+          ) : (
+            <DataTable
+              ariaLabel="Evaluaciones registradas"
+              columns={columnasEvaluacion}
+              rows={evaluaciones}
+              rowKey={(evaluacion) => evaluacion.id}
+              loading={cargandoEvaluaciones}
+              emptyMessage="Todavía no hay evaluaciones registradas."
+            />
+          )}
         </SectionCard>
       )}
 
-      {puedeCrearEvaluacion && (
+      {(puedeCrearEvaluacion || puedeActualizarEvaluacion) && (
         <Dialog
           open={abiertoDialogoEvaluacion}
           onClose={cerrarDialogoEvaluacion}
           maxWidth="sm"
           fullWidth
-          aria-labelledby="titulo-nueva-evaluacion"
+          aria-labelledby="titulo-formulario-evaluacion"
         >
-          <DialogTitle id="titulo-nueva-evaluacion">Nueva evaluación</DialogTitle>
+          <DialogTitle id="titulo-formulario-evaluacion">
+            {evaluacionEditando ? 'Corregir evaluación' : 'Nueva evaluación'}
+          </DialogTitle>
           <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Typography variant="h3" sx={{ mt: 1 }}>
               Datos de la evaluación
@@ -660,7 +1004,7 @@ export default function VistaEducador() {
               component="form"
               id="formulario-evaluacion"
               noValidate
-              onSubmit={(evento) => void manejarCrearEvaluacion(evento)}
+              onSubmit={(evento) => void manejarGuardarEvaluacion(evento)}
               sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
             >
               {matriculasDelGrupo.length > 0 ? (
@@ -673,6 +1017,7 @@ export default function VistaEducador() {
                     onChange={(evento) =>
                       actualizarCampoEvaluacion('matriculaId', evento.target.value)
                     }
+                    disabled={evaluacionEditando !== null}
                   >
                     <MenuItem value="">Selecciona un estudiante</MenuItem>
                     {matriculasDelGrupo.map((matricula) => (
@@ -697,7 +1042,8 @@ export default function VistaEducador() {
                   onChange={(evento) =>
                     actualizarCampoEvaluacion('matriculaId', evento.target.value)
                   }
-                  required
+                  disabled={evaluacionEditando !== null}
+                  required={evaluacionEditando === null}
                   fullWidth
                 />
               )}
@@ -710,7 +1056,8 @@ export default function VistaEducador() {
                 error={Boolean(erroresEvaluacion.indicadorId)}
                 value={indicadorIdEval}
                 onChange={(evento) => actualizarCampoEvaluacion('indicadorId', evento.target.value)}
-                required
+                disabled={evaluacionEditando !== null}
+                required={evaluacionEditando === null}
                 fullWidth
               />
               <TextField
@@ -720,7 +1067,8 @@ export default function VistaEducador() {
                 error={Boolean(erroresEvaluacion.periodo)}
                 value={periodoEval}
                 onChange={(evento) => actualizarCampoEvaluacion('periodo', evento.target.value)}
-                required
+                disabled={evaluacionEditando !== null}
+                required={evaluacionEditando === null}
                 fullWidth
               />
               <FormControl fullWidth>
@@ -761,6 +1109,121 @@ export default function VistaEducador() {
               disabled={enviandoEvaluacion}
             >
               {enviandoEvaluacion ? 'Guardando…' : 'Guardar evaluación'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+
+      {puedeCrearSesion && (
+        <Dialog
+          open={abiertoDialogoSesion}
+          onClose={() => {
+            if (!guardandoSesion) setAbiertoDialogoSesion(false);
+          }}
+          maxWidth="sm"
+          fullWidth
+          aria-labelledby="titulo-nueva-sesion"
+        >
+          <DialogTitle id="titulo-nueva-sesion">Nueva sesión</DialogTitle>
+          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              id="fecha-sesion"
+              label="Fecha"
+              type="date"
+              value={fechaSesion}
+              onChange={(evento) => setFechaSesion(evento.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+              required
+              fullWidth
+            />
+            <TextField
+              id="tema-sesion"
+              label="Tema (opcional)"
+              value={temaSesion}
+              onChange={(evento) => setTemaSesion(evento.target.value)}
+              fullWidth
+            />
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={() => setAbiertoDialogoSesion(false)} disabled={guardandoSesion}>
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => void crearSesion()}
+              disabled={guardandoSesion || !fechaSesion.trim()}
+            >
+              {guardandoSesion ? 'Creando…' : 'Crear sesión'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+
+      {puedeVerGrupos && (
+        <Dialog
+          open={abiertoDetalleSesion}
+          onClose={() => {
+            if (!cambiandoEstado) setAbiertoDetalleSesion(false);
+          }}
+          maxWidth="sm"
+          fullWidth
+          aria-labelledby="titulo-detalle-sesion"
+        >
+          <DialogTitle id="titulo-detalle-sesion">Detalle de la sesión</DialogTitle>
+          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {cargandoDetalle && !detalleSesion ? (
+              <LoadingState label="Cargando detalle…" minHeight={120} />
+            ) : detalleSesion ? (
+              <>
+                <Typography variant="body2">
+                  <strong>Fecha:</strong> {detalleSesion.fecha}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Grupo:</strong> {detalleSesion.grupoId}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Tema:</strong> {detalleSesion.tema ?? '—'}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2">
+                    <strong>Estado:</strong>
+                  </Typography>
+                  <StatusChip status={detalleSesion.estado} />
+                </Box>
+                {puedeActualizarSesion && (
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Cambiar estado de la sesión
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      {(['programada', 'realizada', 'cancelada'] as const)
+                        .filter((estado) => estado !== detalleSesion?.estado)
+                        .map((estado) => (
+                          <Button
+                            key={estado}
+                            size="small"
+                            variant="outlined"
+                            onClick={() => {
+                              if (detalleSesion) void cambiarEstadoSesion(detalleSesion.id, estado);
+                            }}
+                            disabled={cambiandoEstado}
+                          >
+                            {estado}
+                          </Button>
+                        ))}
+                    </Box>
+                  </Box>
+                )}
+              </>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                No hay información disponible de la sesión.
+              </Typography>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={() => setAbiertoDetalleSesion(false)} disabled={cambiandoEstado}>
+              Cerrar
             </Button>
           </DialogActions>
         </Dialog>

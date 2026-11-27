@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -14,13 +14,20 @@ import { Link as RouterLink } from 'react-router-dom';
 /** Referencia lógica a un equipo de la emisora (UUID, sin FK a otros contextos). */
 const EQUIPO_ID = 'dddddddd-0000-4000-8000-000000000001';
 
-import { apiClient } from '../../../api/client';
+import {
+  apiClient,
+  descargarArchivo,
+  type EmisoraIncentivoView,
+  type EmisoraResolucionView,
+} from '../../../api/client';
 import { getErrorMessage } from '../../../api/errors';
 import { useAuth } from '../../../contexts/AuthContext';
+import DataTable, { type DataTableColumn } from '../../../components/common/DataTable';
 import EmptyState from '../../../components/common/EmptyState';
 import ErrorState from '../../../components/common/ErrorState';
 import PageHeader from '../../../components/common/PageHeader';
 import SectionCard from '../../../components/common/SectionCard';
+import StatusChip from '../../../components/common/StatusChip';
 
 /** Fecha sugerida con margen suficiente para la antelación del préstamo de mifi. */
 const FECHA_SUGERIDA = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -72,6 +79,23 @@ export default function EmisoraOperacionE3() {
   const [usuarioViatico, setUsuarioViatico] = useState('');
   const [incentivoId, setIncentivoId] = useState('');
   const [periodo, setPeriodo] = useState('2026');
+  const [incentivos, setIncentivos] = useState<EmisoraIncentivoView[]>([]);
+  const [resolucion, setResolucion] = useState<EmisoraResolucionView | null>(null);
+  const [estadoIncentivo, setEstadoIncentivo] = useState('calificado');
+  const [calificacion, setCalificacion] = useState('85');
+  const [referenciaCdp, setReferenciaCdp] = useState('');
+
+  const cargarIncentivos = useCallback(async () => {
+    const { data, error: apiError } = await apiClient.GET('/emisora/incentivos');
+    if (apiError || !data) {
+      guardar(getErrorMessage(apiError) || 'No se pudo cargar el listado de incentivos.');
+    }
+    setIncentivos(data);
+  }, []);
+
+  useEffect(() => {
+    if (hasPermission('emisora:incentivo:read')) void cargarIncentivos().catch(() => undefined);
+  }, [cargarIncentivos, hasPermission]);
 
   async function ejecutar(accion: () => Promise<void>, exito: string): Promise<void> {
     setEnviando(true);
@@ -327,29 +351,53 @@ export default function EmisoraOperacionE3() {
     }
   }
 
-  async function descargarResolucion(): Promise<void> {
-    // Formato: `${API_PREFIX}/files/{id}/download`.
-    const archivoId = resolucionUrl?.split('/').at(-2);
-    if (!archivoId) guardar('Primero genera la resolución.');
-    // La descarga exige el token de la sesión: se obtiene con el cliente, no
-    // con un enlace plano que el backend rechazaría con 401.
+  async function calificarIncentivo(): Promise<void> {
+    if (!incentivoId.trim()) guardar('Indica el incentivo a calificar.');
+    const nota = Number(calificacion);
+    if (!Number.isFinite(nota) || nota < 0 || nota > 100) {
+      guardar('La calificación debe estar entre 0 y 100.');
+    }
     const {
       data,
       error: apiError,
       response,
-    } = await apiClient.GET('/files/{id}/download', {
-      params: { path: { id: archivoId } },
-      parseAs: 'blob',
+    } = await apiClient.PATCH('/emisora/incentivos/{id}', {
+      params: { path: { id: incentivoId.trim() } },
+      body: {
+        to: estadoIncentivo as 'calificado' | 'asignado' | 'resuelto' | 'solicitud_cdp',
+        calificacion: nota,
+        ...(referenciaCdp.trim() ? { referenciaCdp: referenciaCdp.trim() } : {}),
+      },
     });
-    if (apiError || response?.status !== 200 || !(data instanceof Blob)) {
-      guardar(getErrorMessage(apiError) || 'No se pudo descargar la resolución.');
+    if (apiError || response?.status !== 200 || !data) {
+      guardar(getErrorMessage(apiError) || 'No se pudo actualizar el incentivo.');
     }
-    const url = URL.createObjectURL(data);
-    const enlace = document.createElement('a');
-    enlace.href = url;
-    enlace.download = 'resolucion-incentivos.pdf';
-    enlace.click();
-    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    await cargarIncentivos();
+  }
+
+  async function consultarResolucionPdf(): Promise<void> {
+    if (!resolucion) guardar('Primero genera o consulta una resolución.');
+    const {
+      data,
+      error: apiError,
+      response,
+    } = await apiClient.GET('/emisora/resoluciones/{id}/pdf', {
+      params: { path: { id: resolucion.id } },
+    });
+    if (apiError || response?.status !== 200 || !data) {
+      guardar(getErrorMessage(apiError) || 'No se pudo consultar la resolución.');
+    }
+    setResolucion(data);
+    setResolucionUrl(data.descargaUrl);
+  }
+
+  async function descargarResolucion(): Promise<void> {
+    const archivoId = resolucion?.archivoId ?? resolucionUrl?.split('/').at(-2);
+    if (!archivoId) guardar('Primero genera la resolución.');
+    const resultado = await descargarArchivo(archivoId, 'resolucion-incentivos.pdf');
+    if (!resultado.ok) {
+      guardar(resultado.detail || 'No se pudo descargar la resolución.');
+    }
   }
 
   async function generarResolucion(): Promise<void> {
@@ -365,8 +413,21 @@ export default function EmisoraOperacionE3() {
     if (apiError || response?.status !== 201 || !data) {
       guardar(getErrorMessage(apiError) || 'No se pudo generar la resolución.');
     }
+    setResolucion(data);
     setResolucionUrl(data.descargaUrl);
+    await cargarIncentivos();
   }
+
+  const columnasIncentivos: DataTableColumn<EmisoraIncentivoView>[] = [
+    { id: 'realizador', label: 'Realizador', render: (fila) => fila.realizadorId },
+    { id: 'informe', label: 'Informe', render: (fila) => fila.informeId },
+    { id: 'estado', label: 'Estado', render: (fila) => <StatusChip status={fila.estado} /> },
+    {
+      id: 'calificacion',
+      label: 'Calificación',
+      render: (fila) => (fila.calificacion === null ? '—' : fila.calificacion),
+    },
+  ];
 
   return (
     <Box>
@@ -684,31 +745,54 @@ export default function EmisoraOperacionE3() {
 
       <SectionCard
         title="Resolución de incentivos"
-        subtitle="RF-03.7 — PDF generado con la plantilla existente de Exportaciones"
+        subtitle="RF-03.7 — calificación, resolución y PDF generado con la plantilla de Exportaciones"
         sx={{ mt: 3 }}
       >
-        {resolucionUrl ? (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            <Button
-              variant="outlined"
-              onClick={() => void ejecutar(descargarResolucion, 'Descarga iniciada.')}
-            >
-              Descargar resolución generada
-            </Button>
-          </Alert>
-        ) : (
-          <EmptyState
-            title="Sin resolución en esta sesión"
-            description="Selecciona un incentivo resuelto para generar su oficio PDF."
+        {hasPermission('emisora:incentivo:read') && (
+          <DataTable
+            columns={columnasIncentivos}
+            rows={incentivos}
+            rowKey={(fila) => fila.id}
+            ariaLabel="Incentivos de la emisora"
+            emptyMessage="Todavía no hay incentivos registrados."
           />
         )}
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'flex-end', mt: 2 }}>
           <TextField
-            label="ID del incentivo resuelto"
+            label="ID del incentivo"
             value={incentivoId}
             onChange={(event) => setIncentivoId(event.target.value)}
-            sx={{ flex: '1 1 260px' }}
+            sx={{ flex: '1 1 220px' }}
           />
+          <TextField
+            label="Estado destino"
+            value={estadoIncentivo}
+            onChange={(event) => setEstadoIncentivo(event.target.value)}
+            sx={{ flex: '1 1 180px' }}
+          />
+          <TextField
+            label="Calificación (0-100)"
+            type="number"
+            value={calificacion}
+            onChange={(event) => setCalificacion(event.target.value)}
+            slotProps={{ htmlInput: { min: 0, max: 100 } }}
+            sx={{ flex: '1 1 170px' }}
+          />
+          <TextField
+            label="Referencia CDP"
+            value={referenciaCdp}
+            onChange={(event) => setReferenciaCdp(event.target.value)}
+            sx={{ flex: '1 1 200px' }}
+          />
+          <Button
+            variant="outlined"
+            disabled={enviando || !incentivoId || !hasPermission('emisora:incentivo:update')}
+            onClick={() => void ejecutar(calificarIncentivo, 'Incentivo actualizado.')}
+          >
+            Calificar incentivo
+          </Button>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'flex-end', mt: 2 }}>
           <TextField
             label="Periodo (YYYY o YYYY-MM)"
             value={periodo}
@@ -722,7 +806,30 @@ export default function EmisoraOperacionE3() {
           >
             Generar resolución
           </Button>
+          <Button
+            variant="outlined"
+            disabled={enviando || !resolucion || !hasPermission('emisora:resolucion:read')}
+            onClick={() => void ejecutar(consultarResolucionPdf, 'Resolución consultada.')}
+          >
+            Consultar PDF
+          </Button>
         </Box>
+        {resolucionUrl ? (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={() => void ejecutar(descargarResolucion, 'Descarga iniciada.')}
+            >
+              Descargar resolución generada
+            </Button>
+          </Alert>
+        ) : (
+          <EmptyState
+            title="Sin resolución en esta sesión"
+            description="Selecciona un incentivo resuelto para generar su oficio PDF."
+            minHeight={120}
+          />
+        )}
       </SectionCard>
 
       <Typography variant="body2" sx={{ mt: 3 }}>

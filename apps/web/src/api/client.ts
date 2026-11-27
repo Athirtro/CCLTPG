@@ -413,6 +413,57 @@ export type CrearEvaluacionDto = {
   observacion?: string | null;
 };
 
+export type ActualizarEvaluacionDto = {
+  valor: 'excelente' | 'bueno' | 'regular' | 'deficiente';
+  observacion?: string | null;
+};
+
+export type ActualizarEstudianteDto = {
+  usuarioId?: string | null;
+  tipoDocumento?: string;
+  numeroDocumento?: string;
+  nombres?: string;
+  apellidos?: string;
+  fechaNacimiento?: string | null;
+  municipio?: string | null;
+  barrio?: string | null;
+  direccion?: string | null;
+  telefono?: string | null;
+  consentimientoDatos?: Record<string, unknown>;
+};
+
+/** `POST /auth/mfa/recovery-codes` admite TOTP o un código de recuperación válido. */
+export type CodigosRecuperacionDto = {
+  code: string;
+};
+
+export type CodigosRecuperacionResponseDto = {
+  recoveryCodes: string[];
+};
+
+/** Forma devuelta por `GET /audit/events` (el contrato no declara su esquema). */
+export type EventoAuditoriaDto = {
+  id: string;
+  actorId: string | null;
+  actorPerfil: string | null;
+  ip: string | null;
+  dispositivo: string | null;
+  recurso: string;
+  recursoId: string | null;
+  accion: string;
+  datosAntes: unknown;
+  datosDespues: unknown;
+  ocurridoEn: string;
+  requestId: string | null;
+};
+
+export type PaginaEventosAuditoriaDto = {
+  items: EventoAuditoriaDto[];
+  total: number;
+  limit?: number;
+  offset?: number;
+};
+
 // ===== Tipos analytics (Iteración 6) =====
 
 export type KpiBreakdownItemDto = {
@@ -1236,6 +1287,27 @@ export type Paths = {
       };
     };
   };
+  '/auth/mfa/recovery-codes': {
+    post: {
+      requestBody: {
+        content: {
+          'application/json': CodigosRecuperacionDto;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': CodigosRecuperacionResponseDto;
+          };
+        };
+        401: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
 
   // --- Me ---
   '/me': {
@@ -1427,6 +1499,41 @@ export type Paths = {
         201: {
           content: {
             'application/json': AssignProfileResponseDto;
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+
+  // --- Auditoría ---
+  '/audit/events': {
+    get: {
+      parameters?: {
+        query?: {
+          from?: string;
+          to?: string;
+          actorId?: string;
+          recurso?: string;
+          recursoId?: string;
+          accion?: string;
+          limit?: number;
+          offset?: number;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': PaginaEventosAuditoriaDto;
+          };
+        };
+        401: {
+          content: {
+            'application/json': ProblemDetailsDto;
           };
         };
         403: {
@@ -1825,6 +1932,21 @@ export type Paths = {
             'application/json': ScheduleResponseDto;
           };
         };
+        401: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
       };
     };
     put: {
@@ -1892,6 +2014,45 @@ export type Paths = {
           };
         };
         400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/academic/students/{id}': {
+    patch: {
+      parameters: {
+        path: { id: string };
+      };
+      requestBody: {
+        content: {
+          'application/json': ActualizarEstudianteDto;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': EstudianteDto;
+          };
+        };
+        401: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        404: {
           content: {
             'application/json': ProblemDetailsDto;
           };
@@ -2139,6 +2300,40 @@ export type Paths = {
         200: {
           content: {
             'application/json': PaginatedEvaluacionesDto;
+          };
+        };
+      };
+    };
+  };
+  '/academic/evaluations/{id}': {
+    patch: {
+      parameters: {
+        path: { id: string };
+      };
+      requestBody: {
+        content: {
+          'application/json': ActualizarEvaluacionDto;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': EvaluacionDto;
+          };
+        };
+        401: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
           };
         };
       };

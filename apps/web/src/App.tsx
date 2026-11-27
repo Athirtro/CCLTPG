@@ -24,6 +24,8 @@ import MisEvaluaciones from './pages/MisEvaluaciones';
 import VistaEducador from './pages/VistaEducador';
 import Kpis from './pages/Kpis';
 import Reportes from './pages/Reportes';
+import Auditoria from './pages/Auditoria';
+import Seguridad from './pages/Seguridad';
 import Health from './pages/Health';
 import NotFound from './pages/NotFound';
 import EmisoraRoutes from './extensions/emisora/routes';
@@ -96,6 +98,8 @@ function AppRoutes() {
               <Route path="/vista-educador" element={<VistaEducador />} />
               <Route path="/kpis" element={<Kpis />} />
               <Route path="/reportes" element={<Reportes />} />
+              <Route path="/auditoria" element={<Auditoria />} />
+              <Route path="/seguridad" element={<Seguridad />} />
               <Route path="/emisora/*" element={<EmisoraRoutes />} />
               <Route path="/estado" element={<Health />} />
             </Route>

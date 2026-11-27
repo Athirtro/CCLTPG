@@ -28,6 +28,8 @@ import {
   BarChart as BarChartIcon,
   Description as DescriptionIcon,
   InsertChart as InsertChartIcon,
+  History as HistoryIcon,
+  VpnKey as VpnKeyIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
@@ -112,6 +114,12 @@ const SECCIONES: NavSection[] = [
         icon: <FileCopyIcon />,
         requires: 'exports:report:export',
       },
+      {
+        path: '/auditoria',
+        label: 'Auditoría',
+        icon: <HistoryIcon />,
+        requires: 'audit:event:read',
+      },
     ],
   },
   {
@@ -151,6 +159,11 @@ const SECCIONES: NavSection[] = [
         label: 'Preferencias',
         icon: <SettingsIcon />,
         requires: 'notifications:preference:read_own',
+      },
+      {
+        path: '/seguridad',
+        label: 'Seguridad',
+        icon: <VpnKeyIcon />,
       },
     ],
   },

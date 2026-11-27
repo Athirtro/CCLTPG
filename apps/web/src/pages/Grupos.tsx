@@ -22,10 +22,11 @@ import {
   Group as GroupIcon,
   Lock as LockIcon,
   Refresh as RefreshIcon,
+  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import { apiClient, useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type { CrearGrupoDto, GrupoDto, ProgramaDto } from '../api/client';
+import type { CrearGrupoDto, GrupoDto, ProgramaDto, ScheduleSlotDto } from '../api/client';
 import PageHeader from '../components/common/PageHeader';
 import SectionCard from '../components/common/SectionCard';
 import StatCard from '../components/common/StatCard';
@@ -38,6 +39,7 @@ import ErrorState from '../components/common/ErrorState';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
 type EstadoFiltro = 'todos' | GrupoDto['estado'];
+type FranjaFormulario = { diaSemana: string; horaInicio: string; horaFin: string };
 type Formulario = {
   codigo: string;
   programaId: string;
@@ -55,6 +57,18 @@ const FORMULARIO_VACIO: Formulario = {
   periodo: '',
   cupoMaximo: '',
 };
+
+const FRANJA_VACIA: FranjaFormulario = { diaSemana: '1', horaInicio: '08:00', horaFin: '10:00' };
+
+const DIAS_SEMANA = [
+  { valor: '1', label: 'Lunes' },
+  { valor: '2', label: 'Martes' },
+  { valor: '3', label: 'Miércoles' },
+  { valor: '4', label: 'Jueves' },
+  { valor: '5', label: 'Viernes' },
+  { valor: '6', label: 'Sábado' },
+  { valor: '7', label: 'Domingo' },
+];
 
 export default function Grupos() {
   const { hasPermission, hasProfile, user } = useAuth();
@@ -78,6 +92,11 @@ export default function Grupos() {
 
   const [grupoTransicion, setGrupoTransicion] = useState<GrupoDto | null>(null);
   const [procesandoTransicion, setProcesandoTransicion] = useState(false);
+
+  const [grupoHorario, setGrupoHorario] = useState<GrupoDto | null>(null);
+  const [franjas, setFranjas] = useState<FranjaFormulario[]>([]);
+  const [cargandoHorario, setCargandoHorario] = useState(false);
+  const [guardandoHorario, setGuardandoHorario] = useState(false);
 
   const cargarGrupos = useCallback(async () => {
     if (!puedeGestionar) return;
@@ -231,6 +250,98 @@ export default function Grupos() {
     }
   };
 
+  const abrirHorario = async (grupo: GrupoDto) => {
+    setGrupoHorario(grupo);
+    setFranjas([]);
+    setError(null);
+    setExito(null);
+    setCargandoHorario(true);
+    try {
+      const { data, error: apiError } = await apiClient.GET('/academic/groups/{id}/schedule', {
+        params: { path: { id: grupo.id } },
+      });
+      if (apiError || !data) {
+        setError(apiError?.detail || 'No se pudo cargar el horario del grupo.');
+        return;
+      }
+      setFranjas(
+        data.items.map((item) => ({
+          diaSemana: String(item.diaSemana),
+          horaInicio: item.horaInicio.slice(0, 5),
+          horaFin: item.horaFin.slice(0, 5),
+        })),
+      );
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al cargar el horario del grupo.');
+    } finally {
+      setCargandoHorario(false);
+    }
+  };
+
+  const actualizarFranja = (indice: number, campo: keyof FranjaFormulario, valor: string) => {
+    setFranjas((previas) =>
+      previas.map((franja, posicion) =>
+        posicion === indice ? { ...franja, [campo]: valor } : franja,
+      ),
+    );
+  };
+
+  const validarFranjas = (): string | null => {
+    if (franjas.length === 0) return 'Agrega al menos una franja al horario.';
+    for (const [indice, franja] of franjas.entries()) {
+      const dia = Number(franja.diaSemana);
+      if (!Number.isInteger(dia) || dia < 1 || dia > 7) {
+        return `La franja ${indice + 1} tiene un día de la semana no válido.`;
+      }
+      if (!/^\d{2}:\d{2}$/.test(franja.horaInicio) || !/^\d{2}:\d{2}$/.test(franja.horaFin)) {
+        return `La franja ${indice + 1} usa un formato de hora no válido (HH:MM).`;
+      }
+      if (franja.horaInicio >= franja.horaFin) {
+        return `La franja ${indice + 1} tiene un rango de horas no válido.`;
+      }
+    }
+    return null;
+  };
+
+  const guardarHorario = async () => {
+    if (!grupoHorario) return;
+    const problema = validarFranjas();
+    if (problema) {
+      setError(problema);
+      return;
+    }
+    setGuardandoHorario(true);
+    setError(null);
+    setExito(null);
+    try {
+      const body: { franjas: ScheduleSlotDto[] } = {
+        franjas: franjas.map((franja) => ({
+          diaSemana: Number(franja.diaSemana),
+          horaInicio: franja.horaInicio,
+          horaFin: franja.horaFin,
+        })),
+      };
+      const {
+        data,
+        error: apiError,
+        response,
+      } = await apiClient.PUT('/academic/groups/{id}/schedule', {
+        params: { path: { id: grupoHorario.id } },
+        body,
+      });
+      if (apiError || response?.status !== 200 || !data) {
+        setError(apiError?.detail || 'No se pudo guardar el horario del grupo.');
+        return;
+      }
+      setExito(`Horario del grupo "${grupoHorario.codigo}" actualizado correctamente.`);
+      setGrupoHorario(null);
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al guardar el horario del grupo.');
+    } finally {
+      setGuardandoHorario(false);
+    }
+  };
+
   if (!puedeGestionar) {
     return (
       <Box>
@@ -304,18 +415,29 @@ export default function Grupos() {
       id: 'acciones',
       label: 'Acciones',
       align: 'right',
-      minWidth: 110,
-      render: (grupo) =>
-        grupo.estado === 'abierto' ? (
+      minWidth: 220,
+      render: (grupo) => (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
           <Button
             size="small"
-            startIcon={<LockIcon fontSize="small" />}
-            onClick={() => setGrupoTransicion(grupo)}
-            disabled={procesandoTransicion || cargando}
+            startIcon={<ScheduleIcon fontSize="small" />}
+            onClick={() => void abrirHorario(grupo)}
+            disabled={cargandoHorario || guardandoHorario}
           >
-            Cerrar
+            Horario
           </Button>
-        ) : null,
+          {grupo.estado === 'abierto' && (
+            <Button
+              size="small"
+              startIcon={<LockIcon fontSize="small" />}
+              onClick={() => setGrupoTransicion(grupo)}
+              disabled={procesandoTransicion || cargando}
+            >
+              Cerrar
+            </Button>
+          )}
+        </Box>
+      ),
     },
   ];
 
@@ -557,6 +679,113 @@ export default function Grupos() {
           </Button>
           <Button variant="contained" onClick={() => void manejarCrear()} disabled={enviando}>
             {enviando ? 'Creando…' : 'Crear grupo'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(grupoHorario)}
+        onClose={() => {
+          if (!guardandoHorario) setGrupoHorario(null);
+        }}
+        maxWidth="md"
+        fullWidth
+        aria-labelledby="titulo-horario-grupo"
+      >
+        <DialogTitle id="titulo-horario-grupo">
+          {`Horario de ${grupoHorario?.codigo ?? ''}`}
+        </DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <DialogContentText>
+            Define las franjas semanales del grupo. La operación reemplaza el horario completo.
+          </DialogContentText>
+          {cargandoHorario ? (
+            <LoadingState label="Cargando horario…" minHeight={140} />
+          ) : (
+            <>
+              {franjas.map((franja, indice) => (
+                <Box
+                  key={`${franja.diaSemana}-${franja.horaInicio}-${indice}`}
+                  sx={{
+                    display: 'grid',
+                    gap: 2,
+                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, minmax(0, 1fr))' },
+                    alignItems: 'center',
+                  }}
+                >
+                  <FormControl fullWidth size="small">
+                    <InputLabel id={`dia-franja-${indice}`}>Día</InputLabel>
+                    <Select
+                      labelId={`dia-franja-${indice}`}
+                      label="Día"
+                      value={franja.diaSemana}
+                      onChange={(event) =>
+                        actualizarFranja(indice, 'diaSemana', event.target.value)
+                      }
+                    >
+                      {DIAS_SEMANA.map((dia) => (
+                        <MenuItem key={dia.valor} value={dia.valor}>
+                          {dia.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <TextField
+                    label="Inicio"
+                    type="time"
+                    value={franja.horaInicio}
+                    onChange={(event) => actualizarFranja(indice, 'horaInicio', event.target.value)}
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    fullWidth
+                    size="small"
+                  />
+                  <TextField
+                    label="Fin"
+                    type="time"
+                    value={franja.horaFin}
+                    onChange={(event) => actualizarFranja(indice, 'horaFin', event.target.value)}
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    fullWidth
+                    size="small"
+                  />
+                  <Button
+                    color="error"
+                    onClick={() => setFranjas((previas) => previas.filter((_, i) => i !== indice))}
+                    disabled={guardandoHorario}
+                  >
+                    Eliminar
+                  </Button>
+                </Box>
+              ))}
+              <Button
+                startIcon={<AddIcon />}
+                onClick={() => setFranjas((previas) => [...previas, { ...FRANJA_VACIA }])}
+                disabled={guardandoHorario}
+                sx={{ alignSelf: 'flex-start' }}
+              >
+                Agregar franja
+              </Button>
+              {franjas.length === 0 && (
+                <Typography variant="body2" color="text.secondary">
+                  El grupo todavía no tiene franjas registradas.
+                </Typography>
+              )}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setGrupoHorario(null)}
+            disabled={guardandoHorario || cargandoHorario}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => void guardarHorario()}
+            disabled={cargandoHorario || guardandoHorario}
+          >
+            {guardandoHorario ? 'Guardando…' : 'Guardar horario'}
           </Button>
         </DialogActions>
       </Dialog>

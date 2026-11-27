@@ -34,23 +34,37 @@ function formatearFecha(iso: string): string {
 export default function Health() {
   const [report, setReport] = useState<ReadinessReport | null>(null);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
+  const [live, setLive] = useState<{ status: string } | null>(null);
+  const [liveError, setLiveError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error, response } = await apiClient.GET('/health/ready');
-      if (data && response.ok) {
-        setReport(data);
+      const [readyResult, liveResult] = await Promise.all([
+        apiClient.GET('/health/ready'),
+        apiClient.GET('/health/live'),
+      ]);
+      if (readyResult.data && readyResult.response.ok) {
+        setReport(readyResult.data);
         setProblem(null);
       } else {
         setReport(null);
-        setProblem(error ?? fallbackProblem('Respuesta inesperada.'));
+        setProblem(readyResult.error ?? fallbackProblem('Respuesta inesperada.'));
+      }
+      if (liveResult.data && liveResult.response.ok) {
+        setLive(liveResult.data);
+        setLiveError(null);
+      } else {
+        setLive(null);
+        setLiveError('El endpoint /health/live no respondió correctamente.');
       }
     } catch {
       setReport(null);
       setProblem(fallbackProblem('No se pudo contactar con la API.'));
+      setLive(null);
+      setLiveError('El endpoint /health/live no respondió correctamente.');
     } finally {
       setLastChecked(new Date());
       setLoading(false);
@@ -205,6 +219,36 @@ export default function Health() {
               title="Sin información de estado"
               description="No hay un informe de disponibilidad para mostrar."
               minHeight={160}
+            />
+          )}
+        </Box>
+      </SectionCard>
+
+      <SectionCard
+        title="Liveness"
+        subtitle="Comprobación mínima de que el proceso de la API sigue activo"
+        sx={{ mt: 3 }}
+      >
+        <Box aria-live="polite">
+          {loading && !live && !liveError ? (
+            <LoadingState label="Comprobando liveness…" minHeight={120} />
+          ) : liveError ? (
+            <Alert severity="error">{liveError}</Alert>
+          ) : live ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+              <StatusChip
+                status="success"
+                label={`${live.status.toUpperCase()} · proceso activo`}
+              />
+              <Typography variant="body2" color="text.secondary">
+                Respuesta de GET /health/live
+              </Typography>
+            </Box>
+          ) : (
+            <EmptyState
+              title="Sin respuesta de liveness"
+              description="No se recibió una respuesta válida del endpoint /health/live."
+              minHeight={120}
             />
           )}
         </Box>

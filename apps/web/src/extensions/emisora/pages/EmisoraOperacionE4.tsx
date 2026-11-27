@@ -1,14 +1,17 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Box, Button, LinearProgress, TextField, Typography } from '@mui/material';
 
 import { apiClient } from '../../../api/client';
 import type {
   EmisoraArchivoTipo,
   EmisoraEntidadReporte,
+  EmisoraObraView,
   EmisoraTramiteDestino,
 } from '../../../api/client';
 import { getErrorMessage } from '../../../api/errors';
 import { useAuth } from '../../../contexts/AuthContext';
+import DataTable, { type DataTableColumn } from '../../../components/common/DataTable';
+import EmptyState from '../../../components/common/EmptyState';
 import ErrorState from '../../../components/common/ErrorState';
 import PageHeader from '../../../components/common/PageHeader';
 import SectionCard from '../../../components/common/SectionCard';
@@ -82,6 +85,30 @@ export default function EmisoraOperacionE4() {
   const [duracionObra, setDuracionObra] = useState('210');
   const [obraId, setObraId] = useState('');
   const [reporteId, setReporteId] = useState('');
+  const [obras, setObras] = useState<EmisoraObraView[]>([]);
+
+  const [convocatoriaId, setConvocatoriaId] = useState('');
+  const [tituloProyecto, setTituloProyecto] = useState('Radio comunitaria y memoria local');
+  const [archivoProyectoId, setArchivoProyectoId] = useState(ARCHIVO_PDF);
+  const [fechaRecepcion, setFechaRecepcion] = useState('2026-01-20');
+  const [proyectoId, setProyectoId] = useState('');
+  const [fechaInforme, setFechaInforme] = useState('2026-10-15');
+  const [archivoInformeId, setArchivoInformeId] = useState(ARCHIVO_PDF);
+  const [realizadorId, setRealizadorId] = useState('');
+  const [contactoRealizador, setContactoRealizador] = useState('');
+  const [municipioRealizador, setMunicipioRealizador] = useState('');
+
+  const cargarObras = useCallback(async () => {
+    const { data, error: apiError } = await apiClient.GET('/emisora/obras');
+    if (apiError || !data) {
+      guardar(getErrorMessage(apiError) || 'No se pudo cargar el catálogo de obras.');
+    }
+    setObras(data);
+  }, []);
+
+  useEffect(() => {
+    if (hasPermission('emisora:obra:read')) void cargarObras().catch(() => undefined);
+  }, [cargarObras, hasPermission]);
 
   const [nombreEquipo, setNombreEquipo] = useState('Transmisor E4');
   const [tipoEquipo, setTipoEquipo] = useState('transmisor');
@@ -221,6 +248,72 @@ export default function EmisoraOperacionE4() {
       guardar(getErrorMessage(apiError) || 'No se pudo incluir la obra.');
     }
     setObraId(data.id);
+  }
+
+  async function listarObras(): Promise<void> {
+    await cargarObras();
+  }
+
+  async function crearProyecto(): Promise<void> {
+    if (!convocatoriaId.trim()) guardar('Indica la convocatoria asociada al proyecto.');
+    const {
+      data,
+      error: apiError,
+      response,
+    } = await apiClient.POST('/emisora/proyectos', {
+      body: {
+        convocatoriaId: convocatoriaId.trim(),
+        titulo: tituloProyecto.trim(),
+        archivoId: archivoProyectoId.trim(),
+        fechaRecepcion,
+        realizador: {
+          nombres: 'Realizador',
+          apellidos: 'E4',
+          tipoDocumento: 'CC',
+          numeroDocumento: '1000000001',
+          consentimientoAceptado: true,
+        },
+      },
+      headers: { 'Idempotency-Key': clave() },
+    });
+    if (apiError || response?.status !== 201 || !data) {
+      guardar(getErrorMessage(apiError) || 'No se pudo radicar el proyecto.');
+    }
+    setProyectoId(data.id);
+    if (!realizadorId.trim()) setRealizadorId(JEFE_ID);
+  }
+
+  async function crearInforme(): Promise<void> {
+    if (!proyectoId.trim()) guardar('Primero radica un proyecto.');
+    const {
+      data,
+      error: apiError,
+      response,
+    } = await apiClient.POST('/emisora/informes', {
+      body: {
+        proyectoId: proyectoId.trim(),
+        fechaInforme,
+        archivoId: archivoInformeId.trim(),
+      },
+      headers: { 'Idempotency-Key': clave() },
+    });
+    if (apiError || response?.status !== 201 || !data) {
+      guardar(getErrorMessage(apiError) || 'No se pudo radicar el informe.');
+    }
+  }
+
+  async function notificarRealizador(): Promise<void> {
+    if (!realizadorId.trim()) guardar('Primero radica un proyecto con su realizador.');
+    const { error: apiError, response } = await apiClient.PATCH('/emisora/realizadores/{id}', {
+      params: { path: { id: realizadorId.trim() } },
+      body: {
+        ...(contactoRealizador.trim() ? { contacto: contactoRealizador.trim() } : {}),
+        ...(municipioRealizador.trim() ? { municipio: municipioRealizador.trim() } : {}),
+      },
+    });
+    if (apiError || response?.status !== 200) {
+      guardar(getErrorMessage(apiError) || 'No se pudo notificar al realizador.');
+    }
   }
 
   async function generarReporteObras(): Promise<void> {
@@ -564,6 +657,13 @@ export default function EmisoraOperacionE4() {
     }
   }
 
+  const columnasObras: DataTableColumn<EmisoraObraView>[] = [
+    { id: 'titulo', label: 'Título', render: (fila) => fila.titulo },
+    { id: 'autor', label: 'Compositor o autor', render: (fila) => fila.compositorAutor },
+    { id: 'duracion', label: 'Duración (s)', render: (fila) => fila.duracionSegundos },
+    { id: 'fecha', label: 'Inclusión', render: (fila) => fila.fechaInclusion },
+  ];
+
   return (
     <Box>
       <PageHeader
@@ -694,6 +794,126 @@ export default function EmisoraOperacionE4() {
             onClick={() => void ejecutar(registrarPago, 'Pago de derechos registrado.')}
           >
             Registrar pago
+          </Button>
+          <Button
+            variant="outlined"
+            disabled={enviando || !hasPermission('emisora:obra:read')}
+            onClick={() => void ejecutar(listarObras, 'Catálogo de obras actualizado.')}
+          >
+            Listar obras
+          </Button>
+        </Box>
+        {hasPermission('emisora:obra:read') && (
+          <Box sx={{ mt: 2 }}>
+            {obras.length === 0 ? (
+              <EmptyState
+                title="Catálogo vacío"
+                description="Todavía no hay obras registradas en el catálogo."
+                minHeight={120}
+              />
+            ) : (
+              <DataTable
+                columns={columnasObras}
+                rows={obras}
+                rowKey={(fila) => fila.id}
+                ariaLabel="Catálogo de obras"
+                emptyMessage="No hay obras disponibles."
+              />
+            )}
+          </Box>
+        )}
+      </SectionCard>
+
+      <SectionCard
+        title="Convocatoria, proyectos e informes"
+        subtitle="RF-10/RF-11 — radicación del proyecto, informe anual y notificación al realizador"
+        sx={{ mt: 3 }}
+      >
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <Campo
+            etiqueta="ID de la convocatoria"
+            valor={convocatoriaId}
+            alCambiar={setConvocatoriaId}
+            ancho="240px"
+          />
+          <Campo
+            etiqueta="Título del proyecto"
+            valor={tituloProyecto}
+            alCambiar={setTituloProyecto}
+            ancho="260px"
+          />
+          <Campo
+            etiqueta="ID del PDF del proyecto"
+            valor={archivoProyectoId}
+            alCambiar={setArchivoProyectoId}
+            ancho="240px"
+          />
+          <Campo
+            etiqueta="Fecha de recepción"
+            tipo="date"
+            valor={fechaRecepcion}
+            alCambiar={setFechaRecepcion}
+          />
+          <Button
+            variant="contained"
+            disabled={enviando || !hasPermission('emisora:proyecto:create')}
+            onClick={() => void ejecutar(crearProyecto, 'Proyecto radicado correctamente.')}
+          >
+            Radicar proyecto
+          </Button>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'flex-end', mt: 2 }}>
+          <Campo
+            etiqueta="ID del proyecto"
+            valor={proyectoId}
+            alCambiar={setProyectoId}
+            ancho="220px"
+          />
+          <Campo
+            etiqueta="Fecha del informe"
+            tipo="date"
+            valor={fechaInforme}
+            alCambiar={setFechaInforme}
+          />
+          <Campo
+            etiqueta="ID del PDF del informe"
+            valor={archivoInformeId}
+            alCambiar={setArchivoInformeId}
+            ancho="240px"
+          />
+          <Button
+            variant="contained"
+            disabled={enviando || !proyectoId || !hasPermission('emisora:informe:create')}
+            onClick={() => void ejecutar(crearInforme, 'Informe radicado correctamente.')}
+          >
+            Radicar informe
+          </Button>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'flex-end', mt: 2 }}>
+          <Campo
+            etiqueta="ID del realizador"
+            valor={realizadorId}
+            alCambiar={setRealizadorId}
+            ancho="240px"
+          />
+          <Campo
+            etiqueta="Contacto del realizador"
+            valor={contactoRealizador}
+            alCambiar={setContactoRealizador}
+            ancho="240px"
+          />
+          <Campo
+            etiqueta="Municipio del realizador"
+            valor={municipioRealizador}
+            alCambiar={setMunicipioRealizador}
+            ancho="220px"
+          />
+          <Button
+            variant="outlined"
+            disabled={enviando || !realizadorId || !hasPermission('emisora:realizador:update_own')}
+            onClick={() => void ejecutar(notificarRealizador, 'Realizador notificado.')}
+          >
+            Notificar realizador
           </Button>
         </Box>
       </SectionCard>

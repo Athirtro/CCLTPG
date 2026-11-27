@@ -18,10 +18,19 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { Add as AddIcon, People as PeopleIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  People as PeopleIcon,
+  Refresh as RefreshIcon,
+} from '@mui/icons-material';
 import { apiClient, useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type { CrearEstudianteDto, EstudianteSummaryDto } from '../api/client';
+import type {
+  ActualizarEstudianteDto,
+  CrearEstudianteDto,
+  EstudianteSummaryDto,
+} from '../api/client';
 import PageHeader from '../components/common/PageHeader';
 import SectionCard from '../components/common/SectionCard';
 import StatCard from '../components/common/StatCard';
@@ -39,6 +48,8 @@ type Formulario = {
   numeroDocumento: string;
   nombres: string;
   apellidos: string;
+  municipio: string;
+  barrio: string;
   consentimiento: boolean;
 };
 
@@ -50,6 +61,8 @@ const FORMULARIO_VACIO: Formulario = {
   numeroDocumento: '',
   nombres: '',
   apellidos: '',
+  municipio: '',
+  barrio: '',
   consentimiento: false,
 };
 
@@ -68,6 +81,7 @@ export default function Estudiantes() {
   const [tamanoPagina, setTamanoPagina] = useState(10);
 
   const [abiertoDialogo, setAbiertoDialogo] = useState(false);
+  const [estudianteEditando, setEstudianteEditando] = useState<EstudianteSummaryDto | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [formulario, setFormulario] = useState<Formulario>(FORMULARIO_VACIO);
   const [errores, setErrores] = useState<Partial<Record<keyof Formulario, string>>>({});
@@ -127,11 +141,11 @@ export default function Estudiantes() {
     setErrores((prev) => ({ ...prev, [campo]: undefined }));
   };
 
-  const validar = (): boolean => {
+  const validar = (editando: boolean): boolean => {
     const nuevosErrores: Partial<Record<keyof Formulario, string>> = {};
     if (!formulario.tipoDocumento.trim())
       nuevosErrores.tipoDocumento = 'Selecciona el tipo de documento.';
-    if (!formulario.numeroDocumento.trim())
+    if (!editando && !formulario.numeroDocumento.trim())
       nuevosErrores.numeroDocumento = 'Ingresa el número de documento.';
     if (!formulario.nombres.trim()) nuevosErrores.nombres = 'Ingresa los nombres.';
     if (!formulario.apellidos.trim()) nuevosErrores.apellidos = 'Ingresa los apellidos.';
@@ -139,49 +153,113 @@ export default function Estudiantes() {
     return Object.keys(nuevosErrores).length === 0;
   };
 
-  const cerrarDialogo = () => {
-    if (enviando) return;
+  const abrirNuevo = () => {
+    setEstudianteEditando(null);
+    setFormulario(FORMULARIO_VACIO);
+    setErrores({});
+    setAbiertoDialogo(true);
+  };
+
+  const abrirEditar = (estudiante: EstudianteSummaryDto) => {
+    setEstudianteEditando(estudiante);
+    setFormulario({
+      tipoDocumento: estudiante.tipoDocumento,
+      numeroDocumento: '',
+      nombres: estudiante.nombres,
+      apellidos: estudiante.apellidos,
+      municipio: estudiante.municipio ?? '',
+      barrio: estudiante.barrio ?? '',
+      consentimiento: estudiante.consentimientoAceptado,
+    });
+    setErrores({});
+    setAbiertoDialogo(true);
+  };
+
+  const reiniciarDialogo = () => {
     setAbiertoDialogo(false);
+    setEstudianteEditando(null);
     setFormulario(FORMULARIO_VACIO);
     setErrores({});
   };
 
-  const manejarCrear = async () => {
-    if (!validar()) return;
+  const cerrarDialogo = () => {
+    if (!enviando) reiniciarDialogo();
+  };
+
+  const manejarGuardar = async () => {
+    const editando = estudianteEditando !== null;
+    if (!validar(editando)) return;
     setEnviando(true);
     setError(null);
     setExito(null);
     try {
-      const payload: CrearEstudianteDto = {
-        tipoDocumento: formulario.tipoDocumento.trim(),
-        numeroDocumento: formulario.numeroDocumento.trim(),
-        nombres: formulario.nombres.trim(),
-        apellidos: formulario.apellidos.trim(),
-        consentimientoDatos: {
-          aceptado: formulario.consentimiento,
-          fecha: new Date().toISOString(),
-          versionAviso: VERSION_AVISO,
-          medio: 'web',
-        },
-      };
-      const {
-        data,
-        error: apiError,
-        response,
-      } = await apiClient.POST('/academic/students', {
-        body: payload,
-        headers: { 'Idempotency-Key': crypto.randomUUID() },
-      });
-      if (apiError || response?.status !== 201 || !data) {
-        const problema = apiError;
-        setError(problema?.detail || 'No se pudo crear el estudiante.');
-        return;
+      if (estudianteEditando) {
+        const numeroDocumento = formulario.numeroDocumento.trim();
+        const cambioConsentimiento =
+          formulario.consentimiento !== estudianteEditando.consentimientoAceptado;
+        const body: ActualizarEstudianteDto = {
+          usuarioId: estudianteEditando.usuarioId,
+          tipoDocumento: formulario.tipoDocumento.trim(),
+          ...(numeroDocumento ? { numeroDocumento } : {}),
+          nombres: formulario.nombres.trim(),
+          apellidos: formulario.apellidos.trim(),
+          municipio: formulario.municipio.trim() || null,
+          barrio: formulario.barrio.trim() || null,
+          ...(cambioConsentimiento
+            ? {
+                consentimientoDatos: {
+                  aceptado: formulario.consentimiento,
+                  fecha: new Date().toISOString(),
+                  versionAviso: VERSION_AVISO,
+                  medio: 'web',
+                },
+              }
+            : {}),
+        };
+        const {
+          data,
+          error: apiError,
+          response,
+        } = await apiClient.PATCH('/academic/students/{id}', {
+          params: { path: { id: estudianteEditando.id } },
+          body,
+        });
+        if (apiError || response?.status !== 200 || !data) {
+          setError(apiError?.detail || 'No se pudo actualizar la ficha del estudiante.');
+          return;
+        }
+        setExito(`Ficha de "${data.nombres} ${data.apellidos}" actualizada correctamente.`);
+      } else {
+        const payload: CrearEstudianteDto = {
+          tipoDocumento: formulario.tipoDocumento.trim(),
+          numeroDocumento: formulario.numeroDocumento.trim(),
+          nombres: formulario.nombres.trim(),
+          apellidos: formulario.apellidos.trim(),
+          consentimientoDatos: {
+            aceptado: formulario.consentimiento,
+            fecha: new Date().toISOString(),
+            versionAviso: VERSION_AVISO,
+            medio: 'web',
+          },
+        };
+        const {
+          data,
+          error: apiError,
+          response,
+        } = await apiClient.POST('/academic/students', {
+          body: payload,
+          headers: { 'Idempotency-Key': crypto.randomUUID() },
+        });
+        if (apiError || response?.status !== 201 || !data) {
+          setError(apiError?.detail || 'No se pudo crear el estudiante.');
+          return;
+        }
+        setExito(`Estudiante "${data.nombres} ${data.apellidos}" creado correctamente.`);
       }
-      setExito(`Estudiante "${data.nombres} ${data.apellidos}" creado correctamente.`);
-      cerrarDialogo();
+      reiniciarDialogo();
       await cargarEstudiantes();
     } catch (err) {
-      setError(getErrorMessage(err) || 'Error inesperado al crear el estudiante.');
+      setError(getErrorMessage(err) || 'Error inesperado al guardar el estudiante.');
     } finally {
       setEnviando(false);
     }
@@ -230,10 +308,21 @@ export default function Estudiantes() {
       id: 'acciones',
       label: 'Acciones',
       align: 'right',
-      render: () => (
-        <Button size="small" onClick={() => void cargarEstudiantes()} disabled={cargando}>
-          Actualizar
-        </Button>
+      minWidth: 200,
+      render: (estudiante) => (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+          <Button
+            size="small"
+            startIcon={<EditIcon fontSize="small" />}
+            onClick={() => abrirEditar(estudiante)}
+            disabled={cargando || enviando}
+          >
+            Editar ficha
+          </Button>
+          <Button size="small" onClick={() => void cargarEstudiantes()} disabled={cargando}>
+            Actualizar
+          </Button>
+        </Box>
       ),
     },
   ];
@@ -260,11 +349,7 @@ export default function Estudiantes() {
             >
               Actualizar listado
             </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setAbiertoDialogo(true)}
-            >
+            <Button variant="contained" startIcon={<AddIcon />} onClick={abrirNuevo}>
               Nuevo estudiante
             </Button>
           </>
@@ -392,9 +477,11 @@ export default function Estudiantes() {
         onClose={cerrarDialogo}
         maxWidth="sm"
         fullWidth
-        aria-labelledby="titulo-crear-estudiante"
+        aria-labelledby="titulo-formulario-estudiante"
       >
-        <DialogTitle id="titulo-crear-estudiante">Nuevo estudiante</DialogTitle>
+        <DialogTitle id="titulo-formulario-estudiante">
+          {estudianteEditando ? 'Editar ficha del estudiante' : 'Nuevo estudiante'}
+        </DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Typography variant="h3" sx={{ mt: 1 }}>
             Información personal
@@ -420,8 +507,13 @@ export default function Estudiantes() {
             value={formulario.numeroDocumento}
             onChange={(event) => actualizarCampo('numeroDocumento', event.target.value)}
             error={Boolean(errores.numeroDocumento)}
-            helperText={errores.numeroDocumento}
-            required
+            helperText={
+              errores.numeroDocumento ??
+              (estudianteEditando
+                ? 'El listado no expone este dato; déjalo vacío para conservar el actual.'
+                : undefined)
+            }
+            required={!estudianteEditando}
             fullWidth
           />
           <TextField
@@ -444,6 +536,20 @@ export default function Estudiantes() {
             required
             fullWidth
           />
+          <TextField
+            id="municipio-estudiante"
+            label="Municipio (opcional)"
+            value={formulario.municipio}
+            onChange={(event) => actualizarCampo('municipio', event.target.value)}
+            fullWidth
+          />
+          <TextField
+            id="barrio-estudiante"
+            label="Barrio (opcional)"
+            value={formulario.barrio}
+            onChange={(event) => actualizarCampo('barrio', event.target.value)}
+            fullWidth
+          />
           <Divider />
           <Typography variant="h3">Protección de datos</Typography>
           <FormControl error={Boolean(errores.consentimiento)}>
@@ -459,15 +565,17 @@ export default function Estudiantes() {
             {errores.consentimiento && <FormHelperText>{errores.consentimiento}</FormHelperText>}
           </FormControl>
           <Typography variant="caption" color="text.secondary">
-            El registro se enviará con el medio “web” y el estado de consentimiento indicado.
+            {estudianteEditando
+              ? 'La ficha se actualizará con los cambios indicados; el historial queda en auditoría.'
+              : 'El registro se enviará con el medio “web” y el estado de consentimiento indicado.'}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={cerrarDialogo} disabled={enviando}>
             Cancelar
           </Button>
-          <Button variant="contained" onClick={() => void manejarCrear()} disabled={enviando}>
-            {enviando ? 'Creando…' : 'Crear estudiante'}
+          <Button variant="contained" onClick={() => void manejarGuardar()} disabled={enviando}>
+            {enviando ? 'Guardando…' : estudianteEditando ? 'Guardar cambios' : 'Crear estudiante'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -34,7 +34,9 @@ export default function EmptyState({
       <Box sx={{ color: 'text.secondary', '& svg': { fontSize: 40 } }}>
         {icon ?? <InboxOutlinedIcon />}
       </Box>
-      <Typography variant="h3">{title}</Typography>
+      <Typography variant="h3" component="h2">
+        {title}
+      </Typography>
       {description && (
         <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 460 }}>
           {description}

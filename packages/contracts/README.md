@@ -69,7 +69,8 @@ Si un cambio añade una ruta pública, CI falla hasta que se revise y actualice 
 
 ## Estado actual
 
-- 45 rutas y 54 operaciones documentadas; 28 declaran `requestBody` y 11 parámetros `query`.
+- 101 rutas y 118 operaciones documentadas; 80 declaran `requestBody` y 15 parámetros `query`.
+- El núcleo Rol B aporta 45 rutas y 54 operaciones; la extensión Emisora aporta 56 rutas y 64 operaciones.
 - 4 operaciones públicas, todas en `public-routes.json`.
 - 64 eventos en el catálogo de auditoría.
 - `/metrics` no forma parte del contrato ni de la allowlist pública.

@@ -151,15 +151,10 @@ function compareShapes(label, expected, actual, errors) {
 const operations = clientOperations();
 const errors = [];
 
-/** Operaciones documentadas que el SPA no consume todavía (fuera de la gestión de usuarios). */
-const OPERACIONES_NO_CONSUMIDAS = new Set([
-  'get /audit/events',
-  'post /auth/mfa/recovery-codes',
-  'patch /academic/evaluations/{id}',
-  'patch /academic/students/{id}',
-]);
+/** Toda operación del contrato debe estar declarada en el cliente generado. */
+const OPERACIONES_NO_CONSUMIDAS = new Set([]);
 
-test('el cliente declara todas las operaciones del contrato salvo las no consumidas', () => {
+test('el cliente declara todas las operaciones del contrato', () => {
   const clientPaths = new Set(
     operations.map((operation) => `${operation.method} ${operation.path}`),
   );

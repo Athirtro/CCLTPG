@@ -53,6 +53,9 @@ export default function EmisoraOperacion() {
   const [tipoAudio, setTipoAudio] = useState(TIPO_AUDIO);
   const [audio, setAudio] = useState<File | null>(null);
   const [confirmarRejilla, setConfirmarRejilla] = useState(false);
+  const [anioConvocatoria, setAnioConvocatoria] = useState(String(ANIO));
+  const [idActaBases, setIdActaBases] = useState('');
+  const [estadoGrabacion, setEstadoGrabacion] = useState('realizada');
 
   const anio = rejilla?.anio ?? convocatorias[0]?.anio ?? ANIO;
   const fecha = programacion?.fecha ?? grabaciones[0]?.fecha ?? FECHA;
@@ -105,6 +108,49 @@ export default function EmisoraOperacion() {
       setError(getErrorMessage(err) || 'La operación no pudo completarse.');
     } finally {
       setEnviando(false);
+    }
+  }
+
+  async function abrirConvocatoria(): Promise<void> {
+    const anioNumero = Number(anioConvocatoria);
+    if (!Number.isInteger(anioNumero) || anioNumero < 1000 || anioNumero > 9999) {
+      guardar('Indica un año de convocatoria válido (4 dígitos).');
+    }
+    if (!idActaBases.trim()) guardar('Indica el ID del PDF de bases ya cargado en Archivos.');
+    const {
+      data,
+      error: apiError,
+      response,
+    } = await apiClient.POST('/emisora/convocatorias', {
+      body: {
+        anio: anioNumero,
+        fechaApertura: `${anioNumero}-01-15`,
+        basesArchivoId: idActaBases.trim(),
+      },
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
+    });
+    if (apiError || response?.status !== 201 || !data) {
+      guardar(getErrorMessage(apiError) || 'No se pudo abrir la convocatoria.');
+    }
+  }
+
+  async function transicionarGrabacion(): Promise<void> {
+    const grabacion = grabaciones[0];
+    if (!grabacion) guardar('No hay grabación para cambiar de estado.');
+    if (!estadoGrabacion.trim()) guardar('Indica el estado destino de la grabación.');
+    const {
+      data,
+      error: apiError,
+      response,
+    } = await apiClient.POST('/emisora/grabaciones/{id}/transitions', {
+      params: { path: { id: grabacion.id } },
+      body: {
+        to: estadoGrabacion.trim() as 'programada' | 'realizada' | 'aprobada' | 'cancelada',
+      },
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
+    });
+    if (apiError || response?.status !== 200 || !data) {
+      guardar(getErrorMessage(apiError) || 'No se pudo cambiar el estado de la grabación.');
     }
   }
 
@@ -316,6 +362,32 @@ export default function EmisoraOperacion() {
             title="Convocatoria anual"
             subtitle="RF-03.1 — apertura en enero y cierre a 21 días"
           >
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'flex-end', mb: 2 }}>
+              <TextField
+                label="Año de la convocatoria"
+                type="number"
+                value={anioConvocatoria}
+                onChange={(event) => setAnioConvocatoria(event.target.value)}
+                slotProps={{ htmlInput: { min: 1000, max: 9999 } }}
+                sx={{ flex: '1 1 180px' }}
+              />
+              <TextField
+                label="ID del PDF de bases"
+                value={idActaBases}
+                onChange={(event) => setIdActaBases(event.target.value)}
+                placeholder="UUID del archivo cargado en Archivos"
+                sx={{ flex: '1 1 300px' }}
+              />
+              <Button
+                variant="outlined"
+                disabled={enviando || !hasPermission('emisora:convocatoria:create')}
+                onClick={() =>
+                  void ejecutar(abrirConvocatoria, 'Convocatoria anual abierta correctamente.')
+                }
+              >
+                Abrir convocatoria
+              </Button>
+            </Box>
             {convocatorias.length === 0 ? (
               <EmptyState
                 title="Sin convocatorias"
@@ -467,6 +539,26 @@ export default function EmisoraOperacion() {
                 onClick={() => void ejecutar(registrarAsistencia, 'Asistencia registrada.')}
               >
                 Registrar asistencia
+              </Button>
+              <TextField
+                label="Estado destino de grabación"
+                value={estadoGrabacion}
+                onChange={(event) => setEstadoGrabacion(event.target.value)}
+                sx={{ flex: '1 1 180px' }}
+              />
+              <Button
+                variant="outlined"
+                disabled={
+                  enviando || grabaciones.length === 0 || !hasPermission('emisora:grabacion:update')
+                }
+                onClick={() =>
+                  void ejecutar(
+                    transicionarGrabacion,
+                    'Estado de la grabación actualizado correctamente.',
+                  )
+                }
+              >
+                Cambiar estado
               </Button>
               <TextField
                 label="Tipo de audio"
