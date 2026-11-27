@@ -1,3 +1,4 @@
+import { ApiQueryParams } from '../../../openapi/api-query-params.js';
 import { Controller, Get, Inject, Param, ParseUUIDPipe, Query, Req } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -23,6 +24,7 @@ import { actorOf, type AuthenticatedRequest } from './actor.js';
 export class GroupSessionsController {
   constructor(@Inject(SessionService) private readonly sessions: SessionService) {}
 
+  @ApiQueryParams(PaginationQueryDto)
   @Get()
   @RequirePermissions('academic:group:manage', 'academic:group:read_own')
   @ApiOperation({

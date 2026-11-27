@@ -8,6 +8,7 @@ import {
   ApiTags,
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 
@@ -33,6 +34,7 @@ import {
   ChangePasswordDto,
   LoginDto,
   MfaConfirmDto,
+  MfaEnrollDto,
   MfaVerifyDto,
   RecoveryCodesDto,
 } from './dto/auth.dto.js';
@@ -59,6 +61,7 @@ export class AuthController {
     @Inject(CsrfService) private readonly csrf: CsrfService,
   ) {}
 
+  @ApiBody({ type: LoginDto })
   @Post('login')
   @Public()
   @OkCode()
@@ -96,6 +99,7 @@ export class AuthController {
     return toLoginBody(result);
   }
 
+  @ApiBody({ type: MfaVerifyDto })
   @Post('mfa/verify')
   @PartialScopes('mfa_verify')
   @OkCode()
@@ -142,6 +146,7 @@ export class AuthController {
     return toLoginBody(result);
   }
 
+  @ApiBody({ type: MfaEnrollDto })
   @Post('mfa/enroll')
   @PartialScopes('mfa_enroll')
   @AuthenticatedOnly()
@@ -164,11 +169,15 @@ export class AuthController {
     auditExempt: 'La inscripción solo se audita al confirmar (usuario.mfa_inscrita).',
     errorCodes: ['AUTH_MFA_SESSION_INVALID', 'AUTH_MFA_ALREADY_ENABLED'],
   })
-  async enrollMfa(@Req() request: AuthRequest): Promise<MfaEnrollResponseDto> {
+  async enrollMfa(
+    @Body() _dto: MfaEnrollDto,
+    @Req() request: AuthRequest,
+  ): Promise<MfaEnrollResponseDto> {
     const usuarioId = request.auth?.userId ?? request.authPartial!.usuarioId;
     return this.mfaService.enroll(usuarioId);
   }
 
+  @ApiBody({ type: MfaConfirmDto })
   @Post('mfa/enroll/confirm')
   @PartialScopes('mfa_enroll')
   @AuthenticatedOnly()
@@ -212,6 +221,7 @@ export class AuthController {
     };
   }
 
+  @ApiBody({ type: RecoveryCodesDto })
   @Post('mfa/recovery-codes')
   @AuthenticatedOnly()
   @OkCode()
@@ -330,6 +340,7 @@ export class AuthController {
     );
   }
 
+  @ApiBody({ type: ChangePasswordDto })
   @Post('password')
   @PartialScopes('pwd_change')
   @AuthenticatedOnly()

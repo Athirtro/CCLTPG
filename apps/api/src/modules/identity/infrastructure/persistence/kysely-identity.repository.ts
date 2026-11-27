@@ -198,6 +198,7 @@ export class KyselyIdentityRepository implements IdentityRepository {
         'mfa_habilitado',
         'debe_cambiar_password',
         'creado_en',
+        'actualizado_en',
       ])
       .orderBy('creado_en', 'desc')
       .limit(filter.limit)
@@ -223,6 +224,7 @@ export class KyselyIdentityRepository implements IdentityRepository {
       mfaHabilitado: row.mfa_habilitado,
       debeCambiarPassword: row.debe_cambiar_password,
       creadoEn: row.creado_en,
+      actualizadoEn: row.actualizado_en,
     }));
   }
 

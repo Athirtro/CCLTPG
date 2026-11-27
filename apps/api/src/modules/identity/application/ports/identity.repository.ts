@@ -37,6 +37,7 @@ export interface UserListRow {
   mfaHabilitado: boolean;
   debeCambiarPassword: boolean;
   creadoEn: Date;
+  actualizadoEn: Date;
 }
 
 export interface GrantedPermissionRow {

@@ -1,3 +1,4 @@
+import { ApiQueryParams } from '../../../openapi/api-query-params.js';
 import {
   Body,
   Controller,
@@ -21,6 +22,7 @@ import {
   ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 
 import { RequirePermissions } from '../../../shared/auth/auth-metadata.js';
@@ -51,6 +53,7 @@ const EVALUATION_ERRORS = [
 export class EvaluationsController {
   constructor(@Inject(EvaluationService) private readonly evaluations: EvaluationService) {}
 
+  @ApiBody({ type: CreateEvaluationDto })
   @Post()
   @RequirePermissions('academic:evaluation:create')
   @ApiCreatedResponse({ type: EvaluationResponseDto })
@@ -86,6 +89,7 @@ export class EvaluationsController {
     );
   }
 
+  @ApiQueryParams(PaginationQueryDto)
   @Get()
   @RequirePermissions('academic:evaluation:read')
   @ApiOkResponse({ type: PaginatedEvaluationsDto })
@@ -110,6 +114,7 @@ export class EvaluationsController {
     return this.evaluations.list({ page: query.page, pageSize: query.pageSize }, actorOf(request));
   }
 
+  @ApiBody({ type: UpdateEvaluationDto })
   @Patch(':id')
   @RequirePermissions('academic:evaluation:update')
   @ApiParam({ name: 'id', type: String, format: 'uuid' })

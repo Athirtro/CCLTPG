@@ -23,7 +23,9 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
   ApiUnsupportedMediaTypeResponse,
+  ApiBody,
 } from '@nestjs/swagger';
+import { ApiQueryParams } from '../../../openapi/api-query-params.js';
 import { RequirePermissions } from '../../../shared/auth/auth-metadata.js';
 import { ProblemDetailsDto } from '../../../shared/errors/problem-details.dto.js';
 import { ApiContract } from '../../../shared/openapi/contract-metadata.js';
@@ -53,6 +55,7 @@ const PROGRAM_ERRORS = [
 export class ProgramsController {
   constructor(@Inject(ProgramService) private readonly programs: ProgramService) {}
 
+  @ApiQueryParams(PaginationQueryDto)
   @Get()
   @RequirePermissions('academic:program:manage')
   @ApiOperation({ operationId: 'listPrograms', summary: 'Listar programas formativos' })
@@ -71,6 +74,7 @@ export class ProgramsController {
     return this.programs.list({ page: query.page, pageSize: query.pageSize });
   }
 
+  @ApiBody({ type: CreateProgramDto })
   @Post()
   @RequirePermissions('academic:program:manage')
   @HttpCode(201)
@@ -113,6 +117,7 @@ export class ProgramsController {
     );
   }
 
+  @ApiBody({ type: ProgramTransitionDto })
   @Post(':id/transitions')
   @RequirePermissions('academic:program:manage')
   @HttpCode(200)

@@ -22,8 +22,15 @@ Desde la raíz:
 pnpm contracts:generate   # regenera openapi.json y events.json
 pnpm contracts:validate   # R-028, R-031 y allowlist pública
 pnpm contracts:lint       # reglas Spectral
-pnpm test:contracts       # pruebas del validador
+pnpm test:contracts       # pruebas del validador y paridad cliente ↔ contrato
 ```
+
+`client-contract.test.mjs` comprueba que toda operación usada por
+`apps/web/src/api/client.ts` existe en `openapi.json` y que, para esas
+operaciones, los parámetros `query` y los cuerpos JSON/multipart coinciden en
+ambos sentidos. El contrato puede incluir operaciones que el SPA no consume
+(salud, auditoría, administración de identidad). Así una corrección "solo del
+cliente" no puede divergir silenciosamente del contrato generado desde la API.
 
 ## Reglas del contrato
 
@@ -60,10 +67,11 @@ código (controladores + ApiContract)
 
 Si un cambio añade una ruta pública, CI falla hasta que se revise y actualice `public-routes.json`. Es intencional: la lista blanca no se amplía por accidente.
 
-## Estado C1
+## Estado actual
 
-- 2 operaciones (ambas de salud), 2 rutas públicas y 59 eventos de catálogo.
-- Las rutas de negocio llegan en C2, cuando se ratifiquen RC-A-01…04 y RC-C-01…04.
+- 45 rutas y 54 operaciones documentadas; 28 declaran `requestBody` y 11 parámetros `query`.
+- 4 operaciones públicas, todas en `public-routes.json`.
+- 64 eventos en el catálogo de auditoría.
 - `/metrics` no forma parte del contrato ni de la allowlist pública.
 
 ## Referencias

@@ -11,6 +11,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
   ApiUnsupportedMediaTypeResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 
@@ -28,6 +29,7 @@ import { CreateExportDto, ExportResponseDto } from './dto/export.dto.js';
 export class ExportsController {
   constructor(@Inject(ExportsService) private readonly exports: ExportsService) {}
 
+  @ApiBody({ type: CreateExportDto })
   @Post()
   @RequirePermissions('exports:report:export')
   @ApiHeader({

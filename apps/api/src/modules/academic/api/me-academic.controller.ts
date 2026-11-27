@@ -1,3 +1,4 @@
+import { ApiQueryParams } from '../../../openapi/api-query-params.js';
 import { Controller, Get, Inject, Query, Req } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -63,6 +64,7 @@ export class MeAcademicController {
     return this.students.getMine(actorOf(request));
   }
 
+  @ApiQueryParams(PaginationQueryDto)
   @Get('enrollments')
   @RequirePermissions('academic:enrollment:read_own')
   @ApiOperation({

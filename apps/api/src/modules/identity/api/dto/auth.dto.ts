@@ -44,6 +44,15 @@ export class MfaVerifyDto {
   method?: 'totp' | 'recovery';
 }
 
+export class MfaEnrollDto {
+  @ApiPropertyOptional({ type: String, description: 'Token parcial `mfa_enroll`.' })
+  @IsOptional()
+  @IsString()
+  @MinLength(16)
+  @MaxLength(256)
+  sessionToken?: string;
+}
+
 export class MfaConfirmDto {
   @ApiPropertyOptional({ type: String, description: 'Token parcial `mfa_enroll`.' })
   @IsOptional()
@@ -79,6 +88,13 @@ export class ChangePasswordDto {
   @MinLength(12)
   @MaxLength(128)
   newPassword!: string;
+
+  @ApiPropertyOptional({ type: String, description: 'Token parcial `pwd_change`.' })
+  @IsOptional()
+  @IsString()
+  @MinLength(16)
+  @MaxLength(256)
+  sessionToken?: string;
 }
 
 export class CreateUserProfileDto {

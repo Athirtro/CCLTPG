@@ -1,3 +1,4 @@
+import { ApiQueryParams } from '../../../openapi/api-query-params.js';
 import { Controller, Get, Inject, Query, Req } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -26,6 +27,7 @@ type AuthenticatedRequest = Request & { auth?: AuthPrincipal };
 export class AnalyticsController {
   constructor(@Inject(KpiService) private readonly kpis: KpiService) {}
 
+  @ApiQueryParams(KpiQueryDto)
   @Get('kpis')
   @RequirePermissions('analytics:kpi:read')
   @ApiOperation({

@@ -1,3 +1,4 @@
+import { ApiQueryParams } from '../../../openapi/api-query-params.js';
 import {
   Body,
   Controller,
@@ -20,6 +21,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 
@@ -44,6 +46,7 @@ import {
 export class NotificationsController {
   constructor(@Inject(NotificationsService) private readonly notifications: NotificationsService) {}
 
+  @ApiQueryParams(ListNotificationsQueryDto)
   @Get()
   @RequirePermissions('notifications:notification:read_own')
   @ApiOperation({
@@ -90,6 +93,7 @@ export class NotificationsController {
     };
   }
 
+  @ApiBody({ type: UpdateNotificationDto })
   @Patch(':id')
   @RequirePermissions('notifications:notification:update_own')
   @HttpCode(200)
@@ -143,6 +147,7 @@ export class NotificationsController {
     return { preferencias: result.preferencias, criticos: [...result.criticos] };
   }
 
+  @ApiBody({ type: UpdatePreferencesDto })
   @Put('preferences')
   @RequirePermissions('notifications:preference:update_own')
   @ApiOperation({

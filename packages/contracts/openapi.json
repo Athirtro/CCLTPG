@@ -5,7 +5,46 @@
       "get": {
         "description": "Solo `audit:event:read`. La propia consulta genera `auditoria.consultada` con los filtros y el número de resultados.",
         "operationId": "listAuditEvents",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": { "format": "date-time", "type": "string" }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": { "format": "date-time", "type": "string" }
+          },
+          {
+            "name": "actorId",
+            "required": false,
+            "in": "query",
+            "schema": { "format": "uuid", "type": "string" }
+          },
+          { "name": "recurso", "required": false, "in": "query", "schema": { "type": "string" } },
+          {
+            "name": "recursoId",
+            "required": false,
+            "in": "query",
+            "schema": { "format": "uuid", "type": "string" }
+          },
+          { "name": "accion", "required": false, "in": "query", "schema": { "type": "string" } },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "maximum": 200, "type": "number" }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 0, "type": "number" }
+          }
+        ],
         "responses": {
           "200": { "description": "Página de eventos." },
           "401": {
@@ -36,6 +75,12 @@
         "description": "Credenciales correctas pueden terminar en sesión completa o en un estado parcial (cambio de contraseña, inscripción o verificación MFA).",
         "operationId": "login",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/LoginDto" } }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -70,6 +115,12 @@
         "description": "Acepta TOTP o un código de recuperación. Al quinto intento invalida el token parcial y responde 429 `AUTH_MFA_ATTEMPTS_EXCEEDED`.",
         "operationId": "verifyMfa",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/MfaVerifyDto" } }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -110,6 +161,12 @@
         "description": "Devuelve el secreto TOTP y el `otpauthUri` una sola vez, con `Cache-Control: no-store`. La inscripción se audita al confirmar.",
         "operationId": "enrollMfa",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/MfaEnrollDto" } }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -143,6 +200,12 @@
         "description": "Valida el primer código TOTP, habilita MFA y entrega los 10 códigos de recuperación una sola vez.",
         "operationId": "confirmMfaEnrollment",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/MfaConfirmDto" } }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -177,6 +240,12 @@
         "description": "Exige un TOTP válido y reemplaza los 10 códigos anteriores, que dejan de ser aceptados. Responde `Cache-Control: no-store`.",
         "operationId": "regenerateRecoveryCodes",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/RecoveryCodesDto" } }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -266,6 +335,12 @@
         "description": "Con sesión completa responde 204 y conserva la familia actual; con token parcial `pwd_change` responde el siguiente estado.",
         "operationId": "changePassword",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ChangePasswordDto" } }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -329,9 +404,36 @@
       "get": {
         "description": "Solo `identity:user:manage`. La consulta de PII genera `usuario.listado` con filtros y número de resultados, sin copiar filas.",
         "operationId": "listUsers",
-        "parameters": [],
+        "parameters": [
+          { "name": "search", "required": false, "in": "query", "schema": { "type": "string" } },
+          {
+            "name": "estado",
+            "required": false,
+            "in": "query",
+            "schema": { "enum": ["activo", "inactivo", "bloqueado"], "type": "string" }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "maximum": 200, "type": "number" }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 0, "type": "number" }
+          }
+        ],
         "responses": {
-          "200": { "description": "Página de usuarios." },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ListUsersResponseDto" }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -358,8 +460,21 @@
         "description": "El usuario nace con `debe_cambiar_password` y sin MFA.",
         "operationId": "createUser",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateUserDto" } }
+          }
+        },
         "responses": {
-          "201": { "description": "Usuario creado." },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AdminUserResponseDto" }
+              }
+            }
+          },
           "403": {
             "description": "",
             "content": {
@@ -395,8 +510,21 @@
             "schema": { "format": "uuid", "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateUserDto" } }
+          }
+        },
         "responses": {
-          "200": { "description": "Usuario actualizado." },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AdminUserResponseDto" }
+              }
+            }
+          },
           "403": {
             "description": "",
             "content": {
@@ -430,8 +558,21 @@
             "schema": { "format": "uuid", "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/TransitionDto" } }
+          }
+        },
         "responses": {
-          "200": { "description": "Usuario con el nuevo estado." },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AdminUserResponseDto" }
+              }
+            }
+          },
           "403": {
             "description": "",
             "content": {
@@ -461,8 +602,21 @@
             "schema": { "format": "uuid", "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/AssignProfileDto" } }
+          }
+        },
         "responses": {
-          "201": { "description": "Perfil asignado." },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AssignProfileResponseDto" }
+              }
+            }
+          },
           "403": {
             "description": "",
             "content": {
@@ -483,7 +637,20 @@
     "/academic/programs": {
       "get": {
         "operationId": "listPrograms",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "default": 1, "type": "number" }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "maximum": 100, "default": 20, "type": "number" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -528,6 +695,12 @@
             "schema": { "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateProgramDto" } }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -592,6 +765,14 @@
             "schema": { "format": "uuid", "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProgramTransitionDto" }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -642,7 +823,20 @@
       "get": {
         "description": "El administrador ve todos; el educador ve únicamente los grupos donde figura como educador.",
         "operationId": "listGroups",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "default": 1, "type": "number" }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "maximum": 100, "default": 20, "type": "number" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -687,6 +881,12 @@
             "schema": { "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateGroupDto" } }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -745,6 +945,12 @@
             "schema": { "format": "uuid", "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/GroupTransitionDto" } }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -857,6 +1063,12 @@
             "schema": { "format": "uuid", "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ReplaceScheduleDto" } }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -917,6 +1129,18 @@
             "required": true,
             "in": "path",
             "schema": { "format": "uuid", "type": "string" }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "default": 1, "type": "number" }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "maximum": 100, "default": 20, "type": "number" }
           }
         ],
         "responses": {
@@ -971,6 +1195,12 @@
             "schema": { "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateSessionDto" } }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -1035,6 +1265,14 @@
             "schema": { "format": "uuid", "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SessionTransitionDto" }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -1150,6 +1388,14 @@
             "schema": { "format": "uuid", "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ReplaceAttendanceDto" }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -1247,6 +1493,12 @@
         "description": "Única por matrícula, indicador y periodo; observación redactada en auditoría.",
         "operationId": "createEvaluation",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateEvaluationDto" } }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -1299,7 +1551,20 @@
       },
       "get": {
         "operationId": "listEvaluations",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "default": 1, "type": "number" }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "maximum": 100, "default": 20, "type": "number" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -1344,6 +1609,12 @@
             "schema": { "format": "uuid", "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateEvaluationDto" } }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -1391,7 +1662,20 @@
       "get": {
         "description": "Listado de datos mínimos. Nunca incluye documento, dirección ni teléfono; el acceso se audita antes de responder.",
         "operationId": "listStudents",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "default": 1, "type": "number" }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "maximum": 100, "default": 20, "type": "number" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -1435,6 +1719,12 @@
             "schema": { "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateStudentDto" } }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -1494,6 +1784,12 @@
             "schema": { "format": "uuid", "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateStudentDto" } }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -1551,7 +1847,20 @@
       "get": {
         "description": "La administración ve todas; el educador únicamente las de sus grupos. Nunca se filtra por documento.",
         "operationId": "listEnrollments",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "default": 1, "type": "number" }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "maximum": 100, "default": 20, "type": "number" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -1596,6 +1905,12 @@
             "schema": { "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateEnrollmentDto" } }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -1663,6 +1978,14 @@
             "schema": { "format": "uuid", "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EnrollmentTransitionDto" }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -1767,7 +2090,20 @@
       "get": {
         "description": "Un usuario sin vínculo de estudiante recibe una colección vacía.",
         "operationId": "getMyEnrollments",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "default": 1, "type": "number" }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "maximum": 100, "default": 20, "type": "number" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -1884,7 +2220,42 @@
       "get": {
         "description": "Seis KPIs con fórmula documentada. El ámbito del educador se aplica en servidor; las respuestas contienen solo agregados y las celdas derivadas de PII con menos de 5 casos se suprimen.",
         "operationId": "getKpis",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "periodo",
+            "required": true,
+            "in": "query",
+            "schema": { "example": "2026-1", "type": "string" }
+          },
+          {
+            "name": "programaId",
+            "required": false,
+            "in": "query",
+            "schema": { "format": "uuid", "nullable": true, "type": "string" }
+          },
+          {
+            "name": "grupoId",
+            "required": false,
+            "in": "query",
+            "schema": { "format": "uuid", "nullable": true, "type": "string" }
+          },
+          {
+            "name": "kpi",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "matricula_activa",
+                "asistencia",
+                "evaluacion",
+                "programas",
+                "desercion",
+                "distribucion_geografica"
+              ],
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2053,7 +2424,27 @@
       "get": {
         "description": "Solo devuelve notificaciones del usuario autenticado; nunca las de otro usuario.",
         "operationId": "listNotifications",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "soloNoLeidas",
+            "required": false,
+            "in": "query",
+            "description": "Solo notificaciones no leídas.",
+            "schema": { "type": "boolean" }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": { "default": 50, "type": "number" }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": { "default": 0, "type": "number" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2098,6 +2489,14 @@
             "schema": { "format": "uuid", "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateNotificationDto" }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -2171,6 +2570,14 @@
         "description": "Los eventos críticos no se pueden silenciar.",
         "operationId": "updateNotificationPreferences",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdatePreferencesDto" }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -2227,6 +2634,12 @@
             "schema": { "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateExportDto" } }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -2350,6 +2763,12 @@
             "schema": { "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/GenerateReportDto" } }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -2539,6 +2958,14 @@
         },
         "required": ["type", "title", "status", "detail", "instance", "code", "requestId"]
       },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "example": "persona@ccltpg.org" },
+          "password": { "type": "string", "example": "Plataforma#2026!" }
+        },
+        "required": ["email", "password"]
+      },
       "ProfileSummaryDto": {
         "type": "object",
         "properties": {
@@ -2572,15 +2999,60 @@
         },
         "required": ["status", "mustChangePassword", "profiles"]
       },
+      "MfaVerifyDto": {
+        "type": "object",
+        "properties": {
+          "sessionToken": {
+            "type": "string",
+            "description": "Token parcial emitido por el login."
+          },
+          "code": { "type": "string", "example": "123456" },
+          "method": { "type": "string", "enum": ["totp", "recovery"], "default": "totp" }
+        },
+        "required": ["sessionToken", "code"]
+      },
+      "MfaEnrollDto": {
+        "type": "object",
+        "properties": {
+          "sessionToken": { "type": "string", "description": "Token parcial `mfa_enroll`." }
+        }
+      },
       "MfaEnrollResponseDto": {
         "type": "object",
         "properties": { "secret": { "type": "string" }, "otpauthUri": { "type": "string" } },
         "required": ["secret", "otpauthUri"]
       },
+      "MfaConfirmDto": {
+        "type": "object",
+        "properties": {
+          "sessionToken": { "type": "string", "description": "Token parcial `mfa_enroll`." },
+          "code": { "type": "string", "example": "123456" }
+        },
+        "required": ["code"]
+      },
+      "RecoveryCodesDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "description": "Código TOTP o de recuperación." }
+        },
+        "required": ["code"]
+      },
       "RecoveryCodesResponseDto": {
         "type": "object",
         "properties": { "recoveryCodes": { "type": "array", "items": { "type": "string" } } },
         "required": ["recoveryCodes"]
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": { "type": "string" },
+          "newPassword": {
+            "type": "string",
+            "description": "Nueva contraseña (12–128 caracteres)."
+          },
+          "sessionToken": { "type": "string", "description": "Token parcial `pwd_change`." }
+        },
+        "required": ["currentPassword", "newPassword"]
       },
       "MeResponseDto": {
         "type": "object",
@@ -2609,6 +3081,93 @@
           "permissions"
         ]
       },
+      "AdminUserResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "example": "persona@ccltpg.org" },
+          "nombre": { "type": "string" },
+          "estado": { "type": "string", "enum": ["activo", "inactivo", "bloqueado"] },
+          "mfaHabilitado": { "type": "boolean" },
+          "debeCambiarPassword": { "type": "boolean" },
+          "creadoEn": { "type": "string", "format": "date-time" },
+          "actualizadoEn": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "id",
+          "email",
+          "nombre",
+          "estado",
+          "mfaHabilitado",
+          "debeCambiarPassword",
+          "creadoEn",
+          "actualizadoEn"
+        ]
+      },
+      "ListUsersResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AdminUserResponseDto" }
+          },
+          "total": { "type": "number" },
+          "limit": { "type": "number" },
+          "offset": { "type": "number" }
+        },
+        "required": ["items", "total", "limit", "offset"]
+      },
+      "CreateUserProfileDto": {
+        "type": "object",
+        "properties": {
+          "codigo": { "type": "string", "example": "educador" },
+          "validUntil": { "type": "string", "format": "date-time" }
+        },
+        "required": ["codigo"]
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "example": "nuevo@ccltpg.org" },
+          "nombre": { "type": "string", "example": "Nombre Apellido" },
+          "password": { "type": "string", "description": "Contraseña inicial; se fuerza cambio." },
+          "estado": { "type": "string", "enum": ["activo", "inactivo", "bloqueado"] },
+          "profiles": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CreateUserProfileDto" }
+          }
+        },
+        "required": ["email", "nombre", "password", "profiles"]
+      },
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": {
+          "nombre": { "type": "string" },
+          "password": { "type": "string", "description": "Reset administrativo; write-only." },
+          "resetMfa": { "type": "boolean" }
+        }
+      },
+      "TransitionDto": {
+        "type": "object",
+        "properties": {
+          "to": { "type": "string", "enum": ["activo", "inactivo", "bloqueado"] },
+          "motivo": { "type": "string" }
+        },
+        "required": ["to"]
+      },
+      "AssignProfileDto": {
+        "type": "object",
+        "properties": {
+          "codigo": { "type": "string", "example": "estudiante" },
+          "validUntil": { "type": "string", "format": "date-time" }
+        },
+        "required": ["codigo"]
+      },
+      "AssignProfileResponseDto": {
+        "type": "object",
+        "properties": { "ok": { "type": "boolean" } },
+        "required": ["ok"]
+      },
       "ProgramResponseDto": {
         "type": "object",
         "properties": {
@@ -2634,6 +3193,23 @@
           }
         },
         "required": ["page", "pageSize", "total", "data"]
+      },
+      "CreateProgramDto": {
+        "type": "object",
+        "properties": {
+          "nombre": { "type": "string", "example": "Música inicial" },
+          "descripcion": { "type": "string", "nullable": true },
+          "area": { "type": "string", "enum": ["danza", "musica", "teatro", "artes_plasticas"] },
+          "cupoMaximo": { "type": "number", "minimum": 1, "example": 30 }
+        },
+        "required": ["nombre", "area", "cupoMaximo"]
+      },
+      "ProgramTransitionDto": {
+        "type": "object",
+        "properties": {
+          "to": { "type": "string", "enum": ["borrador", "publicado", "archivado"] }
+        },
+        "required": ["to"]
       },
       "GroupResponseDto": {
         "type": "object",
@@ -2669,6 +3245,23 @@
         },
         "required": ["page", "pageSize", "total", "data"]
       },
+      "CreateGroupDto": {
+        "type": "object",
+        "properties": {
+          "programaId": { "type": "string", "format": "uuid" },
+          "codigo": { "type": "string", "example": "G-01" },
+          "educadorId": { "type": "string", "format": "uuid" },
+          "salon": { "type": "string", "nullable": true, "example": "Aula 2" },
+          "periodo": { "type": "string", "example": "2026-1" },
+          "cupoMaximo": { "type": "number", "minimum": 1, "example": 25 }
+        },
+        "required": ["programaId", "codigo", "educadorId", "periodo", "cupoMaximo"]
+      },
+      "GroupTransitionDto": {
+        "type": "object",
+        "properties": { "to": { "type": "string", "enum": ["abierto", "cerrado"] } },
+        "required": ["to"]
+      },
       "ScheduleItemDto": {
         "type": "object",
         "properties": {
@@ -2701,6 +3294,30 @@
         },
         "required": ["items"]
       },
+      "ScheduleSlotDto": {
+        "type": "object",
+        "properties": {
+          "diaSemana": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 7,
+            "description": "Día ISO 1 (lunes) – 7 (domingo)."
+          },
+          "horaInicio": { "type": "string", "example": "08:00" },
+          "horaFin": { "type": "string", "example": "10:00" }
+        },
+        "required": ["diaSemana", "horaInicio", "horaFin"]
+      },
+      "ReplaceScheduleDto": {
+        "type": "object",
+        "properties": {
+          "franjas": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ScheduleSlotDto" }
+          }
+        },
+        "required": ["franjas"]
+      },
       "SessionResponseDto": {
         "type": "object",
         "properties": {
@@ -2726,6 +3343,40 @@
         },
         "required": ["page", "pageSize", "total", "data"]
       },
+      "CreateSessionDto": {
+        "type": "object",
+        "properties": {
+          "grupoId": { "type": "string", "format": "uuid" },
+          "fecha": { "type": "string", "example": "2026-09-14" },
+          "tema": { "type": "string", "nullable": true }
+        },
+        "required": ["grupoId", "fecha"]
+      },
+      "SessionTransitionDto": {
+        "type": "object",
+        "properties": {
+          "to": { "type": "string", "enum": ["programada", "realizada", "cancelada"] }
+        },
+        "required": ["to"]
+      },
+      "AttendanceEntryDto": {
+        "type": "object",
+        "properties": {
+          "matriculaId": { "type": "string", "format": "uuid" },
+          "estado": { "type": "string", "enum": ["presente", "ausente", "tarde", "excusa"] }
+        },
+        "required": ["matriculaId", "estado"]
+      },
+      "ReplaceAttendanceDto": {
+        "type": "object",
+        "properties": {
+          "registros": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AttendanceEntryDto" }
+          }
+        },
+        "required": ["registros"]
+      },
       "AttendanceResponseDto": {
         "type": "object",
         "properties": {
@@ -2747,6 +3398,17 @@
           "total": { "type": "number" }
         },
         "required": ["registros", "total"]
+      },
+      "CreateEvaluationDto": {
+        "type": "object",
+        "properties": {
+          "matriculaId": { "type": "string", "format": "uuid" },
+          "indicadorId": { "type": "string", "format": "uuid" },
+          "periodo": { "type": "string", "example": "2026-1" },
+          "valor": { "type": "string", "enum": ["excelente", "bueno", "regular", "deficiente"] },
+          "observacion": { "type": "string", "nullable": true }
+        },
+        "required": ["matriculaId", "indicadorId", "periodo", "valor"]
       },
       "EvaluationResponseDto": {
         "type": "object",
@@ -2783,6 +3445,14 @@
         },
         "required": ["page", "pageSize", "total", "data"]
       },
+      "UpdateEvaluationDto": {
+        "type": "object",
+        "properties": {
+          "valor": { "type": "string", "enum": ["excelente", "bueno", "regular", "deficiente"] },
+          "observacion": { "type": "string", "nullable": true }
+        },
+        "required": ["valor"]
+      },
       "StudentSummaryDto": {
         "type": "object",
         "properties": {
@@ -2815,6 +3485,39 @@
         },
         "required": ["page", "pageSize", "total", "data"]
       },
+      "ConsentimientoDatosDto": {
+        "type": "object",
+        "properties": {
+          "aceptado": { "type": "boolean" },
+          "fecha": { "type": "string", "format": "date-time" },
+          "versionAviso": { "type": "string" },
+          "medio": { "type": "string" }
+        },
+        "required": ["aceptado", "fecha", "versionAviso"]
+      },
+      "CreateStudentDto": {
+        "type": "object",
+        "properties": {
+          "usuarioId": { "type": "string", "format": "uuid", "nullable": true },
+          "tipoDocumento": { "type": "string", "example": "CC" },
+          "numeroDocumento": { "type": "string", "example": "1020304050" },
+          "nombres": { "type": "string" },
+          "apellidos": { "type": "string" },
+          "fechaNacimiento": { "type": "string", "format": "date", "nullable": true },
+          "municipio": { "type": "string", "nullable": true },
+          "barrio": { "type": "string", "nullable": true },
+          "direccion": { "type": "string", "nullable": true },
+          "telefono": { "type": "string", "nullable": true },
+          "consentimientoDatos": { "$ref": "#/components/schemas/ConsentimientoDatosDto" }
+        },
+        "required": [
+          "tipoDocumento",
+          "numeroDocumento",
+          "nombres",
+          "apellidos",
+          "consentimientoDatos"
+        ]
+      },
       "StudentResponseDto": {
         "type": "object",
         "properties": {
@@ -2845,6 +3548,22 @@
           "consentimientoDatos",
           "actualizadoEn"
         ]
+      },
+      "UpdateStudentDto": {
+        "type": "object",
+        "properties": {
+          "usuarioId": { "type": "string", "format": "uuid", "nullable": true },
+          "tipoDocumento": { "type": "string" },
+          "numeroDocumento": { "type": "string" },
+          "nombres": { "type": "string" },
+          "apellidos": { "type": "string" },
+          "fechaNacimiento": { "type": "string", "format": "date", "nullable": true },
+          "municipio": { "type": "string", "nullable": true },
+          "barrio": { "type": "string", "nullable": true },
+          "direccion": { "type": "string", "nullable": true },
+          "telefono": { "type": "string", "nullable": true },
+          "consentimientoDatos": { "$ref": "#/components/schemas/ConsentimientoDatosDto" }
+        }
       },
       "EnrollmentResponseDto": {
         "type": "object",
@@ -2890,6 +3609,25 @@
           }
         },
         "required": ["page", "pageSize", "total", "data"]
+      },
+      "CreateEnrollmentDto": {
+        "type": "object",
+        "properties": {
+          "estudianteId": { "type": "string", "format": "uuid" },
+          "grupoId": { "type": "string", "format": "uuid" },
+          "periodo": { "type": "string", "example": "2026-1" }
+        },
+        "required": ["estudianteId", "grupoId"]
+      },
+      "EnrollmentTransitionDto": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string",
+            "enum": ["preinscrita", "confirmada", "activa", "finalizada", "cancelada", "retirada"]
+          }
+        },
+        "required": ["to"]
       },
       "MyEvaluationResponseDto": {
         "type": "object",
@@ -3003,6 +3741,16 @@
         },
         "required": ["items", "total", "limit", "offset"]
       },
+      "UpdateNotificationDto": {
+        "type": "object",
+        "properties": {
+          "leida": {
+            "type": "boolean",
+            "description": "Marca la notificación como leída o no leída."
+          }
+        },
+        "required": ["leida"]
+      },
       "MarkReadResponseDto": {
         "type": "object",
         "properties": {
@@ -3034,6 +3782,40 @@
           }
         },
         "required": ["preferencias", "criticos"]
+      },
+      "NotificationPreferenceDto": {
+        "type": "object",
+        "properties": {
+          "evento": { "type": "string", "example": "matricula.confirmada" },
+          "canal": { "type": "string", "enum": ["app", "email"] },
+          "habilitado": { "type": "boolean" }
+        },
+        "required": ["evento", "canal", "habilitado"]
+      },
+      "UpdatePreferencesDto": {
+        "type": "object",
+        "properties": {
+          "preferencias": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/NotificationPreferenceDto" }
+          }
+        },
+        "required": ["preferencias"]
+      },
+      "CreateExportDto": {
+        "type": "object",
+        "properties": {
+          "plantilla": { "type": "string", "example": "matriculas-por-programa" },
+          "formato": { "type": "string", "enum": ["pdf", "xlsx", "csv"] },
+          "parametros": {
+            "type": "object",
+            "example": {
+              "periodo": "2026-1",
+              "filas": [{ "programa": "Música", "matriculados": 30, "activos": 28 }]
+            }
+          }
+        },
+        "required": ["plantilla", "formato", "parametros"]
       },
       "ExportResponseDto": {
         "type": "object",
@@ -3093,6 +3875,16 @@
           }
         },
         "required": ["items"]
+      },
+      "GenerateReportDto": {
+        "type": "object",
+        "properties": {
+          "periodo": { "type": "string", "example": "2026-1" },
+          "formato": { "type": "string", "enum": ["pdf", "xlsx", "csv"] },
+          "programaId": { "type": "string", "format": "uuid", "nullable": true },
+          "grupoId": { "type": "string", "format": "uuid", "nullable": true }
+        },
+        "required": ["periodo", "formato"]
       },
       "LivenessResponseDto": {
         "type": "object",

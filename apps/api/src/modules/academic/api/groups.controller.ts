@@ -1,3 +1,4 @@
+import { ApiQueryParams } from '../../../openapi/api-query-params.js';
 import {
   Body,
   Controller,
@@ -24,6 +25,7 @@ import {
   ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 
 import { RequirePermissions } from '../../../shared/auth/auth-metadata.js';
@@ -59,6 +61,7 @@ const GROUP_ERRORS = [
 export class GroupsController {
   constructor(@Inject(GroupService) private readonly groups: GroupService) {}
 
+  @ApiQueryParams(PaginationQueryDto)
   @Get()
   @RequirePermissions('academic:group:manage', 'academic:group:read_own')
   @ApiOperation({
@@ -85,6 +88,7 @@ export class GroupsController {
     return this.groups.list({ page: query.page, pageSize: query.pageSize }, actorOf(request));
   }
 
+  @ApiBody({ type: CreateGroupDto })
   @Post()
   @RequirePermissions('academic:group:manage')
   @HttpCode(201)
@@ -128,6 +132,7 @@ export class GroupsController {
     );
   }
 
+  @ApiBody({ type: GroupTransitionDto })
   @Post(':id/transitions')
   @RequirePermissions('academic:group:manage')
   @HttpCode(200)
@@ -194,6 +199,7 @@ export class GroupsController {
     return { items: await this.groups.getSchedule(id, actorOf(request)) };
   }
 
+  @ApiBody({ type: ReplaceScheduleDto })
   @Put(':id/schedule')
   @RequirePermissions('academic:group:manage')
   @HttpCode(200)

@@ -22,6 +22,7 @@ import {
   ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 
 import { RequirePermissions } from '../../../shared/auth/auth-metadata.js';
@@ -47,6 +48,7 @@ const SESSION_ERRORS = [
 export class SessionsController {
   constructor(@Inject(SessionService) private readonly sessions: SessionService) {}
 
+  @ApiBody({ type: CreateSessionDto })
   @Post()
   @RequirePermissions('academic:session:create')
   @HttpCode(201)
@@ -84,6 +86,7 @@ export class SessionsController {
     );
   }
 
+  @ApiBody({ type: SessionTransitionDto })
   @Post(':id/transitions')
   @RequirePermissions('academic:session:update')
   @HttpCode(200)

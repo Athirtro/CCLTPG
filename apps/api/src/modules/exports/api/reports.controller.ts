@@ -12,6 +12,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
   ApiUnsupportedMediaTypeResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 
@@ -57,6 +58,7 @@ export class ReportsController {
     return { items: await this.reports.catalog() };
   }
 
+  @ApiBody({ type: GenerateReportDto })
   @Post(':code/generate')
   @RequirePermissions('exports:report:create')
   @HttpCode(201)

@@ -21,9 +21,11 @@ import {
   ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 
+import { ApiQueryParams } from '../../../openapi/api-query-params.js';
 import type { AuthPrincipal } from '../../../shared/auth/auth-principal.js';
 import { RequirePermissions } from '../../../shared/auth/auth-metadata.js';
 import { ProblemDetailsDto } from '../../../shared/errors/problem-details.dto.js';
@@ -31,7 +33,12 @@ import { buildRequestContext } from '../../../shared/http/request-context.js';
 import { ApiContract } from '../../../shared/openapi/contract-metadata.js';
 import { IdentityAdminService } from '../application/identity-admin.service.js';
 import { AssignProfileDto, CreateUserDto, TransitionDto, UpdateUserDto } from './dto/auth.dto.js';
-import { ListUsersQueryDto } from './dto/auth-response.dto.js';
+import {
+  AdminUserResponseDto,
+  AssignProfileResponseDto,
+  ListUsersQueryDto,
+  ListUsersResponseDto,
+} from './dto/auth-response.dto.js';
 
 type AdminRequest = Request & { auth?: AuthPrincipal };
 
@@ -46,6 +53,7 @@ type AdminRequest = Request & { auth?: AuthPrincipal };
 export class IdentityController {
   constructor(@Inject(IdentityAdminService) private readonly admin: IdentityAdminService) {}
 
+  @ApiQueryParams(ListUsersQueryDto)
   @Get()
   @RequirePermissions('identity:user:manage')
   @ApiOperation({
@@ -54,7 +62,7 @@ export class IdentityController {
     description:
       'Solo `identity:user:manage`. La consulta de PII genera `usuario.listado` con filtros y número de resultados, sin copiar filas.',
   })
-  @ApiOkResponse({ description: 'Página de usuarios.' })
+  @ApiOkResponse({ type: ListUsersResponseDto })
   @ApiUnauthorizedResponse({ type: ProblemDetailsDto })
   @ApiForbiddenResponse({ type: ProblemDetailsDto })
   @ApiContract({
@@ -79,6 +87,7 @@ export class IdentityController {
     return { items: page.items, total: page.total, limit: query.limit, offset: query.offset };
   }
 
+  @ApiBody({ type: CreateUserDto })
   @Post()
   @RequirePermissions('identity:user:manage')
   @ApiOperation({
@@ -86,7 +95,7 @@ export class IdentityController {
     summary: 'Alta de usuario',
     description: 'El usuario nace con `debe_cambiar_password` y sin MFA.',
   })
-  @ApiCreatedResponse({ description: 'Usuario creado.' })
+  @ApiCreatedResponse({ type: AdminUserResponseDto })
   @ApiConflictResponse({ type: ProblemDetailsDto })
   @ApiForbiddenResponse({ type: ProblemDetailsDto })
   @ApiContract({
@@ -115,6 +124,7 @@ export class IdentityController {
     return this.present(created);
   }
 
+  @ApiBody({ type: UpdateUserDto })
   @Patch(':id')
   @RequirePermissions('identity:user:manage')
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
@@ -124,7 +134,7 @@ export class IdentityController {
     description:
       'Permite renombrar, resetear la contraseña (write-only, fuerza cambio) y resetear MFA.',
   })
-  @ApiOkResponse({ description: 'Usuario actualizado.' })
+  @ApiOkResponse({ type: AdminUserResponseDto })
   @ApiForbiddenResponse({ type: ProblemDetailsDto })
   @ApiContract({
     access: 'permission',
@@ -148,6 +158,7 @@ export class IdentityController {
     return this.present(updated);
   }
 
+  @ApiBody({ type: TransitionDto })
   @Post(':id/transitions')
   @RequirePermissions('identity:user:manage')
   @HttpCode(200)
@@ -158,7 +169,7 @@ export class IdentityController {
     description:
       'Activa, desactiva o bloquea. Cualquier estado distinto de `activo` revoca sesiones.',
   })
-  @ApiOkResponse({ description: 'Usuario con el nuevo estado.' })
+  @ApiOkResponse({ type: AdminUserResponseDto })
   @ApiForbiddenResponse({ type: ProblemDetailsDto })
   @ApiContract({
     access: 'permission',
@@ -183,6 +194,7 @@ export class IdentityController {
     return this.present(updated);
   }
 
+  @ApiBody({ type: AssignProfileDto })
   @Post(':id/profiles')
   @RequirePermissions('identity:user:manage')
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
@@ -192,7 +204,7 @@ export class IdentityController {
     description:
       'Con `validUntil` crea una identidad temporal; el usuario queda obligado a MFA mientras esté vigente.',
   })
-  @ApiCreatedResponse({ description: 'Perfil asignado.' })
+  @ApiCreatedResponse({ type: AssignProfileResponseDto })
   @ApiForbiddenResponse({ type: ProblemDetailsDto })
   @ApiContract({
     access: 'permission',

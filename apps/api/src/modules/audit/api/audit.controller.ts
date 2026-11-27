@@ -1,3 +1,4 @@
+import { ApiQueryParams } from '../../../openapi/api-query-params.js';
 import { Controller, Get, HttpException, Inject, Query, Req } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -23,6 +24,7 @@ import { AuditQueryDto } from './dto/audit-query.dto.js';
 export class AuditController {
   constructor(@Inject(AuditService) private readonly audit: AuditService) {}
 
+  @ApiQueryParams(AuditQueryDto)
   @Get('events')
   @RequirePermissions('audit:event:read')
   @ApiOperation({

@@ -8,6 +8,7 @@ import {
   ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 
 import { RequirePermissions } from '../../../shared/auth/auth-metadata.js';
@@ -23,6 +24,7 @@ import { actorOf, type AuthenticatedRequest } from './actor.js';
 export class AttendanceController {
   constructor(@Inject(AttendanceService) private readonly attendance: AttendanceService) {}
 
+  @ApiBody({ type: ReplaceAttendanceDto })
   @Put()
   @RequirePermissions('academic:attendance:create')
   @ApiOperation({

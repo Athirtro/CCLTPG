@@ -3,14 +3,17 @@ import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class ListUsersQueryDto {
+  @ApiPropertyOptional({ type: String })
   @IsOptional()
   @IsString()
   search?: string;
 
+  @ApiPropertyOptional({ type: String, enum: ['activo', 'inactivo', 'bloqueado'] })
   @IsOptional()
   @IsIn(['activo', 'inactivo', 'bloqueado'])
   estado?: 'activo' | 'inactivo' | 'bloqueado';
 
+  @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 200 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -18,6 +21,7 @@ export class ListUsersQueryDto {
   @Max(200)
   limit = 50;
 
+  @ApiPropertyOptional({ type: Number, minimum: 0 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -102,4 +106,50 @@ export class MfaEnrollResponseDto {
 export class RecoveryCodesResponseDto {
   @ApiProperty({ type: [String] })
   recoveryCodes!: string[];
+}
+
+/** Proyección administrativa de usuario: nunca incluye hashes ni secreto MFA. */
+export class AdminUserResponseDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ type: String, example: 'persona@ccltpg.org' })
+  email!: string;
+
+  @ApiProperty({ type: String })
+  nombre!: string;
+
+  @ApiProperty({ type: String, enum: ['activo', 'inactivo', 'bloqueado'] })
+  estado!: 'activo' | 'inactivo' | 'bloqueado';
+
+  @ApiProperty({ type: Boolean })
+  mfaHabilitado!: boolean;
+
+  @ApiProperty({ type: Boolean })
+  debeCambiarPassword!: boolean;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  creadoEn!: string;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  actualizadoEn!: string;
+}
+
+export class ListUsersResponseDto {
+  @ApiProperty({ type: () => [AdminUserResponseDto] })
+  items!: AdminUserResponseDto[];
+
+  @ApiProperty({ type: Number })
+  total!: number;
+
+  @ApiProperty({ type: Number })
+  limit!: number;
+
+  @ApiProperty({ type: Number })
+  offset!: number;
+}
+
+export class AssignProfileResponseDto {
+  @ApiProperty({ type: Boolean })
+  ok!: true;
 }

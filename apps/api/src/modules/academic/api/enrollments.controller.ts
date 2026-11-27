@@ -1,3 +1,4 @@
+import { ApiQueryParams } from '../../../openapi/api-query-params.js';
 import {
   Body,
   Controller,
@@ -23,6 +24,7 @@ import {
   ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 
 import { RequirePermissions } from '../../../shared/auth/auth-metadata.js';
@@ -57,6 +59,7 @@ const ENROLLMENT_ERRORS = [
 export class EnrollmentsController {
   constructor(@Inject(EnrollmentService) private readonly enrollments: EnrollmentService) {}
 
+  @ApiQueryParams(PaginationQueryDto)
   @Get()
   @RequirePermissions('academic:enrollment:read')
   @ApiOperation({
@@ -86,6 +89,7 @@ export class EnrollmentsController {
     });
   }
 
+  @ApiBody({ type: CreateEnrollmentDto })
   @Post()
   @RequirePermissions('academic:enrollment:create')
   @HttpCode(201)
@@ -128,6 +132,7 @@ export class EnrollmentsController {
     );
   }
 
+  @ApiBody({ type: EnrollmentTransitionDto })
   @Post(':id/transitions')
   @RequirePermissions('academic:enrollment:update')
   @HttpCode(200)

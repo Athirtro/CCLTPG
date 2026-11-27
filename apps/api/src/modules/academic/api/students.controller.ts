@@ -1,3 +1,4 @@
+import { ApiQueryParams } from '../../../openapi/api-query-params.js';
 import {
   Body,
   Controller,
@@ -24,6 +25,7 @@ import {
   ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 
 import { RequirePermissions } from '../../../shared/auth/auth-metadata.js';
@@ -56,6 +58,7 @@ const STUDENT_ERRORS = [
 export class StudentsController {
   constructor(@Inject(StudentService) private readonly students: StudentService) {}
 
+  @ApiQueryParams(PaginationQueryDto)
   @Get()
   @RequirePermissions('academic:student:manage')
   @ApiOperation({
@@ -81,6 +84,7 @@ export class StudentsController {
     return this.students.list({ page: query.page, pageSize: query.pageSize }, actorOf(request));
   }
 
+  @ApiBody({ type: CreateStudentDto })
   @Post()
   @RequirePermissions('academic:student:manage')
   @HttpCode(201)
@@ -130,6 +134,7 @@ export class StudentsController {
     );
   }
 
+  @ApiBody({ type: UpdateStudentDto })
   @Patch(':id')
   @RequirePermissions('academic:student:manage')
   @HttpCode(200)
