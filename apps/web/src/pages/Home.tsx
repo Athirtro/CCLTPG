@@ -22,6 +22,7 @@ import EmptyState from '../components/common/EmptyState';
 import LoadingState from '../components/common/LoadingState';
 import ErrorState from '../components/common/ErrorState';
 import { getErrorMessage } from '../api/errors';
+import { periodoActual } from '../api/periodo';
 import type {
   EvaluacionDto,
   GrupoDto,
@@ -98,11 +99,13 @@ export default function Home() {
           hasPermission('academic:group:manage')
             ? apiClient.GET('/academic/groups')
             : Promise.resolve(null),
-          hasPermission('academic:enrollment:manage')
+          hasPermission('academic:enrollment:read')
             ? apiClient.GET('/academic/enrollments')
             : Promise.resolve(null),
           hasPermission('analytics:kpi:read')
-            ? apiClient.GET('/analytics/kpis')
+            ? apiClient.GET('/analytics/kpis', {
+                params: { query: { periodo: periodoActual() } },
+              })
             : Promise.resolve(null),
         ]);
 
@@ -208,12 +211,13 @@ export default function Home() {
         matriculas: inscripciones?.data?.filter(
           (m) => m.estado === 'activa' || m.estado === 'confirmada',
         ).length,
-        asistencia: evaluaciones?.total,
+        // El panel del estudiante no dispone de un KPI de asistencia propio.
+        asistencia: null,
         estudiantes: notificaciones?.items?.filter((n) => n.estado !== 'leida').length,
       });
       setHorario(horarioRespuesta?.items ?? []);
       setActividad(
-        [...(evaluaciones?.data ?? [])]
+        [...(evaluaciones ?? [])]
           .sort((a, b) => b.evaluadoEn.localeCompare(a.evaluadoEn))
           .slice(0, 4)
           .map((evaluacion: EvaluacionDto) => ({
@@ -257,7 +261,7 @@ export default function Home() {
             label: 'Matrículas',
             to: '/matriculas',
             icon: <AssignmentIcon />,
-            perms: 'academic:enrollment:manage',
+            perms: 'academic:enrollment:read',
           },
           {
             label: 'Indicadores',

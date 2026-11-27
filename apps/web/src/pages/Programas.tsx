@@ -181,6 +181,7 @@ export default function Programas() {
         response,
       } = await apiClient.POST('/academic/programs', {
         body: payload,
+        headers: { 'Idempotency-Key': crypto.randomUUID() },
       });
       if (apiError || response?.status !== 201 || !data) {
         const problema = apiError;

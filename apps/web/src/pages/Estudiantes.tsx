@@ -42,6 +42,9 @@ type Formulario = {
   consentimiento: boolean;
 };
 
+/** Versión del aviso de privacidad vigente en la interfaz. */
+const VERSION_AVISO = 'v1';
+
 const FORMULARIO_VACIO: Formulario = {
   tipoDocumento: '',
   numeroDocumento: '',
@@ -154,7 +157,12 @@ export default function Estudiantes() {
         numeroDocumento: formulario.numeroDocumento.trim(),
         nombres: formulario.nombres.trim(),
         apellidos: formulario.apellidos.trim(),
-        consentimientoDatos: { aceptado: formulario.consentimiento, medio: 'web' },
+        consentimientoDatos: {
+          aceptado: formulario.consentimiento,
+          fecha: new Date().toISOString(),
+          versionAviso: VERSION_AVISO,
+          medio: 'web',
+        },
       };
       const {
         data,
@@ -162,6 +170,7 @@ export default function Estudiantes() {
         response,
       } = await apiClient.POST('/academic/students', {
         body: payload,
+        headers: { 'Idempotency-Key': crypto.randomUUID() },
       });
       if (apiError || response?.status !== 201 || !data) {
         const problema = apiError;

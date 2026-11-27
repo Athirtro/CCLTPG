@@ -55,7 +55,7 @@ export default function MisEvaluaciones() {
         setError('No se pudieron cargar las evaluaciones');
         return;
       }
-      setEvaluaciones(data.data as MyEvaluacionDto[]);
+      setEvaluaciones(data);
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al cargar evaluaciones');
     } finally {

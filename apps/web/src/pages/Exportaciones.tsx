@@ -16,8 +16,9 @@ import {
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
-import { useAuth, apiClient } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
+import { postWithIdempotency } from '../api/idempotent-client';
 import type { CrearExportacionDto, ExportacionDto, ProblemDetailsDto } from '../api/client';
 import PageHeader from '../components/common/PageHeader';
 import SectionCard from '../components/common/SectionCard';
@@ -26,11 +27,13 @@ import EmptyState from '../components/common/EmptyState';
 import LoadingState from '../components/common/LoadingState';
 
 const PLANTILLAS = [
-  { valor: 'matriculas_por_programa', label: 'Matrículas por programa' },
-  { valor: 'asistencia_por_grupo', label: 'Asistencia por grupo' },
-  { valor: 'evaluaciones_por_periodo', label: 'Evaluaciones por periodo' },
-  { valor: 'estudiantes_activos', label: 'Estudiantes activos' },
+  { valor: 'matriculas-por-programa', label: 'Matrículas por programa' },
+  { valor: 'reporte-asistencia', label: 'Asistencia por grupo' },
+  { valor: 'reporte-desempeno', label: 'Evaluaciones por periodo' },
+  { valor: 'reporte-matricula', label: 'Estudiantes activos' },
 ];
+
+const PARAMETROS_INICIALES = '{"periodo":"2026-1","filas":[]}';
 
 const FORMATOS: Array<{ valor: 'pdf' | 'xlsx' | 'csv'; label: string }> = [
   { valor: 'pdf', label: 'PDF' },
@@ -53,7 +56,7 @@ export default function Exportaciones() {
   const { hasPermission } = useAuth();
   const [plantillaSeleccionada, setPlantillaSeleccionada] = useState('');
   const [formatoSeleccionado, setFormatoSeleccionado] = useState<'pdf' | 'xlsx' | 'csv'>('pdf');
-  const [entradaJson, setEntradaJson] = useState('{}');
+  const [entradaJson, setEntradaJson] = useState(PARAMETROS_INICIALES);
   const [errorParametros, setErrorParametros] = useState<string | null>(null);
   const [generando, setGenerando] = useState(false);
   const [resultado, setResultado] = useState<ExportacionDto | null>(null);
@@ -66,7 +69,7 @@ export default function Exportaciones() {
   const limpiarFormulario = () => {
     setPlantillaSeleccionada('');
     setFormatoSeleccionado('pdf');
-    setEntradaJson('{}');
+    setEntradaJson(PARAMETROS_INICIALES);
     setErrorParametros(null);
     setResultado(null);
     setGeneradoEn(null);
@@ -91,7 +94,7 @@ export default function Exportaciones() {
 
     let entrada: Record<string, unknown>;
     try {
-      const parseado: unknown = JSON.parse(entradaJson || '{}');
+      const parseado: unknown = JSON.parse(entradaJson || PARAMETROS_INICIALES);
       if (typeof parseado !== 'object' || parseado === null || Array.isArray(parseado)) {
         setErrorParametros(
           'Los parámetros deben ser un objeto JSON, por ejemplo {"periodo": "2026-1"}.',
@@ -99,6 +102,14 @@ export default function Exportaciones() {
         return;
       }
       entrada = parseado as Record<string, unknown>;
+      if (typeof entrada.periodo !== 'string' || !/^\d{4}-\d+$/.test(entrada.periodo)) {
+        setErrorParametros('El parámetro "periodo" debe tener el formato YYYY-P.');
+        return;
+      }
+      if (!Array.isArray(entrada.filas)) {
+        setErrorParametros('El parámetro "filas" debe ser un arreglo.');
+        return;
+      }
       setErrorParametros(null);
     } catch {
       setErrorParametros('JSON no válido: revisa las comillas y las comas.');
@@ -112,24 +123,24 @@ export default function Exportaciones() {
         formato: formatoSeleccionado,
         parametros: entrada,
       };
-      const {
-        data,
-        error: apiError,
-        response,
-      } = await apiClient.POST('/exports', { body: payload });
+      const result = await postWithIdempotency('/exports', {
+        body: payload,
+        idempotencyKey: crypto.randomUUID(),
+      });
 
-      if (apiError || response?.status !== 201 || !data) {
-        const problema = apiError as ProblemDetailsDto | null;
+      if (result.error || result.response?.status !== 201 || !result.data) {
+        const problema = result.error as ProblemDetailsDto | null;
         setError(problema?.detail || 'No se pudo generar la exportación.');
         return;
       }
 
+      const data = result.data as ExportacionDto;
       setResultado(data);
       setGeneradoEn(new Date());
       setExito(
         `Exportación "${data.nombre}" generada correctamente (${data.formato.toUpperCase()}).`,
       );
-      setEntradaJson('{}');
+      setEntradaJson(PARAMETROS_INICIALES);
     } catch (err) {
       setError(getErrorMessage(err) || 'Error inesperado al generar la exportación.');
     } finally {
@@ -209,7 +220,11 @@ export default function Exportaciones() {
                 id="exportacion-plantilla"
                 label="Plantilla"
                 value={plantillaSeleccionada}
-                onChange={(event) => setPlantillaSeleccionada(event.target.value)}
+                onChange={(event) => {
+                  setPlantillaSeleccionada(event.target.value);
+                  setEntradaJson(PARAMETROS_INICIALES);
+                  setErrorParametros(null);
+                }}
               >
                 <MenuItem value="">Selecciona una plantilla</MenuItem>
                 {PLANTILLAS.map((plantilla) => (

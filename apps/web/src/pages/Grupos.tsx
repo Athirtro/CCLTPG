@@ -187,6 +187,7 @@ export default function Grupos() {
         response,
       } = await apiClient.POST('/academic/groups', {
         body: payload,
+        headers: { 'Idempotency-Key': crypto.randomUUID() },
       });
       if (apiError || response?.status !== 201 || !data) {
         const problema = apiError;

@@ -113,7 +113,7 @@ export default function Reportes() {
       setError('Selecciona un reporte y un formato.');
       return;
     }
-    if (!puedeExportar) {
+    if (!puedeCrear) {
       setError('No tienes permiso para generar reportes.');
       return;
     }
@@ -129,6 +129,10 @@ export default function Reportes() {
         return;
       }
       parametros = parseado as Record<string, unknown>;
+      if (typeof parametros.periodo !== 'string' || !/^\d{4}-\d+$/.test(parametros.periodo)) {
+        setErrorParametros('El parámetro "periodo" debe tener el formato YYYY-P.');
+        return;
+      }
       setErrorParametros(null);
     } catch {
       setErrorParametros('JSON no válido: revisa las comillas y las comas.');
@@ -141,12 +145,16 @@ export default function Reportes() {
     setResultado(null);
     setGeneradoEn(null);
     try {
+      const cuerpo: Record<string, unknown> = {
+        periodo: parametros.periodo,
+        formato: formatoSeleccionado,
+      };
+      if (typeof parametros.programaId === 'string') cuerpo.programaId = parametros.programaId;
+      if (typeof parametros.grupoId === 'string') cuerpo.grupoId = parametros.grupoId;
+
       const result = await postWithIdempotency(`/reports/${reporteSeleccionado.code}/generate`, {
-        body: {
-          plantilla: reporteSeleccionado.code,
-          formato: formatoSeleccionado,
-          parametros,
-        },
+        body: cuerpo,
+        idempotencyKey: crypto.randomUUID(),
       });
 
       if (result.error || result.response?.status !== 201) {
@@ -208,7 +216,7 @@ export default function Reportes() {
       minWidth: 180,
       render: (reporte) => (
         <Typography variant="caption" color="text.secondary">
-          {reporte.columnas.map((columna) => columna.nombre).join(', ') || '—'}
+          {reporte.columnas.map((columna) => columna.label).join(', ') || '—'}
         </Typography>
       ),
     },
@@ -371,18 +379,18 @@ export default function Reportes() {
               <Button
                 variant="contained"
                 startIcon={<FileDownloadIcon />}
-                disabled={generando || !formatoSeleccionado || !puedeExportar}
+                disabled={generando || !formatoSeleccionado || !puedeCrear}
                 onClick={() => void manejarGenerar()}
               >
                 {generando ? 'Generando…' : 'Generar reporte'}
               </Button>
-              {!puedeExportar && (
+              {!puedeCrear && (
                 <Typography
                   variant="caption"
                   color="text.secondary"
                   sx={{ display: 'block', mt: 1 }}
                 >
-                  Necesitas el permiso exports:report:export para generar reportes.
+                  Necesitas el permiso exports:report:create para generar reportes.
                 </Typography>
               )}
             </Box>

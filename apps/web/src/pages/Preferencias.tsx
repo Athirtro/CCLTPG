@@ -101,11 +101,13 @@ export default function Preferencias() {
     setError(null);
     setExito(null);
     try {
-      const payload: ActualizarPreferenciaDto[] = preferencias.map((p) => ({
-        evento: p.evento,
-        canal: p.canal,
-        habilitado: p.habilitado,
-      }));
+      const payload: { preferencias: ActualizarPreferenciaDto[] } = {
+        preferencias: preferencias.map((p) => ({
+          evento: p.evento,
+          canal: p.canal,
+          habilitado: p.habilitado,
+        })),
+      };
       const {
         data,
         error: apiError,

@@ -56,10 +56,11 @@ const FORMULARIO_VACIO: Formulario = {
 
 export default function Matriculas() {
   const { hasPermission } = useAuth();
-  const puedeGestionar = hasPermission('academic:enrollment:manage');
+  const puedeGestionar = hasPermission('academic:enrollment:read');
   const puedeLeerPropia = hasPermission('academic:enrollment:read_own');
-  // El backend exige `academic:enrollment:create`; `manage` lo implica en el catálogo de permisos.
-  const puedeCrear = puedeGestionar || hasPermission('academic:enrollment:create');
+  // El backend exige `academic:enrollment:create` para registrar matrículas;
+  // `read` solo habilita el listado global, no el alta.
+  const puedeCrear = hasPermission('academic:enrollment:create');
 
   const [matriculas, setMatriculas] = useState<MatriculaDto[]>([]);
   const [gruposDisponibles, setGruposDisponibles] = useState<GrupoDto[]>([]);
@@ -251,6 +252,7 @@ export default function Matriculas() {
         response,
       } = await apiClient.POST('/academic/enrollments', {
         body: payload,
+        headers: { 'Idempotency-Key': crypto.randomUUID() },
       });
       if (apiError || response?.status !== 201 || !data) {
         const problema = apiError;

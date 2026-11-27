@@ -18,6 +18,7 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
+import { periodoActual } from '../api/periodo';
 import type { KpiResultDto, KpiBreakdownItemDto } from '../api/client';
 import PageHeader from '../components/common/PageHeader';
 import SectionCard from '../components/common/SectionCard';
@@ -105,7 +106,9 @@ export default function Kpis() {
     setCargando(true);
     setError(null);
     try {
-      const { data, error: apiError } = await apiClient.GET('/analytics/kpis');
+      const { data, error: apiError } = await apiClient.GET('/analytics/kpis', {
+        params: { query: { periodo: periodoActual() } },
+      });
       if (apiError || !data) {
         setError('No se pudieron cargar los indicadores.');
         return;
