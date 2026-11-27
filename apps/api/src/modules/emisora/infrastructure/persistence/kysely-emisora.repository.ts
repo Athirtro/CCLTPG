@@ -1563,6 +1563,7 @@ export class KyselyEmisoraRepository implements EmisoraRepository {
         oficio_archivo_id: input.oficioArchivoId,
         destino: input.destino,
         fecha_emision: input.fechaEmision ? dateParam(input.fechaEmision) : null,
+        estado: input.estado,
       })
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -1679,6 +1680,7 @@ export class KyselyEmisoraRepository implements EmisoraRepository {
           programacion_diaria_id: input.programacionDiariaId,
           operador_id: input.operadorId,
           archivo_id: input.archivoId,
+          estado: input.estado,
         })
         .returningAll()
         .executeTakeFirstOrThrow();

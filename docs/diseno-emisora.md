@@ -661,7 +661,7 @@ modifican permisos existentes: E4 solo consume el catálogo cerrado ya declarado
 | `POST /emisora/reportes-obras` | `emisora:derecho:create` | `reporte_obra.generado` + `reporte.generado` (Exportaciones) | RF-08.2 |
 | `POST /emisora/pagos-derechos` | `emisora:derecho:create` | `pago.registrado` | RF-08.3 |
 | `POST /emisora/equipos`, `PATCH /emisora/equipos/{id}/estado`, `POST /emisora/versiones-software`, `POST /emisora/asignaciones-equipo` | `emisora:equipo:create/update` | `equipo.actualizado` | RF-09.1/09.2/09.4 |
-| `POST /emisora/actualizaciones-tecnologicas`, `PATCH /emisora/actualizaciones-tecnologicas/{id}/transitions` | `emisora:equipo:update` | — | RF-09.2 |
+| `POST /emisora/actualizaciones-tecnologicas`, `PATCH /emisora/actualizaciones-tecnologicas/{id}/transitions` | `emisora:equipo:create/update` | `equipo.actualizado` | RF-09.2 |
 | `POST /emisora/proyecciones`, `PATCH /emisora/proyecciones/{id}/transitions` | `emisora:proyeccion:create/update` | `proyeccion.generada` | RF-09.3 |
 | `POST /emisora/inversiones`, `PATCH /emisora/inversiones/{id}/transitions` | `emisora:inversion:create/update` | `inversion.registrada` | RF-09.3 |
 | `POST /emisora/actividades`, `GET /emisora/actividades` | `emisora:actividad:create/read` | `actividad.registrada` | RF-10.1 |

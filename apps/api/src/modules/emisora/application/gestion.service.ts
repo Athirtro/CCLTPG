@@ -370,7 +370,7 @@ export class EmisoraGestionService {
         actor,
         datosAntes: { estado: actual.estado },
         datosDespues: { estado: fila.estado },
-        eventos: [],
+        eventos: [{ tipo: 'turno.asignado', payload: { turnoId: id, estado: fila.estado } }],
       });
       return fila;
     });
@@ -746,7 +746,12 @@ export class EmisoraGestionService {
         actor,
         datosAntes: { estado: actual.estado },
         datosDespues: { estado: fila.estado },
-        eventos: [],
+        eventos: [
+          {
+            tipo: 'equipo.actualizado',
+            payload: { actualizacionId: id, equipoId: fila.equipoId, estado: fila.estado },
+          },
+        ],
       });
       return fila;
     });
@@ -878,7 +883,9 @@ export class EmisoraGestionService {
         actor,
         datosAntes: { estado: actual.estado },
         datosDespues: { estado: fila.estado, contratoRef: fila.contratoRef },
-        eventos: [],
+        eventos: [
+          { tipo: 'inversion.registrada', payload: { inversionId: id, estado: fila.estado } },
+        ],
       });
       return fila;
     });
@@ -1026,6 +1033,7 @@ export class EmisoraGestionService {
           oficioArchivoId: documento.archivoId,
           destino,
           fechaEmision: hoy,
+          estado: 'emitido',
         });
         await registrarEvento(tx, {
           accion: 'permiso.emitido',
@@ -1139,6 +1147,7 @@ export class EmisoraGestionService {
           programacionDiariaId: texto(input.programacionDiariaId),
           operadorId: texto(input.operadorId),
           archivoId: borrador.archivoId,
+          estado: 'registrada',
         });
         await registrarEvento(tx, {
           accion: 'planilla.registrada',
@@ -1267,7 +1276,7 @@ export class EmisoraGestionService {
         actor,
         datosAntes: { estado: actual.estado },
         datosDespues: { estado: fila.estado, radicadoRef: fila.radicadoRef },
-        eventos: [],
+        eventos: [{ tipo: 'tramite.radicado', payload: { tramiteId: id, estado: fila.estado } }],
       });
       return fila;
     });

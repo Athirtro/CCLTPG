@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { DomainEvent } from '../../../shared/events/outbox.port.js';
 import type { AuditPort } from '../../../shared/audit/audit.port.js';
+import type { IdempotencyStore } from '../../../shared/idempotency/idempotency.port.js';
 import { EMISORA_ERRORS } from './emisora-error.js';
 import { EmisoraGestionService } from './gestion.service.js';
 import type { ActorContext } from './emisora.types.js';
@@ -67,7 +68,7 @@ const METODOS_REPOSITORIO = [
   'updateTramiteEstado',
 ] as const;
 
-function crearServicio() {
+function crearServicio(opciones: { idempotencia?: IdempotencyStore } = {}) {
   const repo = Object.fromEntries(METODOS_REPOSITORIO.map((nombre) => [nombre, vi.fn()])) as Record<
     (typeof METODOS_REPOSITORIO)[number],
     ReturnType<typeof vi.fn>
@@ -115,7 +116,7 @@ function crearServicio() {
   const uow = {
     run: <T>(callback: (contexto: EmisoraTransactionContext) => Promise<T>) => callback(tx),
   };
-  const idempotencia = {
+  const idempotencia = opciones.idempotencia ?? {
     reserve: vi.fn().mockResolvedValue({ status: 'nuevo', id: 'reserva-e4' }),
     complete: vi.fn().mockResolvedValue(undefined),
     abandon: vi.fn().mockResolvedValue(undefined),
@@ -168,6 +169,45 @@ describe('RF-07: sede de transmisores', () => {
         null,
       ),
     ).rejects.toMatchObject({ code: EMISORA_ERRORS.idempotencyKeyRequired });
+  });
+
+  it('devuelve la respuesta cacheada al repetir la misma clave', async () => {
+    const respuesta = {
+      id: 'turno-cacheado',
+      transmisorId: TRANSMISOR,
+      operadorId: OPERADOR,
+      fecha: '2026-01-19',
+      horaInicio: '06:00',
+      horaFin: '07:00',
+      estado: 'planificado',
+    };
+    const { service, repo } = crearServicio({
+      idempotencia: {
+        reserve: vi.fn().mockResolvedValue({
+          status: 'repetir',
+          responseStatus: 201,
+          responseBody: respuesta,
+        }),
+        complete: vi.fn().mockResolvedValue(undefined),
+        abandon: vi.fn().mockResolvedValue(undefined),
+        purgeExpired: vi.fn().mockResolvedValue(0),
+      },
+    });
+
+    await expect(
+      service.createTurno(
+        {
+          transmisorId: TRANSMISOR,
+          operadorId: OPERADOR,
+          fecha: '2026-01-19',
+          horaInicio: '06:00',
+          horaFin: '07:00',
+        },
+        ACTOR,
+        CLAVE,
+      ),
+    ).resolves.toEqual(respuesta);
+    expect(repo.createTurno).not.toHaveBeenCalled();
   });
 
   it('rechaza una segunda lectura del mismo transmisor y fecha', async () => {
@@ -334,6 +374,9 @@ describe('RF-10 y RF-11: oficio, archivo y planilla', () => {
     expect(exportador.generarOficioSalida).toHaveBeenCalledWith(
       expect.objectContaining({ referencia: 'OF-001', idempotencyKey: CLAVE }),
     );
+    expect(repo.createPermisoGobierno).toHaveBeenCalledWith(
+      expect.objectContaining({ estado: 'emitido' }),
+    );
   });
 
   it('rechaza un archivo inexistente y archiva un audio limpio', async () => {
@@ -386,6 +429,25 @@ describe('RF-10 y RF-11: oficio, archivo y planilla', () => {
     expect(repo.createArchivoEmisora).toHaveBeenCalledWith(
       expect.objectContaining({ hashSha256: 'b'.repeat(64), mime: 'audio/mpeg' }),
     );
+  });
+
+  it('registra la planilla como registrada y publica su evento', async () => {
+    const { service, repo, eventos } = crearServicio();
+    repo.createPlanilla.mockResolvedValue({
+      id: 'planilla-1',
+      fecha: '2026-01-19',
+      programacionDiariaId: null,
+      operadorId: null,
+      archivoId: 'archivo-generado-e4',
+      estado: 'registrada',
+    });
+    await expect(
+      service.createPlanilla({ fecha: '2026-01-19', programa: 'Programa matutino' }, ACTOR, CLAVE),
+    ).resolves.toMatchObject({ estado: 'registrada' });
+    expect(repo.createPlanilla).toHaveBeenCalledWith(
+      expect.objectContaining({ estado: 'registrada' }),
+    );
+    expect(eventos.map((evento) => evento.tipo)).toContain('planilla.registrada');
   });
 
   it('rechaza dos planillas para la misma fecha', async () => {

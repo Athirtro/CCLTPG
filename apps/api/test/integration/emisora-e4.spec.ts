@@ -20,6 +20,8 @@ describe.runIf(hasDatabase)('E4: reglas de la sede contra PostgreSQL', () => {
   const lecturaId = uuidv7();
   const proyeccionId = uuidv7();
   const planillaId = uuidv7();
+  const actividadId = uuidv7();
+  const permisoId = uuidv7();
   const bitacorasIds: string[] = [];
   const UUID_V7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -43,6 +45,10 @@ describe.runIf(hasDatabase)('E4: reglas de la sede contra PostgreSQL', () => {
         '107.9'
       )
     `.execute(db);
+    await sql`
+      insert into emisora.actividad_cultural (id, nombre, fecha)
+      values (${actividadId}::uuid, 'Actividad E4', '2026-01-19')
+    `.execute(db);
     repository = new KyselyEmisoraRepository(db);
   });
 
@@ -55,6 +61,8 @@ describe.runIf(hasDatabase)('E4: reglas de la sede contra PostgreSQL', () => {
     await sql`delete from emisora.lectura_transmisor where id = ${lecturaId}::uuid`.execute(db);
     await sql`delete from emisora.turno_operador where id = ${turnoId}::uuid`.execute(db);
     await sql`delete from emisora.planilla_emision where id = ${planillaId}::uuid`.execute(db);
+    await sql`delete from emisora.permiso_gobierno where id = ${permisoId}::uuid`.execute(db);
+    await sql`delete from emisora.actividad_cultural where id = ${actividadId}::uuid`.execute(db);
     await sql`delete from emisora.proyeccion_anual where id = ${proyeccionId}::uuid`.execute(db);
     await sql`delete from emisora.transmisor where id = ${transmisorId}::uuid`.execute(db);
     await db.destroy();
@@ -125,14 +133,17 @@ describe.runIf(hasDatabase)('E4: reglas de la sede contra PostgreSQL', () => {
     ).resolves.toMatchObject({ estado: 'aprobada' });
   });
 
-  it('rechaza dos planillas para la misma fecha', async () => {
-    await repository.createPlanilla({
-      id: planillaId,
-      fecha: '2026-01-19',
-      programacionDiariaId: null,
-      operadorId,
-      archivoId: uuidv7(),
-    });
+  it('registra la planilla como registrada y rechaza otra para la misma fecha', async () => {
+    await expect(
+      repository.createPlanilla({
+        id: planillaId,
+        fecha: '2026-01-19',
+        programacionDiariaId: null,
+        operadorId,
+        archivoId: uuidv7(),
+        estado: 'registrada',
+      }),
+    ).resolves.toMatchObject({ estado: 'registrada' });
     await expect(
       repository.createPlanilla({
         id: uuidv7(),
@@ -140,8 +151,28 @@ describe.runIf(hasDatabase)('E4: reglas de la sede contra PostgreSQL', () => {
         programacionDiariaId: null,
         operadorId,
         archivoId: uuidv7(),
+        estado: 'registrada',
       }),
     ).rejects.toMatchObject({ code: 'EMISORA_PLANILLA_DUPLICADA' });
+  });
+
+  it('persiste el permiso de salida en estado emitido', async () => {
+    await expect(
+      repository.createPermisoGobierno({
+        id: permisoId,
+        actividadId,
+        oficioArchivoId: uuidv7(),
+        destino: 'Alcaldía',
+        fechaEmision: '2026-01-19',
+        estado: 'emitido',
+      }),
+    ).resolves.toMatchObject({ estado: 'emitido' });
+    const fila = await db
+      .selectFrom('emisora.permiso_gobierno')
+      .select('estado')
+      .where('id', '=', permisoId)
+      .executeTakeFirstOrThrow();
+    expect(fila.estado).toBe('emitido');
   });
 
   it('guarda un request_id UUID correlacionado o lo genera cuando no es válido', async () => {

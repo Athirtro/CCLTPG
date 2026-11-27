@@ -375,6 +375,7 @@ export interface NewPermisoGobierno {
   oficioArchivoId: string;
   destino: string | null;
   fechaEmision: string | null;
+  estado: PermisoEstado;
 }
 
 export interface NewTramite {
@@ -400,6 +401,7 @@ export interface NewPlanilla {
   programacionDiariaId: string | null;
   operadorId: string | null;
   archivoId: string;
+  estado: PlanillaEstado;
 }
 
 export interface NewArchivoEmisora {
