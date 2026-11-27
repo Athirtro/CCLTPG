@@ -4,6 +4,8 @@ dist/
 build/
 coverage/
 *.tsbuildinfo
+test-results/
+playwright-report/
 .vite/
 .pnpm-store/
 # Secretos y configuración local (solo los ejemplos se versionan)
