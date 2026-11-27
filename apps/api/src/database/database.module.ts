@@ -37,10 +37,10 @@ const redisProvider: Provider = {
   provide: REDIS,
   useFactory: (): Redis => {
     const logger = new Logger('Redis');
+    // Conexión eagerly + cola offline: la primera petición después del arranque
+    // no debe fallar mientras el socket de Redis todavía se está estableciendo.
     const client = new Redis(env.REDIS_URL, {
-      lazyConnect: true,
       maxRetriesPerRequest: 1,
-      enableOfflineQueue: false,
       connectTimeout: 3_000,
     });
 

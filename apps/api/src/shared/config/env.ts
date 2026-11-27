@@ -61,6 +61,8 @@ const envSchema = z.object({
   OBJECT_STORAGE_ACCESS_KEY: z.string().min(1).optional(),
   OBJECT_STORAGE_SECRET_KEY: z.string().min(1).optional(),
   OBJECT_STORAGE_REGION: z.string().min(1).default('us-east-1'),
+  /** SSE-S3 solo si el proveedor lo soporta; MinIO sin KMS responde 501. */
+  OBJECT_STORAGE_SSE: z.enum(['AES256']).optional(),
   OBJECT_STORAGE_LOCAL_ROOT: z.string().min(1).default('.data/objects'),
   OBJECT_STORAGE_FORCE_PATH_STYLE: z
     .string()

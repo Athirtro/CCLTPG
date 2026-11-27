@@ -19,6 +19,7 @@ import { S3ObjectStorage } from './s3-object-storage.js';
             accessKey: env.OBJECT_STORAGE_ACCESS_KEY!,
             secretKey: env.OBJECT_STORAGE_SECRET_KEY!,
             forcePathStyle: env.OBJECT_STORAGE_FORCE_PATH_STYLE,
+            serverSideEncryption: env.OBJECT_STORAGE_SSE,
           });
         }
 

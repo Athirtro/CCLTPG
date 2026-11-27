@@ -19,6 +19,7 @@ export interface S3ObjectStorageOptions {
   accessKey: string;
   secretKey: string;
   forcePathStyle: boolean;
+  serverSideEncryption?: 'AES256';
 }
 
 /**
@@ -31,9 +32,11 @@ export interface S3ObjectStorageOptions {
 export class S3ObjectStorage implements ObjectStorage {
   private readonly client: S3Client;
   private readonly bucket: string;
+  private readonly serverSideEncryption?: 'AES256';
 
   constructor(options: S3ObjectStorageOptions) {
     this.bucket = options.bucket;
+    this.serverSideEncryption = options.serverSideEncryption;
     this.client = new S3Client({
       endpoint: options.endpoint,
       region: options.region,
@@ -53,7 +56,9 @@ export class S3ObjectStorage implements ObjectStorage {
           Key: key,
           Body: body,
           ContentType: contentType,
-          ServerSideEncryption: 'AES256',
+          ...(this.serverSideEncryption
+            ? { ServerSideEncryption: this.serverSideEncryption }
+            : {}),
         }),
       );
     } catch (error) {

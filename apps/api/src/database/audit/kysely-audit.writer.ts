@@ -36,10 +36,8 @@ export class KyselyAuditWriter implements AuditPort {
           recurso: event.recurso,
           recurso_id: event.recursoId ?? null,
           accion: event.accion,
-          datos_antes:
-            event.datosAntes === undefined ? null : this.redactor.redact(event.datosAntes),
-          datos_despues:
-            event.datosDespues === undefined ? null : this.redactor.redact(event.datosDespues),
+          datos_antes: serializeJson(event.datosAntes, this.redactor),
+          datos_despues: serializeJson(event.datosDespues, this.redactor),
           ocurrido_en: event.ocurridoEn ?? new Date(),
           request_id: event.requestId ?? null,
         })
@@ -50,4 +48,14 @@ export class KyselyAuditWriter implements AuditPort {
       throw new AuditWriteError(error);
     }
   }
+}
+
+/**
+ * `pg` serializa arreglos como arreglos de PostgreSQL, no como JSON; al enlazar
+ * un arreglo directamente en una columna `jsonb` se produce un 22P02. Serializar
+ * explícitamente mantiene el mismo resultado para objetos y arreglos.
+ */
+function serializeJson(value: unknown, redactor: AuditRedactor): string | null {
+  if (value === undefined) return null;
+  return JSON.stringify(redactor.redact(value));
 }
