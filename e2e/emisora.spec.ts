@@ -170,7 +170,7 @@ test('la operación E3 de la emisora recorre soportes, transmisiones y resoluci�
   );
 
   // RF-03.7: PDF con la plantilla de Exportaciones, descargable por Archivos.
-  await page.getByLabel('ID del incentivo resuelto').fill(E2E_EMISORA.incentivoId);
+  await page.getByLabel('ID del incentivo').fill(E2E_EMISORA.incentivoId);
   await page.getByRole('button', { name: 'Generar resolución' }).click();
   await expect(
     page.getByRole('alert').filter({ hasText: 'Resolución PDF generada.' }),

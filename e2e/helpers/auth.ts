@@ -10,13 +10,6 @@ import {
 import { clearRateLimits } from './rate-limits.js';
 import { totpCode } from './totp.js';
 
-/** Extrae el secreto TOTP mostrado por la UI de inscripción. */
-export function extractSecretFromUri(uri: string): string {
-  const match = /[?&]secret=([A-Z2-7]+)/i.exec(uri);
-  if (!match) throw new Error(`No se encontró el secreto en: ${uri}`);
-  return match[1]!.toUpperCase();
-}
-
 /**
  * Inicia sesión por la interfaz real y completa los estados intermedios
  * (cambio de contraseña, inscripción y verificación MFA) hasta llegar al home.
@@ -70,9 +63,10 @@ export async function completePendingAuthStates(
 
     if (path === '/mfa-enroll') {
       await page.getByRole('button', { name: 'Generar secreto TOTP' }).click();
-      const uri = await page.getByText(/otpauth:\/\/totp/).textContent();
-      if (!uri) throw new Error('La UI no mostró la URI otpauth');
-      const secret = extractSecretFromUri(uri);
+      // La UI muestra el QR y el secreto en texto; la URI otpauth solo vive
+      // dentro del QR, así que se lee el valor que el usuario copiaría.
+      const secret = (await page.getByTestId('mfa-secret').textContent())?.trim();
+      if (!secret) throw new Error('La UI no mostró el secreto TOTP');
       await page.getByLabel('Código de verificación (6 dígitos)').fill(totpCode(secret));
       await page.getByRole('button', { name: 'Activar MFA' }).click();
       // AuthRedirect puede llevar al home antes de que se observe el estado "done".

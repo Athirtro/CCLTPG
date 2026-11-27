@@ -104,13 +104,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: ccltpg
+          POSTGRES_DB: ccltpg_integration
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: ccltpg_test_postgres
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d ccltpg"
+          --health-cmd "pg_isready -U postgres -d ccltpg_integration"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
@@ -126,16 +126,17 @@ jobs:
     env:
       PGHOST: localhost
       PGPORT: '5432'
-      PGDATABASE: ccltpg
+      PGDATABASE: ccltpg_integration
       PGUSER: postgres
       PGPASSWORD: ccltpg_test_postgres
-      POSTGRES_DB: ccltpg
+      POSTGRES_DB: ccltpg_integration
+      CCLTPG_INTEGRATION_DB: ccltpg_integration
       CCLTPG_MIGRATOR_PASSWORD: ccltpg_test_migrator
       CCLTPG_APP_PASSWORD: ccltpg_test_app
       CCLTPG_READONLY_PASSWORD: ccltpg_test_readonly
-      DATABASE_MIGRATOR_URL: postgresql://ccltpg_migrator:ccltpg_test_migrator@localhost:5432/ccltpg
-      DATABASE_URL: postgresql://ccltpg_app:ccltpg_test_app@localhost:5432/ccltpg
-      DATABASE_READONLY_URL: postgresql://ccltpg_readonly:ccltpg_test_readonly@localhost:5432/ccltpg
+      DATABASE_MIGRATOR_URL: postgresql://ccltpg_migrator:ccltpg_test_migrator@localhost:5432/ccltpg_integration
+      DATABASE_URL: postgresql://ccltpg_app:ccltpg_test_app@localhost:5432/ccltpg_integration
+      DATABASE_READONLY_URL: postgresql://ccltpg_readonly:ccltpg_test_readonly@localhost:5432/ccltpg_integration
       REDIS_URL: redis://localhost:6379
     steps:
       - uses: actions/checkout@v4

@@ -46,7 +46,7 @@ test('las exportaciones generan y permiten descargar un archivo', async ({ page 
     );
   await page.getByRole('button', { name: 'Generar exportación' }).click();
   await expect(page.getByRole('heading', { name: 'Resultado', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Descargar archivo' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Descargar archivo' })).toBeVisible();
 });
 
 test('la gestión de archivos sube un documento y muestra sus metadatos', async ({ page }) => {

@@ -131,7 +131,11 @@ export default function MfaEnroll() {
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
             ¿No puedes escanearlo? Ingresa este secreto manualmente:
           </Typography>
-          <Typography variant="body2" sx={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}>
+          <Typography
+            variant="body2"
+            data-testid="mfa-secret"
+            sx={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}
+          >
             {secret}
           </Typography>
         </Box>

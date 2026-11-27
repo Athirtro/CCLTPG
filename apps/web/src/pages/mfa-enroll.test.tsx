@@ -14,7 +14,7 @@ const SECRETO = 'JBSWY3DPEHPK3PXP';
 function renderEnroll() {
   return render(
     <ThemeProvider theme={theme}>
-      <AuthProvider initialSessionToken="session-mfa">
+      <AuthProvider initialSessionToken="test-session-mfa">
         <MemoryRouter>
           <MfaEnroll />
         </MemoryRouter>
@@ -48,6 +48,7 @@ describe('inscripción MFA', () => {
     const qr = await screen.findByRole('img', { name: 'Código QR para configurar MFA' });
     expect(qr.tagName.toLowerCase()).toBe('svg');
     expect(screen.getByText(SECRETO)).toBeInTheDocument();
+    expect(screen.getByTestId('mfa-secret')).toHaveTextContent(SECRETO);
     expect(fetchSpy).not.toHaveBeenCalledWith(
       expect.stringMatching(/^https?:/u),
       expect.anything(),
