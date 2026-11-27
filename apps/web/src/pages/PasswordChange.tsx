@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import AuthShell from '../components/common/AuthShell';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import { setSessionCredentials, type LoginResponseDto } from '../api/client';
+
+const PASSWORD_MIN_LENGTH = 12;
+const PASSWORD_MAX_LENGTH = 128;
 
 export default function PasswordChange() {
   const navigate = useNavigate();
-  const { user, loadMe, isLoading } = useAuth();
+  const { user, loadMe, adoptAuthResponse, isLoading, sessionToken } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -26,17 +28,27 @@ export default function PasswordChange() {
       return;
     }
     setConfirmError(null);
+    const newPasswordLength = [...newPassword].length;
+    if (newPasswordLength < PASSWORD_MIN_LENGTH || newPasswordLength > PASSWORD_MAX_LENGTH) {
+      setError(
+        `La nueva contraseña debe tener entre ${PASSWORD_MIN_LENGTH} y ${PASSWORD_MAX_LENGTH} caracteres.`,
+      );
+      return;
+    }
     try {
       const {
         data,
         error: apiError,
         response,
       } = await apiClient.POST('/auth/password', {
-        body: { currentPassword, newPassword },
+        body: { currentPassword, newPassword, sessionToken: sessionToken ?? undefined },
       });
 
-      if (apiError || response?.status === 401) {
-        throw new Error('Contraseña actual inválida');
+      if (apiError || (response?.status ?? 0) >= 400) {
+        throw new Error(
+          getErrorMessage(apiError) ||
+            `No se pudo cambiar la contraseña (HTTP ${response?.status ?? 'desconocido'}).`,
+        );
       }
 
       if (response?.status === 204) {
@@ -47,14 +59,25 @@ export default function PasswordChange() {
         return;
       }
 
-      if (data && (data as LoginResponseDto).status === 'authenticated') {
-        setSessionCredentials(data);
-        setSuccess(true);
-        await loadMe();
-        void navigate('/');
-      } else {
-        setError('Respuesta inesperada del servidor');
+      if (data) {
+        const dto = data as {
+          status?: string;
+          sessionToken?: string;
+          accessToken?: string;
+          csrfToken?: string;
+        };
+        if (dto.status) {
+          // El backend emite el siguiente estado del flujo (MFA, inscripción…).
+          await adoptAuthResponse(dto);
+          if (dto.status === 'authenticated') {
+            setSuccess(true);
+            void navigate('/');
+          }
+          return;
+        }
       }
+
+      setError('Respuesta inesperada del servidor');
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al cambiar la contraseña');
     }
@@ -119,7 +142,7 @@ export default function PasswordChange() {
             setNewPassword(e.target.value);
             setConfirmError(null);
           }}
-          helperText="Debe cumplir la política de seguridad del sistema."
+          helperText={`Entre ${PASSWORD_MIN_LENGTH} y ${PASSWORD_MAX_LENGTH} caracteres; debe cumplir la política de seguridad.`}
         />
         <TextField
           required

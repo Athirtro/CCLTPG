@@ -4,11 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import AuthShell from '../components/common/AuthShell';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import { setSessionCredentials, type LoginResponseDto } from '../api/client';
+import type { LoginResponseDto } from '../api/client';
 
 export default function MfaEnroll() {
   const navigate = useNavigate();
-  const { loadMe } = useAuth();
+  const { adoptAuthResponse, sessionToken } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'secret' | 'confirm' | 'done'>('secret');
   const [secret, setSecret] = useState<string>('');
@@ -20,7 +20,9 @@ export default function MfaEnroll() {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error: apiError, response } = await apiClient.POST('/auth/mfa/enroll');
+      const { data, error: apiError, response } = await apiClient.POST('/auth/mfa/enroll', {
+        body: { sessionToken: sessionToken ?? undefined },
+      });
 
       if (apiError || !data || response?.status !== 200) {
         throw new Error('No se pudo iniciar la inscripción MFA');
@@ -46,7 +48,7 @@ export default function MfaEnroll() {
         error: apiError,
         response,
       } = await apiClient.POST('/auth/mfa/enroll/confirm', {
-        body: { code },
+        body: { code, sessionToken: sessionToken ?? undefined },
       });
 
       if (apiError || !data || response?.status !== 200) {
@@ -55,8 +57,7 @@ export default function MfaEnroll() {
 
       const dto = data as LoginResponseDto & { recoveryCodes: string[] };
       if (dto.status === 'authenticated') {
-        setSessionCredentials(dto);
-        await loadMe();
+        await adoptAuthResponse(dto);
         setStep('done');
       } else {
         setError('Respuesta inesperada del servidor');

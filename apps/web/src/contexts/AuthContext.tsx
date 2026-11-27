@@ -39,6 +39,12 @@ type AuthContextType = {
     | 'mfa_enrollment_required'
     | null;
   sessionToken: string | null;
+  adoptAuthResponse: (dto: {
+    status?: string;
+    sessionToken?: string;
+    accessToken?: string;
+    csrfToken?: string;
+  }) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   verifyMfa: (sessionToken: string, code: string, method?: 'totp' | 'recovery') => Promise<void>;
   logout: () => Promise<void>;
@@ -163,6 +169,23 @@ export function AuthProvider({ children, initialUser, initialSessionToken }: Aut
     })();
   }, [initialUser, loadMe]);
 
+  /** Adopta la respuesta de un flujo que emite un nuevo estado de sesión. */
+  const adoptAuthResponse = async (dto: {
+    status?: string;
+    sessionToken?: string;
+    accessToken?: string;
+    csrfToken?: string;
+  }) => {
+    if (dto.status) {
+      setAuthStatus(dto.status as AuthContextType['authStatus']);
+    }
+    setSessionToken(dto.sessionToken ?? null);
+    setSessionCredentials(dto);
+    if (dto.status === 'authenticated') {
+      await loadMe();
+    }
+  };
+
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
@@ -215,6 +238,7 @@ export function AuthProvider({ children, initialUser, initialSessionToken }: Aut
     isRestoring,
     authStatus,
     sessionToken,
+    adoptAuthResponse,
     login,
     verifyMfa,
     logout,

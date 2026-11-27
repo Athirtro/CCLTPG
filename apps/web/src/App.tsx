@@ -1,4 +1,5 @@
-﻿import { BrowserRouter, Routes, Route } from 'react-router-dom';
+﻿import { useEffect, type ReactNode } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import { Box, CssBaseline } from '@mui/material';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -27,6 +28,23 @@ import Health from './pages/Health';
 import NotFound from './pages/NotFound';
 import { theme } from './theme/theme';
 
+/** Evita que un deep-link privado se renderice sin sesión autenticada. */
+function RequireAuth({ children }: { children: ReactNode }) {
+  const { user, isRestoring } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isRestoring && !user) {
+      void navigate('/login', { replace: true });
+    }
+  }, [isRestoring, user, navigate]);
+
+  if (isRestoring) {
+    return <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>Restaurando sesión…</Box>;
+  }
+  return user ? <>{children}</> : null;
+}
+
 function AppRoutes() {
   const { isRestoring } = useAuth();
 
@@ -51,7 +69,7 @@ function AppRoutes() {
             <Route path="/auth-redirect" element={<AuthRedirect />} />
 
             {/* Rutas privadas (con layout de sidebar) */}
-            <Route element={<MainLayout />}>
+            <Route element={<RequireAuth><MainLayout /></RequireAuth>}>
               <Route index element={<Home />} />
               <Route path="/estudiantes" element={<Estudiantes />} />
               <Route path="/programas" element={<Programas />} />
