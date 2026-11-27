@@ -55,7 +55,8 @@ const FORMULARIO_VACIO: Formulario = {
 };
 
 export default function Matriculas() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasProfile } = useAuth();
+  const esEstudiante = hasProfile('estudiante');
   const puedeGestionar = hasPermission('academic:enrollment:read');
   const puedeLeerPropia = hasPermission('academic:enrollment:read_own');
   // El backend exige `academic:enrollment:create` para registrar matrículas;
@@ -125,13 +126,17 @@ export default function Matriculas() {
         } else {
           setEstudiantes(resEstudiantes.data.data);
         }
-      } else if (puedeCrear) {
+      }
+
+      if (puedeCrear && (!puedeGestionar || esEstudiante)) {
         try {
           const resMiEstudiante = await apiClient.GET('/me/student');
           if (resMiEstudiante.error || !resMiEstudiante.data) {
             setMiEstudiante(null);
             setMiEstudianteError(
-              'No se pudo resolver tu ficha de estudiante. No puedes crear matrículas.',
+              puedeGestionar
+                ? 'No se pudo resolver tu ficha de estudiante. Puedes seleccionar otro estudiante.'
+                : 'No se pudo resolver tu ficha de estudiante. No puedes crear matrículas.',
             );
           } else {
             setMiEstudiante({
@@ -142,8 +147,10 @@ export default function Matriculas() {
         } catch (err) {
           setMiEstudiante(null);
           setMiEstudianteError(
-            getErrorMessage(err) ||
-              'No se pudo resolver tu ficha de estudiante. No puedes crear matrículas.',
+            puedeGestionar
+              ? 'No se pudo resolver tu ficha de estudiante. Puedes seleccionar otro estudiante.'
+              : getErrorMessage(err) ||
+                  'No se pudo resolver tu ficha de estudiante. No puedes crear matrículas.',
           );
         }
       }
@@ -154,7 +161,7 @@ export default function Matriculas() {
     } finally {
       setCargandoAuxiliares(false);
     }
-  }, [puedeCrear, puedeGestionar]);
+  }, [esEstudiante, puedeCrear, puedeGestionar]);
 
   useEffect(() => {
     void cargarMatriculas();
@@ -196,14 +203,14 @@ export default function Matriculas() {
   const confirmadas = matriculas.filter((m) => m.estado === 'confirmada').length;
   const canceladas = matriculas.filter((m) => m.estado === 'cancelada').length;
 
-  const estudianteId = puedeGestionar ? formulario.estudianteId.trim() : (miEstudiante?.id ?? '');
+  const estudianteId = formulario.estudianteId.trim() || (miEstudiante?.id ?? '');
   const puedeEnviar = Boolean(
     estudianteId &&
     formulario.grupoId &&
     !enviando &&
     !cargandoAuxiliares &&
     !errorAuxiliares &&
-    !miEstudianteError,
+    (!miEstudianteError || puedeGestionar),
   );
 
   const actualizarCampo = (campo: keyof Formulario, valor: string) => {
@@ -223,10 +230,15 @@ export default function Matriculas() {
     return Object.keys(nuevosErrores).length === 0;
   };
 
+  const formularioInicial = (): Formulario => ({
+    ...FORMULARIO_VACIO,
+    estudianteId: esEstudiante ? (miEstudiante?.id ?? '') : '',
+  });
+
   const cerrarDialogo = () => {
     if (enviando) return;
     setAbiertoDialogo(false);
-    setFormulario(FORMULARIO_VACIO);
+    setFormulario(formularioInicial());
     setErrores({});
   };
 
@@ -412,7 +424,11 @@ export default function Matriculas() {
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
-                onClick={() => setAbiertoDialogo(true)}
+                onClick={() => {
+                  setFormulario(formularioInicial());
+                  setErrores({});
+                  setAbiertoDialogo(true);
+                }}
                 disabled={cargandoAuxiliares}
               >
                 Nueva matrícula
@@ -561,23 +577,42 @@ export default function Matriculas() {
               : 'Se matriculará el estudiante asociado a tu usuario.'}
           </DialogContentText>
           {puedeGestionar ? (
-            <FormControl fullWidth error={Boolean(errores.estudianteId)}>
-              <InputLabel id="estudiante-matricula-label">Estudiante</InputLabel>
-              <Select
-                labelId="estudiante-matricula-label"
-                label="Estudiante"
-                value={formulario.estudianteId}
-                onChange={(event) => actualizarCampo('estudianteId', event.target.value)}
-              >
-                <MenuItem value="">Selecciona un estudiante</MenuItem>
-                {estudiantes.map((estudiante) => (
-                  <MenuItem key={estudiante.id} value={estudiante.id}>
-                    {estudiante.tipoDocumento} — {estudiante.nombres} {estudiante.apellidos}
-                  </MenuItem>
-                ))}
-              </Select>
-              {errores.estudianteId && <FormHelperText>{errores.estudianteId}</FormHelperText>}
-            </FormControl>
+            <>
+              <FormControl fullWidth error={Boolean(errores.estudianteId)}>
+                <InputLabel id="estudiante-matricula-label">Estudiante</InputLabel>
+                <Select
+                  labelId="estudiante-matricula-label"
+                  label="Estudiante"
+                  value={formulario.estudianteId}
+                  onChange={(event) => actualizarCampo('estudianteId', event.target.value)}
+                >
+                  <MenuItem value="">Selecciona un estudiante</MenuItem>
+                  {estudiantes.map((estudiante) => (
+                    <MenuItem key={estudiante.id} value={estudiante.id}>
+                      {estudiante.tipoDocumento} — {estudiante.nombres} {estudiante.apellidos}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errores.estudianteId && <FormHelperText>{errores.estudianteId}</FormHelperText>}
+              </FormControl>
+              {esEstudiante && miEstudiante && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                  <Button
+                    size="small"
+                    onClick={() => actualizarCampo('estudianteId', miEstudiante.id)}
+                  >
+                    Usar mi UID
+                  </Button>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ overflowWrap: 'anywhere' }}
+                  >
+                    Tu UID: {miEstudiante.id}
+                  </Typography>
+                </Box>
+              )}
+            </>
           ) : (
             <TextField
               label="Estudiante asociado a tu usuario"

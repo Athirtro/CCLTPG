@@ -10,6 +10,7 @@ import {
   DialogTitle,
   FormControl,
   FormHelperText,
+  InputAdornment,
   InputLabel,
   MenuItem,
   Select,
@@ -56,8 +57,9 @@ const FORMULARIO_VACIO: Formulario = {
 };
 
 export default function Grupos() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasProfile, user } = useAuth();
   const puedeGestionar = hasPermission('academic:group:manage');
+  const miUid = hasProfile('educador') ? (user?.id ?? '') : '';
 
   const [grupos, setGrupos] = useState<GrupoDto[]>([]);
   const [programas, setProgramas] = useState<ProgramaDto[]>([]);
@@ -163,7 +165,7 @@ export default function Grupos() {
   const cerrarDialogo = () => {
     if (enviando) return;
     setAbiertoDialogo(false);
-    setFormulario(FORMULARIO_VACIO);
+    setFormulario({ ...FORMULARIO_VACIO, educadorId: miUid });
     setErrores({});
   };
 
@@ -340,7 +342,11 @@ export default function Grupos() {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => setAbiertoDialogo(true)}
+              onClick={() => {
+                setFormulario({ ...FORMULARIO_VACIO, educadorId: miUid });
+                setErrores({});
+                setAbiertoDialogo(true);
+              }}
               disabled={cargando}
             >
               Nuevo grupo
@@ -492,7 +498,27 @@ export default function Grupos() {
             value={formulario.educadorId}
             onChange={(event) => actualizarCampo('educadorId', event.target.value)}
             error={Boolean(errores.educadorId)}
-            helperText={errores.educadorId}
+            helperText={
+              errores.educadorId ??
+              (miUid
+                ? 'Autorellenado con tu UID. Puedes cambiarlo para asignar otro educador.'
+                : undefined)
+            }
+            slotProps={{
+              input: {
+                endAdornment: miUid ? (
+                  <InputAdornment position="end">
+                    <Button
+                      size="small"
+                      onClick={() => actualizarCampo('educadorId', miUid)}
+                      disabled={enviando}
+                    >
+                      Usar mi UID
+                    </Button>
+                  </InputAdornment>
+                ) : undefined,
+              },
+            }}
             required
             fullWidth
           />

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, Box, Button, TextField, Typography } from '@mui/material';
+import { QRCodeSVG } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
 import AuthShell from '../components/common/AuthShell';
 import { useAuth, apiClient } from '../contexts/AuthContext';
@@ -110,11 +111,28 @@ export default function MfaEnroll() {
             textAlign: 'center',
           }}
         >
-          <Typography variant="body2" sx={{ mb: 1, fontFamily: 'monospace' }}>
-            {secret}
+          {otpauthUri ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
+              <QRCodeSVG
+                value={otpauthUri}
+                size={192}
+                level="M"
+                marginSize={2}
+                title="Código QR para configurar MFA"
+                role="img"
+                aria-label="Código QR para configurar MFA"
+              />
+            </Box>
+          ) : (
+            <Typography variant="body2" color="error" sx={{ mb: 1.5 }}>
+              No se pudo generar el código QR. Usa el secreto manual.
+            </Typography>
+          )}
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+            ¿No puedes escanearlo? Ingresa este secreto manualmente:
           </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
-            {otpauthUri}
+          <Typography variant="body2" sx={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}>
+            {secret}
           </Typography>
         </Box>
         {error && (

@@ -3279,3 +3279,76 @@ apiClient.use({
     return request;
   },
 });
+
+/** Resultado de una descarga autorizada de archivo. */
+export type DescargaArchivoResultado =
+  { ok: true; nombre: string } | { ok: false; code: string; detail: string; status?: number };
+
+/**
+ * Convierte el cuerpo de error, que `parseAs: 'blob'` devuelve como Blob, en
+ * ProblemDetails. Un 401 de descarga no debe confundirse con una sesión
+ * cerrada: el access token puede haber expirado.
+ */
+async function leerProblemaDescarga(error: unknown): Promise<ProblemDetailsDto | null> {
+  if (error instanceof Blob) {
+    try {
+      return JSON.parse(await error.text()) as ProblemDetailsDto;
+    } catch {
+      return null;
+    }
+  }
+  return error && typeof error === 'object' ? (error as ProblemDetailsDto) : null;
+}
+
+/**
+ * Descarga un archivo por su ID usando el cliente autenticado.
+ *
+ * Un `<a href>` del navegador no envía la cabecera `Authorization` y el API
+ * responde 401 (`AUTH_TOKEN_INVALID`). Aquí el middleware del cliente añade
+ * Bearer/CSRF. Si el token expiró, se refresca una sola vez y se reintenta;
+ * un fallo posterior NO cierra la sesión ni borra el marcador.
+ */
+export async function descargarArchivo(
+  archivoId: string,
+  nombreArchivo: string,
+): Promise<DescargaArchivoResultado> {
+  const obtener = () =>
+    apiClient.GET('/files/{id}/download', {
+      params: { path: { id: archivoId } },
+      parseAs: 'blob',
+    });
+
+  let respuesta = await obtener();
+  let reintentado = false;
+
+  if (respuesta.response?.status === 401 && hasSessionMarker()) {
+    const refrescado = await apiClient.POST('/auth/refresh');
+    if (!refrescado.error && refrescado.data && refrescado.response?.status === 200) {
+      setSessionCredentials(refrescado.data);
+      respuesta = await obtener();
+      reintentado = true;
+    }
+  }
+
+  if (respuesta.error || respuesta.response?.status !== 200) {
+    const problema = await leerProblemaDescarga(respuesta.error);
+    return {
+      ok: false,
+      code: problema?.code ?? (reintentado ? 'DOWNLOAD_FAILED' : 'DOWNLOAD_UNAUTHORIZED'),
+      detail: problema?.detail ?? 'No se pudo descargar el archivo.',
+      status: respuesta.response?.status,
+    };
+  }
+
+  const contenido: Blob = respuesta.data;
+  const url = URL.createObjectURL(contenido);
+  const enlace = document.createElement('a');
+  enlace.href = url;
+  enlace.download = nombreArchivo;
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  URL.revokeObjectURL(url);
+
+  return { ok: true, nombre: nombreArchivo };
+}

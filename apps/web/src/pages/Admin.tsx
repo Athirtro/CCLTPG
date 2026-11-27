@@ -11,15 +11,20 @@ import {
   FormControl,
   FormControlLabel,
   FormHelperText,
+  IconButton,
   InputLabel,
   MenuItem,
   Select,
   TextField,
+  Tooltip,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import {
   Add as AddIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
+  ContentCopy as ContentCopyIcon,
   Home as HomeIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
@@ -85,6 +90,8 @@ function formatearFecha(valor: string): string {
 
 export default function Admin() {
   const { hasPermission } = useAuth();
+  const theme = useTheme();
+  const pantallaPequena = useMediaQuery(theme.breakpoints.down('sm'));
   const puedeGestionar = hasPermission('identity:user:manage');
 
   const [usuarios, setUsuarios] = useState<AdminUserDto[]>([]);
@@ -162,6 +169,15 @@ export default function Admin() {
     setSeleccionado(null);
     setFormulario(FORMULARIO_VACIO);
     setErrores({});
+  };
+
+  const copiarUid = async (uid: string) => {
+    try {
+      await navigator.clipboard.writeText(uid);
+      setExito('UID copiado al portapapeles.');
+    } catch {
+      setError('No se pudo copiar el UID. Cópialo manualmente.');
+    }
   };
 
   const validar = (): boolean => {
@@ -304,6 +320,30 @@ export default function Admin() {
         </Box>
       ),
     },
+    {
+      id: 'uid',
+      label: 'UID',
+      minWidth: 250,
+      render: (usuario) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
+          <Typography
+            variant="caption"
+            sx={{ fontFamily: 'monospace', overflowWrap: 'anywhere', flex: 1 }}
+          >
+            {usuario.id}
+          </Typography>
+          <Tooltip title="Copiar UID">
+            <IconButton
+              size="small"
+              aria-label={`Copiar UID de ${usuario.email}`}
+              onClick={() => void copiarUid(usuario.id)}
+            >
+              <ContentCopyIcon fontSize="inherit" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      ),
+    },
     { id: 'estado', label: 'Estado', render: (usuario) => <StatusChip status={usuario.estado} /> },
     {
       id: 'mfa',
@@ -336,7 +376,7 @@ export default function Admin() {
       label: 'Acciones',
       align: 'right',
       render: (usuario) => (
-        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
           <Button size="small" onClick={() => abrirDialogo('editar', usuario)}>
             Editar
           </Button>
@@ -461,21 +501,32 @@ export default function Admin() {
       <Dialog
         open={dialogo !== null}
         onClose={cerrarDialogo}
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
+        fullScreen={pantallaPequena}
         aria-labelledby="titulo-dialogo-usuario"
+        slotProps={{ paper: { sx: { borderRadius: pantallaPequena ? 0 : 2 } } }}
       >
-        <DialogTitle id="titulo-dialogo-usuario">
+        <DialogTitle id="titulo-dialogo-usuario" sx={{ pb: 1 }}>
           {dialogo ? tituloDialogo[dialogo] : ''}
           {seleccionado && (
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
               {seleccionado.email}
             </Typography>
           )}
         </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <DialogContent
+          dividers
+          sx={{ display: 'flex', flexDirection: 'column', gap: 2, px: 3, py: 2, minWidth: 0 }}
+        >
           {dialogo === 'crear' && (
-            <>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+              }}
+            >
               <TextField
                 id="correo-nuevo-usuario"
                 label="Correo electrónico"
@@ -527,7 +578,7 @@ export default function Admin() {
                   ))}
                 </Select>
               </FormControl>
-            </>
+            </Box>
           )}
 
           {dialogo === 'editar' && (
@@ -596,7 +647,13 @@ export default function Admin() {
           )}
 
           {(dialogo === 'crear' || dialogo === 'perfil') && (
-            <>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+              }}
+            >
               <FormControl fullWidth error={Boolean(errores.perfil)}>
                 <InputLabel id="perfil-usuario-label">Perfil</InputLabel>
                 <Select
@@ -622,14 +679,19 @@ export default function Admin() {
                 slotProps={{ inputLabel: { shrink: true } }}
                 fullWidth
               />
-            </>
+            </Box>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={cerrarDialogo} disabled={enviando}>
+        <DialogActions sx={{ px: 3, py: 2, gap: 1, flexWrap: 'wrap' }}>
+          <Button onClick={cerrarDialogo} disabled={enviando} sx={{ minWidth: 110 }}>
             Cancelar
           </Button>
-          <Button variant="contained" onClick={() => void guardar()} disabled={enviando}>
+          <Button
+            variant="contained"
+            onClick={() => void guardar()}
+            disabled={enviando}
+            sx={{ minWidth: 140 }}
+          >
             {enviando ? 'Guardando…' : dialogo ? textoBoton[dialogo] : 'Guardar'}
           </Button>
         </DialogActions>

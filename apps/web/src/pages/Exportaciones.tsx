@@ -11,6 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import {
+  Download as DownloadIcon,
   FileCopy as FileCopyIcon,
   Home as HomeIcon,
   Refresh as RefreshIcon,
@@ -19,6 +20,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
 import { postWithIdempotency } from '../api/idempotent-client';
+import { descargarArchivo } from '../api/client';
 import type { CrearExportacionDto, ExportacionDto, ProblemDetailsDto } from '../api/client';
 import PageHeader from '../components/common/PageHeader';
 import SectionCard from '../components/common/SectionCard';
@@ -61,6 +63,7 @@ export default function Exportaciones() {
   const [generando, setGenerando] = useState(false);
   const [resultado, setResultado] = useState<ExportacionDto | null>(null);
   const [generadoEn, setGeneradoEn] = useState<Date | null>(null);
+  const [descargando, setDescargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
 
@@ -73,8 +76,27 @@ export default function Exportaciones() {
     setErrorParametros(null);
     setResultado(null);
     setGeneradoEn(null);
+    setDescargando(false);
     setError(null);
     setExito(null);
+  };
+
+  const manejarDescargar = async () => {
+    if (!resultado) return;
+    setDescargando(true);
+    setError(null);
+    try {
+      const descarga = await descargarArchivo(resultado.archivoId, resultado.nombre);
+      if (descarga.ok) {
+        setExito(`Archivo "${descarga.nombre}" descargado correctamente.`);
+      } else {
+        setError(descarga.detail || 'No se pudo descargar el archivo.');
+      }
+    } catch (err) {
+      setError(getErrorMessage(err) || 'No se pudo descargar el archivo.');
+    } finally {
+      setDescargando(false);
+    }
   };
 
   const manejarGenerar = async () => {
@@ -330,16 +352,13 @@ export default function Exportaciones() {
               </Typography>
             </Box>
             <Button
-              component="a"
-              href={resultado.descargaUrl}
-              target="_blank"
-              rel="noopener noreferrer"
               variant="contained"
-              startIcon={<FileCopyIcon />}
-              disabled={!resultado.descargaUrl}
+              startIcon={<DownloadIcon />}
+              onClick={() => void manejarDescargar()}
+              disabled={descargando || !resultado.archivoId}
               sx={{ mt: 2 }}
             >
-              Descargar archivo
+              {descargando ? 'Descargando…' : 'Descargar archivo'}
             </Button>
           </>
         ) : (
