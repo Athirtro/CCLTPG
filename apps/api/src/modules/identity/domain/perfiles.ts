@@ -138,6 +138,9 @@ export const PROFILE_SEEDS: readonly PerfilSeed[] = [
       'emisora:patrocinio:manage',
       'emisora:planilla:create',
       'emisora:transmision:read',
+      // EM-18: el técnico de emisión gestiona el préstamo del mifi.
+      'emisora:prestamo:create',
+      'emisora:prestamo:update',
     ],
   },
   {

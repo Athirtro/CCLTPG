@@ -16,6 +16,8 @@ describe.runIf(hasDatabase)('Transiciones concurrentes de la emisora contra Post
   const sesionId = uuidv7();
   const actorUno = uuidv7();
   const actorDos = uuidv7();
+  const transmisionId = uuidv7();
+  const usuarioMifi = uuidv7();
 
   beforeAll(async () => {
     db = new Kysely<Database>({
@@ -31,10 +33,18 @@ describe.runIf(hasDatabase)('Transiciones concurrentes de la emisora contra Post
       insert into emisora.sesion_grabacion (id, fecha, estado)
       values (${sesionId}::uuid, ${'2026-01-19'}::date, 'programada')
     `.execute(db);
+    await sql`
+      insert into emisora.transmision (id, fecha_transmision, es_fuera_ciudad)
+      values (${transmisionId}::uuid, ${'2026-01-21'}::date, true)
+    `.execute(db);
     repository = new KyselyEmisoraRepository(db);
   });
 
   afterAll(async () => {
+    await sql`delete from emisora.prestamo_mifi where transmision_id = ${transmisionId}::uuid`.execute(
+      db,
+    );
+    await sql`delete from emisora.transmision where id = ${transmisionId}::uuid`.execute(db);
     await sql`delete from emisora.sesion_grabacion where id = ${sesionId}::uuid`.execute(db);
     await db.destroy();
   });
@@ -54,5 +64,30 @@ describe.runIf(hasDatabase)('Transiciones concurrentes de la emisora contra Post
 
     const actual = await repository.findGrabacionById(sesionId);
     expect(actual).toMatchObject({ estado: 'realizada', aprobadaPor: actorUno });
+  });
+
+  it('la base rechaza préstamos de mifi con menos de dos días calendario en Bogotá', async () => {
+    // 06:00 UTC del 20 ya es 01:00 del 20 en Bogotá: solo un día de antelación.
+    await expect(
+      repository.createPrestamoMifi({
+        id: uuidv7(),
+        transmisionId,
+        usuarioId: usuarioMifi,
+        fechaSolicitud: new Date('2026-01-20T06:00:00.000Z'),
+        fechaTransmision: '2026-01-21',
+        observaciones: null,
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
+
+    // 12:00 UTC del 19 sigue siendo 19 en Bogotá: dos días justos, permitido.
+    const valido = await repository.createPrestamoMifi({
+      id: uuidv7(),
+      transmisionId,
+      usuarioId: usuarioMifi,
+      fechaSolicitud: new Date('2026-01-19T12:00:00.000Z'),
+      fechaTransmision: '2026-01-21',
+      observaciones: null,
+    });
+    expect(valido).toMatchObject({ estado: 'solicitado', fechaTransmision: '2026-01-21' });
   });
 });

@@ -114,6 +114,11 @@ export const E2E_EMISORA = {
   fechaProgramacion: '2026-01-19',
   fechaComite: '2026-02-10',
   actaArchivoId: 'cccccccc-0000-4000-8000-000000000009',
+  /** Soportes limpios del recorrido E3 (RF-04/RF-05). */
+  contratoArchivoId: 'cccccccc-0000-4000-8000-00000000000b',
+  audioPromoArchivoId: 'cccccccc-0000-4000-8000-00000000000c',
+  /** Incentivo resuelto con CDP, sembrado para la resolución PDF (RF-03.7). */
+  incentivoId: 'cccccccc-0000-4000-8000-00000000000d',
 } as const;
 
 export const userByKey = (key: E2eUserKey): E2eUserFixture => {

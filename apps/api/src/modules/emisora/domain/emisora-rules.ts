@@ -145,3 +145,40 @@ export function verificarContraRejilla(
   }
   return { concuerda: desviaciones.length === 0, desviaciones };
 }
+
+const FORMATEADOR_BOGOTA = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/Bogota',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+/**
+ * Fecha de calendario de un instante en `America/Bogota` (§4.4). Se usa para
+ * que la regla de antelación del mifi aplique sobre días calendario, no sobre
+ * 48 horas exactas.
+ */
+export function fechaBogota(instante: string | Date): string | null {
+  const fecha = instante instanceof Date ? instante : new Date(instante);
+  if (Number.isNaN(fecha.getTime())) {
+    return null;
+  }
+  const partes = Object.fromEntries(
+    FORMATEADOR_BOGOTA.formatToParts(fecha)
+      .filter((parte) => parte.type !== 'literal')
+      .map((parte) => [parte.type, parte.value]),
+  );
+  return `${partes.year}-${partes.month}-${partes.day}`;
+}
+
+/** RF-06.5: `fecha_solicitud <= fecha_transmision - 2 días`, inclusive. */
+export function cumpleAntelacionMifi(instante: string | Date, fechaTransmision: string): boolean {
+  const fechaSolicitud = fechaBogota(instante);
+  if (!fechaSolicitud || !esFechaValida(fechaTransmision) || !esFechaValida(fechaSolicitud)) {
+    return false;
+  }
+  const [anio, mes, dia] = fechaTransmision.split('-').map(Number);
+  const limite = Date.UTC(anio, mes - 1, dia - 2);
+  const [anioS, mesS, diaS] = fechaSolicitud.split('-').map(Number);
+  return Date.UTC(anioS, mesS - 1, diaS) <= limite;
+}

@@ -5,6 +5,13 @@ import type {
   FranjaTipo,
   GrabacionEstado,
   IncentivoEstado,
+  OrdenEmisionEstado,
+  PatrocinioEstado,
+  PrestamoEstado,
+  PromoEstado,
+  PublicacionEstado,
+  TransmisionEstado,
+  ViaticoEstado,
   ProgramacionEstado,
   ProyectoEstado,
   RejillaEstado,
@@ -227,4 +234,202 @@ export interface IncentivoView {
   estado: IncentivoEstado;
   calificacion: number | null;
   referenciaCdp: string | null;
+}
+
+/* ------------------------------- Registros E3 ----------------------------- */
+
+export interface ResolucionRecord {
+  id: string;
+  incentivoId: string;
+  pdfArchivoId: string;
+  referenciaCdp: string;
+  emitidaEn: Date;
+  creadoEn: Date;
+}
+
+export interface PatrocinioRecord {
+  id: string;
+  nombre: string;
+  entidad: string;
+  estado: PatrocinioEstado;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  contratoArchivoId: string | null;
+}
+
+export interface PromoRecord {
+  id: string;
+  patrocinioId: string | null;
+  nombre: string;
+  guion: string | null;
+  duracionSegundos: number;
+  audioArchivoId: string | null;
+  estado: PromoEstado;
+}
+
+export interface OrdenEmisionRecord {
+  id: string;
+  promoId: string;
+  programacionItemId: string | null;
+  estado: OrdenEmisionEstado;
+  fechaEmision: string | null;
+  emitidaEn: Date | null;
+}
+
+export interface PublicacionRecord {
+  id: string;
+  promoId: string | null;
+  canal: string;
+  fechaPublicacion: string;
+  estado: PublicacionEstado;
+  archivoId: string | null;
+  publicadaEn: Date | null;
+}
+
+export interface TransmisionRecord {
+  id: string;
+  programacionItemId: string | null;
+  fechaTransmision: string;
+  esFueraCiudad: boolean;
+  destino: string | null;
+  estado: TransmisionEstado;
+  autorizadaPor: string | null;
+  autorizadaEn: Date | null;
+}
+
+export interface SalidaEquipoRecord {
+  id: string;
+  transmisionId: string;
+  equipoId: string;
+  responsableId: string;
+  fechaSalida: Date;
+  fechaDevolucion: Date | null;
+  observaciones: string | null;
+}
+
+export interface ReporteDesplazamientoRecord {
+  id: string;
+  transmisionId: string;
+  conductorId: string | null;
+  vehiculo: string;
+  horaSalida: Date | null;
+  horaLlegada: Date | null;
+  novedades: string | null;
+}
+
+export interface PrestamoMifiRecord {
+  id: string;
+  transmisionId: string;
+  usuarioId: string;
+  fechaSolicitud: Date;
+  fechaTransmision: string;
+  estado: PrestamoEstado;
+  observaciones: string | null;
+}
+
+export interface ViaticoRecord {
+  id: string;
+  transmisionId: string;
+  usuarioId: string;
+  estado: ViaticoEstado;
+  referenciaCompromiso: string | null;
+  referenciaOrden: string | null;
+  soporteArchivoId: string | null;
+}
+
+/* -------------------------------- Vistas E3 ------------------------------- */
+
+export interface ResolucionView {
+  id: string;
+  incentivoId: string;
+  archivoId: string;
+  referenciaCdp: string;
+  emitidaEn: string;
+  descargaUrl: string;
+}
+
+export interface PatrocinioView {
+  id: string;
+  nombre: string;
+  entidad: string;
+  estado: PatrocinioRecord['estado'];
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  contratoArchivoId: string | null;
+}
+
+export interface PromoView {
+  id: string;
+  patrocinioId: string | null;
+  nombre: string;
+  duracionSegundos: number;
+  audioArchivoId: string | null;
+  estado: PromoRecord['estado'];
+}
+
+export interface OrdenEmisionView {
+  id: string;
+  promoId: string;
+  programacionItemId: string | null;
+  estado: OrdenEmisionRecord['estado'];
+  fechaEmision: string | null;
+  emitidaEn: string | null;
+}
+
+export interface PublicacionView {
+  id: string;
+  promoId: string | null;
+  canal: string;
+  fechaPublicacion: string;
+  estado: PublicacionRecord['estado'];
+  archivoId: string | null;
+  publicadaEn: string | null;
+}
+
+export interface TransmisionView {
+  id: string;
+  programacionItemId: string | null;
+  fechaTransmision: string;
+  esFueraCiudad: boolean;
+  destino: string | null;
+  estado: TransmisionRecord['estado'];
+  autorizadaEn: string | null;
+}
+
+export interface SalidaEquipoView {
+  id: string;
+  transmisionId: string;
+  equipoId: string;
+  responsableId: string;
+  fechaSalida: string;
+  fechaDevolucion: string | null;
+}
+
+export interface ReporteDesplazamientoView {
+  id: string;
+  transmisionId: string;
+  conductorId: string | null;
+  vehiculo: string;
+  horaSalida: string | null;
+  horaLlegada: string | null;
+  novedades: string | null;
+}
+
+export interface PrestamoMifiView {
+  id: string;
+  transmisionId: string;
+  usuarioId: string;
+  fechaSolicitud: string;
+  fechaTransmision: string;
+  estado: PrestamoMifiRecord['estado'];
+}
+
+export interface ViaticoView {
+  id: string;
+  transmisionId: string;
+  usuarioId: string;
+  estado: ViaticoRecord['estado'];
+  referenciaCompromiso: string | null;
+  referenciaOrden: string | null;
+  soporteArchivoId: string | null;
 }

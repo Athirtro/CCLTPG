@@ -120,7 +120,15 @@ type QueryableClient = {
  * crea y se repone el acta PDF limpia que valida la aprobación de la rejilla.
  */
 async function seedEmisoraParaE2E(client: QueryableClient): Promise<void> {
-  const { anio, fechaProgramacion, fechaComite, actaArchivoId } = E2E_EMISORA;
+  const {
+    anio,
+    fechaProgramacion,
+    fechaComite,
+    actaArchivoId,
+    contratoArchivoId,
+    audioPromoArchivoId,
+    incentivoId,
+  } = E2E_EMISORA;
   const jefe = E2E_USERS.find((usuario) => usuario.key === 'jefe_emisora');
   if (!jefe) throw new Error('Falta la fixture jefe_emisora para preparar la emisora.');
 
@@ -216,6 +224,93 @@ async function seedEmisoraParaE2E(client: QueryableClient): Promise<void> {
              repeat('b1', 32), 'e2e/acta-comite.pdf', $2, 'limpio')
      ON CONFLICT (id) DO UPDATE SET estado_escaneo = 'limpio', mime = 'application/pdf'`,
     [actaArchivoId, jefe.id],
+  );
+
+  await sembrarOperacionE3(
+    client,
+    jefe.id,
+    anio,
+    contratoArchivoId,
+    audioPromoArchivoId,
+    incentivoId,
+  );
+}
+
+/**
+ * Estado determinista del recorrido E3: soportes limpios y un incentivo ya
+ * resuelto para generar el PDF con la plantilla de Exportaciones. Solo se
+ * reemplazan las filas con IDs reservados para esta fixture.
+ */
+async function sembrarOperacionE3(
+  client: QueryableClient,
+  jefeId: string,
+  anio: number,
+  contratoArchivoId: string,
+  audioPromoArchivoId: string,
+  incentivoId: string,
+): Promise<void> {
+  const realizadorId = 'cccccccc-0000-4000-8000-00000000000e';
+  const proyectoId = 'cccccccc-0000-4000-8000-00000000000f';
+  const comiteId = 'cccccccc-0000-4000-8000-000000000010';
+  const informeId = 'cccccccc-0000-4000-8000-000000000011';
+
+  await client.query('DELETE FROM emisora.resolucion_incentivo WHERE incentivo_id = $1', [
+    incentivoId,
+  ]);
+  await client.query('DELETE FROM emisora.incentivo WHERE id = $1', [incentivoId]);
+  await client.query('DELETE FROM emisora.informe_realizador WHERE id = $1', [informeId]);
+  await client.query('DELETE FROM emisora.proyecto_programa WHERE id = $1', [proyectoId]);
+  await client.query('DELETE FROM emisora.comite WHERE id = $1', [comiteId]);
+  await client.query('DELETE FROM emisora.realizador WHERE id = $1', [realizadorId]);
+
+  for (const [id, nombre, mime, ruta] of [
+    [contratoArchivoId, 'contrato-e2e.pdf', 'application/pdf', 'e2e/contrato.pdf'],
+    [audioPromoArchivoId, 'promo-e2e.mp3', 'audio/mpeg', 'e2e/promo.mp3'],
+  ] as const) {
+    await client.query(
+      `INSERT INTO public.archivo
+         (id, nombre_original, mime, tamano, hash_sha256, ruta_objeto, subido_por, estado_escaneo)
+       VALUES ($1, $2, $3, 1024, repeat('b2', 32), $4, $5, 'limpio')
+       ON CONFLICT (id) DO UPDATE SET
+         nombre_original = EXCLUDED.nombre_original,
+         mime = EXCLUDED.mime,
+         estado_escaneo = 'limpio'`,
+      [id, nombre, mime, ruta, jefeId],
+    );
+  }
+
+  await client.query(
+    `INSERT INTO emisora.realizador
+       (id, nombres, apellidos, tipo_documento, numero_documento_cifrado,
+        numero_documento_hash, consentimiento_datos)
+     VALUES ($1, 'Realizador', 'E2E', 'cc', 'cifrado-e2e', repeat('c2', 32), '{}'::jsonb)`,
+    [realizadorId],
+  );
+  await client.query(
+    `INSERT INTO emisora.proyecto_programa
+       (id, convocatoria_id, realizador_id, titulo, archivo_id, fecha_recepcion, estado)
+     VALUES ($1, (SELECT id FROM emisora.convocatoria WHERE anio = $2), $3,
+             'Proyecto E3E', $4, DATE '2026-01-20', 'aprobado')`,
+    [proyectoId, anio, realizadorId, contratoArchivoId],
+  );
+  // Fecha distinta de la del comité E2 para que la limpieza de ese recorrido
+  // no alcance al comité que sostiene el incentivo de la resolución E3.
+  await client.query(
+    `INSERT INTO emisora.comite (id, convocatoria_id, fecha, acta_archivo_id, integrantes)
+     VALUES ($1, (SELECT id FROM emisora.convocatoria WHERE anio = $2), DATE '2026-02-11', $3, '[]'::jsonb)`,
+    [comiteId, anio, contratoArchivoId],
+  );
+  await client.query(
+    `INSERT INTO emisora.informe_realizador
+       (id, proyecto_id, realizador_id, fecha_informe, estado, archivo_id, calificacion)
+     VALUES ($1, $2, $3, DATE '2026-10-15', 'evaluado', $4, 85)`,
+    [informeId, proyectoId, realizadorId, contratoArchivoId],
+  );
+  await client.query(
+    `INSERT INTO emisora.incentivo
+       (id, informe_id, comite_id, realizador_id, estado, calificacion, referencia_cdp)
+     VALUES ($1, $2, $3, $4, 'resuelto', 85, 'CDP-E2E-2026')`,
+    [incentivoId, informeId, comiteId, realizadorId],
   );
 }
 

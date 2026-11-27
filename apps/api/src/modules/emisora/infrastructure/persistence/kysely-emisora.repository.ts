@@ -3,7 +3,15 @@ import { sql } from 'kysely';
 import { v7 as uuidv7 } from 'uuid';
 
 import type { Database } from '../../../../database/schema.js';
-import type { IncentivoEstado } from '../../domain/emisora-states.js';
+import type {
+  IncentivoEstado,
+  OrdenEmisionEstado,
+  PatrocinioEstado,
+  PrestamoEstado,
+  PromoEstado,
+  PublicacionEstado,
+  TransmisionEstado,
+} from '../../domain/emisora-states.js';
 import { EmisoraError } from '../../application/emisora-error.js';
 import type {
   AsistenciaRecord,
@@ -13,12 +21,22 @@ import type {
   GrabacionRecord,
   IncentivoRecord,
   InformeRecord,
+  OrdenEmisionRecord,
+  PatrocinioRecord,
+  PrestamoMifiRecord,
   ProgramacionItemRecord,
   ProgramacionRecord,
+  PromoRecord,
   ProyectoRecord,
+  PublicacionRecord,
   RealizadorRecord,
+  ReporteDesplazamientoRecord,
+  ResolucionRecord,
   RejillaItemRecord,
   RejillaRecord,
+  SalidaEquipoRecord,
+  TransmisionRecord,
+  ViaticoRecord,
 } from '../../application/emisora.types.js';
 import {
   type EmisoraRepository,
@@ -28,9 +46,19 @@ import {
   type NewConvocatoria,
   type NewGrabacion,
   type NewInforme,
+  type NewOrdenEmision,
+  type NewPatrocinio,
+  type NewPrestamoMifi,
   type NewProgramacion,
+  type NewPromo,
   type NewProyecto,
+  type NewPublicacion,
   type NewRealizador,
+  type NewReporteDesplazamiento,
+  type NewResolucion,
+  type NewSalidaEquipo,
+  type NewTransmision,
+  type NewViatico,
 } from '../../application/ports/emisora.repository.js';
 
 /** Fecha de calendario enlazada como `date`, sin desplazamiento de zona. */
@@ -616,6 +644,391 @@ export class KyselyEmisoraRepository implements EmisoraRepository {
       .execute();
     return rows.map(mapIncentivo);
   }
+
+  /* -------------------------------- E3 --------------------------------- */
+
+  async createResolucion(input: NewResolucion): Promise<ResolucionRecord> {
+    const row = await this.db
+      .insertInto('emisora.resolucion_incentivo')
+      .values({
+        id: input.id,
+        incentivo_id: input.incentivoId,
+        pdf_archivo_id: input.pdfArchivoId,
+        referencia_cdp: input.referenciaCdp,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapResolucion(row);
+  }
+
+  async findResolucionById(id: string): Promise<ResolucionRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.resolucion_incentivo')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst();
+    return row ? mapResolucion(row) : null;
+  }
+
+  async findResolucionByIncentivoId(incentivoId: string): Promise<ResolucionRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.resolucion_incentivo')
+      .selectAll()
+      .where('incentivo_id', '=', incentivoId)
+      .executeTakeFirst();
+    return row ? mapResolucion(row) : null;
+  }
+
+  async createPatrocinio(input: NewPatrocinio): Promise<PatrocinioRecord> {
+    const row = await this.db
+      .insertInto('emisora.patrocinio')
+      .values({
+        id: input.id,
+        nombre: input.nombre,
+        entidad: input.entidad,
+        fecha_inicio: input.fechaInicio ? dateParam(input.fechaInicio) : null,
+        fecha_fin: input.fechaFin ? dateParam(input.fechaFin) : null,
+        contrato_archivo_id: input.contratoArchivoId,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapPatrocinio(row);
+  }
+
+  async findPatrocinioById(id: string): Promise<PatrocinioRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.patrocinio')
+      .selectAll()
+      .where('id', '=', id)
+      .where('deleted_at', 'is', null)
+      .executeTakeFirst();
+    return row ? mapPatrocinio(row) : null;
+  }
+
+  async updatePatrocinioEstado(
+    id: string,
+    from: PatrocinioEstado,
+    estado: PatrocinioEstado,
+    contratoArchivoId: string | null,
+  ): Promise<PatrocinioRecord> {
+    const row = await this.db
+      .updateTable('emisora.patrocinio')
+      .set({ estado, contrato_archivo_id: contratoArchivoId })
+      .where('id', '=', id)
+      .where('estado', '=', from)
+      .where('deleted_at', 'is', null)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) throw EmisoraError.invalidTransition(from, estado);
+    return mapPatrocinio(row);
+  }
+
+  async createPromo(input: NewPromo): Promise<PromoRecord> {
+    const row = await this.db
+      .insertInto('emisora.promo')
+      .values({
+        id: input.id,
+        patrocinio_id: input.patrocinioId,
+        nombre: input.nombre,
+        guion: input.guion,
+        duracion_segundos: input.duracionSegundos,
+        audio_archivo_id: input.audioArchivoId,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapPromo(row);
+  }
+
+  async findPromoById(id: string): Promise<PromoRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.promo')
+      .selectAll()
+      .where('id', '=', id)
+      .where('deleted_at', 'is', null)
+      .executeTakeFirst();
+    return row ? mapPromo(row) : null;
+  }
+
+  async updatePromoEstado(
+    id: string,
+    from: PromoEstado,
+    estado: PromoEstado,
+    audioArchivoId: string | null,
+  ): Promise<PromoRecord> {
+    const row = await this.db
+      .updateTable('emisora.promo')
+      .set({ estado, audio_archivo_id: audioArchivoId })
+      .where('id', '=', id)
+      .where('estado', '=', from)
+      .where('deleted_at', 'is', null)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) throw EmisoraError.invalidTransition(from, estado);
+    return mapPromo(row);
+  }
+
+  async createOrden(input: NewOrdenEmision): Promise<OrdenEmisionRecord> {
+    const row = await this.db
+      .insertInto('emisora.orden_emision')
+      .values({
+        id: input.id,
+        promo_id: input.promoId,
+        programacion_item_id: input.programacionItemId,
+        fecha_emision: input.fechaEmision ? dateParam(input.fechaEmision) : null,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapOrden(row);
+  }
+
+  async findOrdenById(id: string): Promise<OrdenEmisionRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.orden_emision')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst();
+    return row ? mapOrden(row) : null;
+  }
+
+  async updateOrdenEstado(
+    id: string,
+    from: OrdenEmisionEstado,
+    estado: OrdenEmisionEstado,
+    emitidaEn: Date | null,
+  ): Promise<OrdenEmisionRecord> {
+    const row = await this.db
+      .updateTable('emisora.orden_emision')
+      .set({ estado, emitida_en: emitidaEn })
+      .where('id', '=', id)
+      .where('estado', '=', from)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) throw EmisoraError.invalidTransition(from, estado);
+    return mapOrden(row);
+  }
+
+  async createPublicacion(input: NewPublicacion): Promise<PublicacionRecord> {
+    const row = await this.db
+      .insertInto('emisora.publicacion')
+      .values({
+        id: input.id,
+        promo_id: input.promoId,
+        canal: input.canal,
+        fecha_publicacion: dateParam(input.fechaPublicacion),
+        archivo_id: input.archivoId,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapPublicacion(row);
+  }
+
+  async findPublicacionById(id: string): Promise<PublicacionRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.publicacion')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst();
+    return row ? mapPublicacion(row) : null;
+  }
+
+  async updatePublicacionEstado(
+    id: string,
+    from: PublicacionEstado,
+    estado: PublicacionEstado,
+    publicadaEn: Date | null,
+    archivoId: string | null,
+  ): Promise<PublicacionRecord> {
+    const row = await this.db
+      .updateTable('emisora.publicacion')
+      .set({ estado, publicada_en: publicadaEn, archivo_id: archivoId })
+      .where('id', '=', id)
+      .where('estado', '=', from)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) throw EmisoraError.invalidTransition(from, estado);
+    return mapPublicacion(row);
+  }
+
+  async createTransmision(input: NewTransmision): Promise<TransmisionRecord> {
+    const row = await this.db
+      .insertInto('emisora.transmision')
+      .values({
+        id: input.id,
+        programacion_item_id: input.programacionItemId,
+        fecha_transmision: dateParam(input.fechaTransmision),
+        es_fuera_ciudad: input.esFueraCiudad,
+        destino: input.destino,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapTransmision(row);
+  }
+
+  async findTransmisionById(id: string): Promise<TransmisionRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.transmision')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst();
+    return row ? mapTransmision(row) : null;
+  }
+
+  async updateTransmisionEstado(
+    id: string,
+    from: TransmisionEstado,
+    estado: TransmisionEstado,
+    autorizadaPor: string | null,
+    autorizadaEn: Date | null,
+  ): Promise<TransmisionRecord> {
+    const row = await this.db
+      .updateTable('emisora.transmision')
+      .set({ estado, autorizada_por: autorizadaPor, autorizada_en: autorizadaEn })
+      .where('id', '=', id)
+      .where('estado', '=', from)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) throw EmisoraError.invalidTransition(from, estado);
+    return mapTransmision(row);
+  }
+
+  async createSalidaEquipo(input: NewSalidaEquipo): Promise<SalidaEquipoRecord> {
+    const row = await this.db
+      .insertInto('emisora.salida_equipo')
+      .values({
+        id: input.id,
+        transmision_id: input.transmisionId,
+        equipo_id: input.equipoId,
+        responsable_id: input.responsableId,
+        fecha_salida: input.fechaSalida,
+        observaciones: input.observaciones,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapSalida(row);
+  }
+
+  async findSalidaEquipoByTransmision(
+    transmisionId: string,
+  ): Promise<readonly SalidaEquipoRecord[]> {
+    const rows = await this.db
+      .selectFrom('emisora.salida_equipo')
+      .selectAll()
+      .where('transmision_id', '=', transmisionId)
+      .orderBy('creado_en', 'desc')
+      .execute();
+    return rows.map(mapSalida);
+  }
+
+  async devolverSalidaEquipo(id: string, fechaDevolucion: Date): Promise<SalidaEquipoRecord> {
+    const row = await this.db
+      .updateTable('emisora.salida_equipo')
+      .set({ fecha_devolucion: fechaDevolucion })
+      .where('id', '=', id)
+      .where('fecha_devolucion', 'is', null)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) {
+      throw EmisoraError.conflict(
+        'INVALID_STATE_TRANSITION',
+        'La salida de equipo ya tiene fecha de devolución.',
+      );
+    }
+    return mapSalida(row);
+  }
+
+  async createReporteDesplazamiento(
+    input: NewReporteDesplazamiento,
+  ): Promise<ReporteDesplazamientoRecord> {
+    const row = await this.db
+      .insertInto('emisora.reporte_desplazamiento')
+      .values({
+        id: input.id,
+        transmision_id: input.transmisionId,
+        conductor_id: input.conductorId,
+        vehiculo: input.vehiculo,
+        hora_salida: input.horaSalida,
+        hora_llegada: input.horaLlegada,
+        novedades: input.novedades,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapReporte(row);
+  }
+
+  async findReporteDesplazamientoByTransmision(
+    transmisionId: string,
+  ): Promise<ReporteDesplazamientoRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.reporte_desplazamiento')
+      .selectAll()
+      .where('transmision_id', '=', transmisionId)
+      .executeTakeFirst();
+    return row ? mapReporte(row) : null;
+  }
+
+  async createPrestamoMifi(input: NewPrestamoMifi): Promise<PrestamoMifiRecord> {
+    const row = await this.db
+      .insertInto('emisora.prestamo_mifi')
+      .values({
+        id: input.id,
+        transmision_id: input.transmisionId,
+        usuario_id: input.usuarioId,
+        fecha_solicitud: input.fechaSolicitud,
+        fecha_transmision: dateParam(input.fechaTransmision),
+        observaciones: input.observaciones,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapPrestamo(row);
+  }
+
+  async findPrestamoMifiById(id: string): Promise<PrestamoMifiRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.prestamo_mifi')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst();
+    return row ? mapPrestamo(row) : null;
+  }
+
+  async updatePrestamoMifiEstado(
+    id: string,
+    from: PrestamoEstado,
+    estado: PrestamoEstado,
+  ): Promise<PrestamoMifiRecord> {
+    const row = await this.db
+      .updateTable('emisora.prestamo_mifi')
+      .set({ estado })
+      .where('id', '=', id)
+      .where('estado', '=', from)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) throw EmisoraError.invalidTransition(from, estado);
+    return mapPrestamo(row);
+  }
+
+  async createViatico(input: NewViatico): Promise<ViaticoRecord> {
+    const row = await this.db
+      .insertInto('emisora.viatico')
+      .values({
+        id: input.id,
+        transmision_id: input.transmisionId,
+        usuario_id: input.usuarioId,
+        soporte_archivo_id: input.soporteArchivoId,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapViatico(row);
+  }
+
+  async findViaticoById(id: string): Promise<ViaticoRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.viatico')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst();
+    return row ? mapViatico(row) : null;
+  }
 }
 
 /* ------------------------------- Mapeadores ------------------------------ */
@@ -867,5 +1280,203 @@ function mapIncentivo(row: {
     calificacion: row.calificacion,
     referenciaCdp: row.referencia_cdp,
     creadoEn: row.creado_en,
+  };
+}
+
+function mapResolucion(row: {
+  id: string;
+  incentivo_id: string;
+  pdf_archivo_id: string;
+  referencia_cdp: string;
+  emitida_en: Date;
+  creado_en: Date;
+}): ResolucionRecord {
+  return {
+    id: row.id,
+    incentivoId: row.incentivo_id,
+    pdfArchivoId: row.pdf_archivo_id,
+    referenciaCdp: row.referencia_cdp,
+    emitidaEn: row.emitida_en,
+    creadoEn: row.creado_en,
+  };
+}
+
+function mapPatrocinio(row: {
+  id: string;
+  nombre: string;
+  entidad: string;
+  estado: PatrocinioRecord['estado'];
+  fecha_inicio: Date | string | null;
+  fecha_fin: Date | string | null;
+  contrato_archivo_id: string | null;
+}): PatrocinioRecord {
+  return {
+    id: row.id,
+    nombre: row.nombre,
+    entidad: row.entidad,
+    estado: row.estado,
+    fechaInicio: row.fecha_inicio ? fechaText(row.fecha_inicio) : null,
+    fechaFin: row.fecha_fin ? fechaText(row.fecha_fin) : null,
+    contratoArchivoId: row.contrato_archivo_id,
+  };
+}
+
+function mapPromo(row: {
+  id: string;
+  patrocinio_id: string | null;
+  nombre: string;
+  guion: string | null;
+  duracion_segundos: number;
+  audio_archivo_id: string | null;
+  estado: PromoRecord['estado'];
+}): PromoRecord {
+  return {
+    id: row.id,
+    patrocinioId: row.patrocinio_id,
+    nombre: row.nombre,
+    guion: row.guion,
+    duracionSegundos: row.duracion_segundos,
+    audioArchivoId: row.audio_archivo_id,
+    estado: row.estado,
+  };
+}
+
+function mapOrden(row: {
+  id: string;
+  promo_id: string;
+  programacion_item_id: string | null;
+  estado: OrdenEmisionRecord['estado'];
+  fecha_emision: Date | string | null;
+  emitida_en: Date | null;
+}): OrdenEmisionRecord {
+  return {
+    id: row.id,
+    promoId: row.promo_id,
+    programacionItemId: row.programacion_item_id,
+    estado: row.estado,
+    fechaEmision: row.fecha_emision ? fechaText(row.fecha_emision) : null,
+    emitidaEn: row.emitida_en,
+  };
+}
+
+function mapPublicacion(row: {
+  id: string;
+  promo_id: string | null;
+  canal: string;
+  fecha_publicacion: Date | string;
+  estado: PublicacionRecord['estado'];
+  archivo_id: string | null;
+  publicada_en: Date | null;
+}): PublicacionRecord {
+  return {
+    id: row.id,
+    promoId: row.promo_id,
+    canal: row.canal,
+    fechaPublicacion: fechaText(row.fecha_publicacion),
+    estado: row.estado,
+    archivoId: row.archivo_id,
+    publicadaEn: row.publicada_en,
+  };
+}
+
+function mapTransmision(row: {
+  id: string;
+  programacion_item_id: string | null;
+  fecha_transmision: Date | string;
+  es_fuera_ciudad: boolean;
+  destino: string | null;
+  estado: TransmisionRecord['estado'];
+  autorizada_por: string | null;
+  autorizada_en: Date | null;
+}): TransmisionRecord {
+  return {
+    id: row.id,
+    programacionItemId: row.programacion_item_id,
+    fechaTransmision: fechaText(row.fecha_transmision),
+    esFueraCiudad: row.es_fuera_ciudad,
+    destino: row.destino,
+    estado: row.estado,
+    autorizadaPor: row.autorizada_por,
+    autorizadaEn: row.autorizada_en,
+  };
+}
+
+function mapSalida(row: {
+  id: string;
+  transmision_id: string;
+  equipo_id: string;
+  responsable_id: string;
+  fecha_salida: Date;
+  fecha_devolucion: Date | null;
+  observaciones: string | null;
+}): SalidaEquipoRecord {
+  return {
+    id: row.id,
+    transmisionId: row.transmision_id,
+    equipoId: row.equipo_id,
+    responsableId: row.responsable_id,
+    fechaSalida: row.fecha_salida,
+    fechaDevolucion: row.fecha_devolucion,
+    observaciones: row.observaciones,
+  };
+}
+
+function mapReporte(row: {
+  id: string;
+  transmision_id: string;
+  conductor_id: string | null;
+  vehiculo: string;
+  hora_salida: Date | null;
+  hora_llegada: Date | null;
+  novedades: string | null;
+}): ReporteDesplazamientoRecord {
+  return {
+    id: row.id,
+    transmisionId: row.transmision_id,
+    conductorId: row.conductor_id,
+    vehiculo: row.vehiculo,
+    horaSalida: row.hora_salida,
+    horaLlegada: row.hora_llegada,
+    novedades: row.novedades,
+  };
+}
+
+function mapPrestamo(row: {
+  id: string;
+  transmision_id: string;
+  usuario_id: string;
+  fecha_solicitud: Date;
+  fecha_transmision: Date | string;
+  estado: PrestamoMifiRecord['estado'];
+  observaciones: string | null;
+}): PrestamoMifiRecord {
+  return {
+    id: row.id,
+    transmisionId: row.transmision_id,
+    usuarioId: row.usuario_id,
+    fechaSolicitud: row.fecha_solicitud,
+    fechaTransmision: fechaText(row.fecha_transmision),
+    estado: row.estado,
+    observaciones: row.observaciones,
+  };
+}
+
+function mapViatico(row: {
+  id: string;
+  transmision_id: string;
+  usuario_id: string;
+  estado: ViaticoRecord['estado'];
+  referencia_compromiso: string | null;
+  referencia_orden: string | null;
+  soporte_archivo_id: string | null;
+}): ViaticoRecord {
+  return {
+    id: row.id,
+    transmisionId: row.transmision_id,
+    usuarioId: row.usuario_id,
+    estado: row.estado,
+    referenciaCompromiso: row.referencia_compromiso,
+    referenciaOrden: row.referencia_orden,
+    soporteArchivoId: row.soporte_archivo_id,
   };
 }

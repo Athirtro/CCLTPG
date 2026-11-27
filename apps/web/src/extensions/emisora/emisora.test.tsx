@@ -105,6 +105,25 @@ const usuarioOperador: User = {
   ],
 };
 
+const usuarioOperadorE3: User = {
+  ...usuarioConPermiso,
+  permissions: [
+    'emisora:patrocinio:read',
+    'emisora:patrocinio:create',
+    'emisora:patrocinio:update',
+    'emisora:promo:create',
+    'emisora:promo:update',
+    'emisora:publicacion:create',
+    'emisora:publicacion:update',
+    'emisora:transmision:create',
+    'emisora:transmision:update',
+    'emisora:prestamo:create',
+    'emisora:prestamo:update',
+    'emisora:viatico:create',
+    'emisora:resolucion:create',
+  ],
+};
+
 describe('Extensión Emisora R.A.C.', () => {
   beforeEach(() => {
     cleanup();
@@ -190,5 +209,72 @@ describe('Extensión Emisora R.A.C.', () => {
     expect(screen.getByRole('button', { name: 'Crear programación' })).toBeEnabled();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     await checkAccessibility(container, 'EmisoraOperacion con permisos');
+  });
+
+  it('la landing enlaza con la operación E3', () => {
+    renderEmisora();
+
+    expect(screen.getByRole('link', { name: 'Abrir operación E3' })).toHaveAttribute(
+      'href',
+      '/emisora/operacion-e3',
+    );
+  });
+
+  it('la ruta E3 muestra los formularios y respeta los permisos', async () => {
+    const { container } = renderEmisora('/emisora/operacion-e3', usuarioOperadorE3);
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Operación E3 de la emisora' }),
+    ).toBeInTheDocument();
+    for (const titulo of [
+      'Patrocinios y promos',
+      'Orden de emisión y publicación',
+      'Transmisiones y soportes',
+      'Mifi y viáticos',
+      'Resolución de incentivos',
+    ]) {
+      expect(screen.getByRole('heading', { level: 2, name: titulo })).toBeInTheDocument();
+    }
+    for (const boton of [
+      'Proponer patrocinio',
+      'Registrar promo',
+      'Crear orden',
+      'Programar publicación',
+      'Programar transmisión',
+    ]) {
+      expect(screen.getByRole('button', { name: boton })).toBeEnabled();
+    }
+    for (const boton of [
+      'Aprobar patrocinio',
+      'Producir promo',
+      'Programar orden',
+      'Emitir orden',
+      'Publicar',
+      'Autorizar transmisión',
+      'Solicitar mifi',
+      'Autorizar mifi',
+      'Solicitar viático',
+      'Generar resolución',
+    ]) {
+      expect(screen.getByRole('button', { name: boton })).toBeDisabled();
+    }
+    await checkAccessibility(container, 'EmisoraOperacionE3 con permisos');
+  });
+
+  it('la ruta E3 deshabilita las acciones del usuario sin permisos', () => {
+    renderEmisora('/emisora/operacion-e3', usuarioSinPermiso);
+
+    for (const boton of [
+      'Proponer patrocinio',
+      'Registrar promo',
+      'Crear orden',
+      'Programar publicación',
+      'Programar transmisión',
+      'Solicitar mifi',
+      'Solicitar viático',
+      'Generar resolución',
+    ]) {
+      expect(screen.getByRole('button', { name: boton })).toBeDisabled();
+    }
   });
 });

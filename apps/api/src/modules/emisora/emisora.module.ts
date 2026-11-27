@@ -8,6 +8,7 @@ import { EMISORA_OWNERSHIP_POLICY } from '../../shared/integration/ownership.por
 import { ConvocatoriaService } from './application/convocatoria.service.js';
 import { GrabacionService } from './application/grabacion.service.js';
 import { ProgramacionService } from './application/programacion.service.js';
+import { EmisoraOperacionService } from './application/operacion.service.js';
 import { EMISORA_REPOSITORY } from './application/ports/emisora.repository.js';
 import { EmisoraUnitOfWork } from './application/ports/unit-of-work.js';
 import { AudiosController, GrabacionesController } from './api/grabaciones.controller.js';
@@ -21,13 +22,25 @@ import {
   RejillaController,
 } from './api/convocatorias.controller.js';
 import { ProgramacionController } from './api/programacion.controller.js';
+import {
+  OrdenesEmisionController,
+  PatrociniosController,
+  PrestamosMifiController,
+  PromosController,
+  PublicacionesController,
+  ReportesDesplazamientoController,
+  ResolucionesController,
+  SalidasEquipoController,
+  TransmisionesController,
+  ViaticosController,
+} from './api/operacion.controller.js';
 import { EmisoraPii } from './application/emisora-pii.js';
 import { IdentityOwnershipPolicy } from './infrastructure/identity-ownership-policy.js';
 import { KyselyEmisoraRepository } from './infrastructure/persistence/kysely-emisora.repository.js';
 import { KyselyEmisoraUnitOfWork } from './infrastructure/persistence/kysely-unit-of-work.js';
 
 /**
- * Contexto delimitado Emisora R.A.C. (plan §2.1, E2).
+ * Contexto delimitado Emisora R.A.C. (plan §2.1, E2/E3).
  *
  * El puente de `src/integration/` inyecta los directorios de los contextos
  * dueños sin importarlos desde aquí (ADR-0005). Los casos de uso E2 comparten
@@ -47,6 +60,16 @@ import { KyselyEmisoraUnitOfWork } from './infrastructure/persistence/kysely-uni
     ProgramacionController,
     GrabacionesController,
     AudiosController,
+    ResolucionesController,
+    PatrociniosController,
+    PromosController,
+    OrdenesEmisionController,
+    PublicacionesController,
+    TransmisionesController,
+    SalidasEquipoController,
+    ReportesDesplazamientoController,
+    PrestamosMifiController,
+    ViaticosController,
   ],
   providers: [
     {
@@ -60,6 +83,7 @@ import { KyselyEmisoraUnitOfWork } from './infrastructure/persistence/kysely-uni
     ConvocatoriaService,
     ProgramacionService,
     GrabacionService,
+    EmisoraOperacionService,
   ],
   exports: [EMISORA_OWNERSHIP_POLICY],
 })

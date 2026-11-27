@@ -499,3 +499,99 @@ Cada fase es un PR separado sobre `main`, con la regresión en verde antes de ab
 ### 18.6 Archivos existentes añadidos a la tabla de puntos de contacto
 
 `perfiles.spec.ts`, `contract.test.mjs`, `00-roles.sql`, `.github/workflows/ci.yml`, `migrator.spec.ts`, `identity-flow.spec.ts`, `notification-policy.ts`, `notification-policy.spec.ts`, `file.service.ts`, `env.ts`, `.env.example`, `identity.module.ts`, `migrate.ts`, `docs/runbook/migraciones.md`, `audit-redactor.ts`, `client-contract.test.mjs`, `e2e/fixtures.ts`, `apps/api/src/database/seeds/run.ts`. Todos aparecen ahora en §3 con su cambio concreto y su verificación.
+
+---
+
+## 19. Inventario de implementación del slice E3 (patrocinios, promos y transmisiones)
+
+Este apartado cierra el inventario pendiente de §§4.1, 4.2, 13 y 14 y fija la
+correspondencia exacta entre las tablas ya creadas por
+`apps/api/src/database/migrations/emisora/0002_create_emisora_operation.ts` y los
+casos de uso que se añaden en E3. No modifica ninguna migración existente ni
+ningún documento congelado: todas las tablas y enums ya están desplegados desde
+E1; E3 solo los consume.
+
+### 19.1 Tablas de `0002` consumidas en E3
+
+| Tabla | Columnas relevantes | Restricción que se refuerza en dominio | RF |
+| --- | --- | --- | --- |
+| `emisora.resolucion_incentivo` | `incentivo_id`, `pdf_archivo_id`, `referencia_cdp`, `emitida_en` | `unique(incentivo_id)`: una resolución por incentivo | RF-03.7 |
+| `emisora.patrocinio` | `nombre`, `entidad`, `estado`, `fecha_inicio`, `fecha_fin`, `contrato_archivo_id`, `deleted_at` | `fecha_fin >= fecha_inicio`; el acta de aprobación exige contrato PDF limpio | RF-04 |
+| `emisora.promo` | `patrocinio_id`, `nombre`, `guion`, `duracion_segundos`, `audio_archivo_id`, `estado` | `duracion_segundos > 0`; `borrador → producida` exige audio | RF-05 |
+| `emisora.orden_emision` | `promo_id`, `programacion_item_id`, `estado`, `fecha_emision`, `emitida_en` | `borrador → programada → emitida`; la promo debe estar `producida` | RF-04.3 |
+| `emisora.publicacion` | `promo_id`, `canal`, `fecha_publicacion`, `estado`, `archivo_id` | `programada → publicada` | RF-05 |
+| `emisora.transmision` | `programacion_item_id`, `fecha_transmision`, `es_fuera_ciudad`, `destino`, `estado`, `autorizada_por`, `autorizada_en` | `programada → autorizada` exige salida de equipo y reporte de desplazamiento | RF-06 |
+| `emisora.salida_equipo` | `transmision_id`, `equipo_id`, `responsable_id`, `fecha_salida`, `fecha_devolucion` | `fecha_devolucion >= fecha_salida` | RF-06.2 |
+| `emisora.reporte_desplazamiento` | `transmision_id`, `conductor_id`, `vehiculo`, `hora_salida`, `hora_llegada`, `novedades` | `hora_llegada >= hora_salida` | RF-06.3 |
+| `emisora.prestamo_mifi` | `transmision_id`, `usuario_id`, `fecha_solicitud`, `fecha_transmision`, `estado` | `(fecha_solicitud at time zone 'America/Bogota')::date <= fecha_transmision - 2` | RF-06.5 |
+| `emisora.viatico` | `transmision_id`, `usuario_id`, `estado`, `referencia_compromiso`, `referencia_orden`, `soporte_archivo_id` | solo se crea si `transmision.es_fuera_ciudad = true`; sin importes | RF-06.6 |
+
+### 19.2 Reglas de negocio añadidas a §4.2
+
+1. **RF-03.7.** `POST /emisora/resoluciones` solo acepta un incentivo en estado
+   `resuelto` con `referencia_cdp`. Genera el PDF mediante la plantilla
+   `emisora-resolucion-incentivos` del contexto Exportaciones (sin llamar a
+   SIIF) y persiste el `archivo_id` devuelto en `resolucion_incentivo`.
+   El evento `resolucion.generada` **ya se emite en E2** al transicionar el
+   incentivo a `resuelto`; la creación del PDF registra la misma acción en
+   auditoría y añade `reporte.generado` desde Exportaciones, pero **no publica
+   una segunda vez** `resolucion.generada`. Así EM-12 queda cubierto sin
+   duplicar el aviso al realizador.
+2. **RF-04.** Un patrocinio se crea en `propuesto`; `aprobado` exige contrato PDF
+   limpio verificado por `FILE_DIRECTORY` y emite `patrocinio.aprobado`.
+   `rechazado` no emite evento de dominio.
+3. **RF-05.** Una promo `producida` exige audio limpio y emite `promo.producida`.
+   La orden de emisión referencia esa promo y, cuando existe, la franja de
+   programación; `emitida` emite `orden.emitida`. Una publicación se registra en
+   `programada` y `publicada` emite `publicacion.realizada`.
+4. **RF-06.** `autorizar` una transmisión requiere al menos una
+   `salida_equipo` y un `reporte_desplazamiento`; emite
+   `transmision.autorizada`, prefijo crítico de la política de notificaciones
+   (§6.1). El préstamo de mifi valida en dominio la antelación de dos días
+   calendario en `America/Bogota` antes de escribir, con la restricción SQL como
+   red de seguridad, y `autorizado` emite `prestamo.autorizado`. El viático se
+   rechaza con `EMISORA_VIATICO_NO_FUERA_CIUDAD` si la transmisión no es fuera
+   de la ciudad y su creación emite `viatico.solicitado`.
+5. **Concurrencia.** Todas las transiciones E3 leen y validan el estado dentro
+   de `EmisoraUnitOfWork`, y el `UPDATE` filtra por el estado de origen
+   (`WHERE estado = $from`), igual que el fix de E2. Un cambio concurrente
+   devuelve 409 `INVALID_STATE_TRANSITION`, nunca 500.
+
+### 19.3 Operaciones E3 y trazabilidad
+
+| Operación | Permiso | Evento de dominio | RF / matriz |
+| --- | --- | --- | --- |
+| `POST /emisora/resoluciones` | `emisora:resolucion:create` | auditoría `resolucion.generada` + `reporte.generado` (sin duplicar outbox) | RF-03.7 / EM-12 |
+| `GET /emisora/resoluciones/{id}/pdf` | `emisora:resolucion:read` | — | RF-03.7 / EM-34 |
+| `POST /emisora/patrocinios`, `PATCH /emisora/patrocinios/{id}/transitions` | `emisora:patrocinio:create/update` | `patrocinio.aprobado` | RF-04 / EM-13 |
+| `POST /emisora/promos`, `PATCH /emisora/promos/{id}/transitions` | `emisora:promo:create/update` | `promo.producida` | RF-05 / EM-14 |
+| `POST /emisora/ordenes-emision`, `PATCH /emisora/ordenes-emision/{id}/transitions` | `emisora:patrocinio:create/update` | `orden.emitida` | RF-04.3 |
+| `POST /emisora/publicaciones`, `PATCH /emisora/publicaciones/{id}/transitions` | `emisora:publicacion:create/update` | `publicacion.realizada` | RF-05 / EM-15 |
+| `POST /emisora/transmisiones`, `PATCH /emisora/transmisiones/{id}/transitions` | `emisora:transmision:create/update` | `transmision.autorizada` | RF-06 / EM-16 |
+| `POST /emisora/salidas-equipo`, `POST /emisora/reportes-desplazamiento` | `emisora:transmision:create` | — | RF-06.2/06.3 |
+| `POST /emisora/prestamos-mifi`, `PATCH /emisora/prestamos-mifi/{id}/transitions` | `emisora:prestamo:create/update` | `prestamo.autorizado` | RF-06.5 / EM-18 |
+| `POST /emisora/viaticos` | `emisora:viatico:create` | `viatico.solicitado` | RF-06.6 / EM-17 |
+
+Todas son `x-access=permission`, `x-scope=global` y mantienen `public-routes.json`
+intacto. Los perfiles `jefe_emisora`, `tecnico_emision`, `contratista_prensa` y
+`secretario_cultura` conservan los casos permitidos de la matriz §3; E3 añade a
+`tecnico_emision` solo `emisora:prestamo:create`/`update`, necesario para EM-18.
+
+### 19.4 Compuerta específica de E3
+
+Además de la regresión de §12, E3 verifica: (a) el PDF de la resolución se
+descarga por `GET /files/{id}/download` con el permiso existente de Archivos;
+(b) dos solicitudes de mifi con menos de dos días de antelación fallan con
+`EMISORA_MIFI_ANTELACION_INSUFICIENTE`, tanto en dominio como en la restricción
+SQL; (c) un viático sobre transmisión dentro de la ciudad falla con
+`EMISORA_VIATICO_NO_FUERA_CIUDAD`; (d) la autorización de transmisión sin
+soportes falla con `EMISORA_TRANSMISION_SIN_SOPORTES`; (e) la creación de la
+resolución no añade un segundo evento `resolucion.generada` a la outbox; y (f)
+los eventos nuevos ya presentes en el catálogo (101) no se duplican al regenerar
+`events.json`.
+
+Las acciones de auditoría de creación y rechazo (`patrocinio.propuesto`,
+`patrocinio.rechazado`, `orden.creada`, `orden.programada`, etc.) cumplen la
+gramática `recurso.accion`, pero no se publican en la outbox: el catálogo de
+eventos queda intacto. La descarga del PDF se hace con el cliente autenticado
+(token en memoria), no con un enlace plano que recibiría un 401.

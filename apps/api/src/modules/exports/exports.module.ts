@@ -27,5 +27,8 @@ import { KyselyExportsUnitOfWork } from './infrastructure/persistence/kysely-uni
     ExportsService,
     ReportGenerationService,
   ],
+  // Aditivo: permite que el puente de integración reutilice la generación de
+  // PDF sin que Exportaciones conozca al contexto Emisora.
+  exports: [ExportsService],
 })
 export class ExportsModule {}

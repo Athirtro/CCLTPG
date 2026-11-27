@@ -655,6 +655,208 @@ export type EmisoraIncentivoView = {
   referenciaCdp: string | null;
 };
 
+// ===== Tipos emisora R.A.C. (E3) — DTOs reales del contrato =====
+
+export type EmisoraPatrocinioEstado = 'propuesto' | 'aprobado' | 'rechazado';
+export type EmisoraPromoEstado = 'borrador' | 'producida';
+export type EmisoraOrdenEmisionEstado = 'borrador' | 'programada' | 'emitida';
+export type EmisoraPublicacionEstado = 'programada' | 'publicada';
+export type EmisoraTransmisionEstado = 'programada' | 'autorizada' | 'realizada' | 'cancelada';
+export type EmisoraPrestamoEstado =
+  'solicitado' | 'autorizado' | 'entregado' | 'devuelto' | 'rechazado';
+export type EmisoraViaticoEstado = 'solicitado' | 'resuelto' | 'comprometido' | 'orden_generada';
+
+export type CreateEmisoraResolucionDto = {
+  incentivoId: string;
+  periodo: string;
+};
+
+export type CreateEmisoraPatrocinioDto = {
+  nombre: string;
+  entidad: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+  contratoArchivoId?: string;
+};
+
+export type EmisoraPatrocinioTransitionDto = {
+  to: EmisoraPatrocinioEstado;
+  contratoArchivoId?: string;
+};
+
+export type CreateEmisoraPromoDto = {
+  patrocinioId: string;
+  nombre: string;
+  guion?: string;
+  duracionSegundos: number;
+};
+
+export type EmisoraPromoTransitionDto = {
+  to: EmisoraPromoEstado;
+  audioArchivoId?: string;
+};
+
+export type CreateEmisoraOrdenEmisionDto = {
+  promoId: string;
+  programacionItemId?: string;
+  fechaEmision?: string;
+};
+
+export type EmisoraOrdenEmisionTransitionDto = {
+  to: EmisoraOrdenEmisionEstado;
+};
+
+export type CreateEmisoraPublicacionDto = {
+  promoId?: string;
+  canal: string;
+  fechaPublicacion: string;
+  archivoId?: string;
+};
+
+export type EmisoraPublicacionTransitionDto = {
+  to: EmisoraPublicacionEstado;
+  archivoId?: string;
+};
+
+export type CreateEmisoraTransmisionDto = {
+  programacionItemId?: string;
+  fechaTransmision: string;
+  esFueraCiudad: boolean;
+  destino?: string;
+};
+
+export type EmisoraTransmisionTransitionDto = {
+  to: EmisoraTransmisionEstado;
+};
+
+export type CreateEmisoraSalidaEquipoDto = {
+  transmisionId: string;
+  equipoId: string;
+  responsableId: string;
+  fechaSalida?: string;
+  observaciones?: string;
+};
+
+export type CreateEmisoraReporteDesplazamientoDto = {
+  transmisionId: string;
+  conductorId?: string;
+  vehiculo: string;
+  horaSalida?: string;
+  horaLlegada?: string;
+  novedades?: string;
+};
+
+export type CreateEmisoraPrestamoMifiDto = {
+  transmisionId: string;
+  usuarioId: string;
+  observaciones?: string;
+};
+
+export type EmisoraPrestamoMifiTransitionDto = {
+  to: EmisoraPrestamoEstado;
+};
+
+export type CreateEmisoraViaticoDto = {
+  transmisionId: string;
+  usuarioId: string;
+  soporteArchivoId?: string;
+};
+
+export type EmisoraResolucionView = {
+  id: string;
+  incentivoId: string;
+  archivoId: string;
+  referenciaCdp: string;
+  emitidaEn: string;
+  descargaUrl: string;
+};
+
+export type EmisoraPatrocinioView = {
+  id: string;
+  nombre: string;
+  entidad: string;
+  estado: EmisoraPatrocinioEstado;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  contratoArchivoId: string | null;
+};
+
+export type EmisoraPromoView = {
+  id: string;
+  patrocinioId: string | null;
+  nombre: string;
+  duracionSegundos: number;
+  audioArchivoId: string | null;
+  estado: EmisoraPromoEstado;
+};
+
+export type EmisoraOrdenEmisionView = {
+  id: string;
+  promoId: string;
+  programacionItemId: string | null;
+  estado: EmisoraOrdenEmisionEstado;
+  fechaEmision: string | null;
+  emitidaEn: string | null;
+};
+
+export type EmisoraPublicacionView = {
+  id: string;
+  promoId: string | null;
+  canal: string;
+  fechaPublicacion: string;
+  estado: EmisoraPublicacionEstado;
+  archivoId: string | null;
+  publicadaEn: string | null;
+};
+
+export type EmisoraTransmisionView = {
+  id: string;
+  programacionItemId: string | null;
+  fechaTransmision: string;
+  esFueraCiudad: boolean;
+  destino: string | null;
+  estado: EmisoraTransmisionEstado;
+  autorizadaEn: string | null;
+};
+
+export type EmisoraSalidaEquipoView = {
+  id: string;
+  transmisionId: string;
+  equipoId: string;
+  responsableId: string;
+  fechaSalida: string;
+  fechaDevolucion: string | null;
+};
+
+export type EmisoraReporteDesplazamientoView = {
+  id: string;
+  transmisionId: string;
+  conductorId: string | null;
+  vehiculo: string;
+  horaSalida: string | null;
+  horaLlegada: string | null;
+  novedades: string | null;
+};
+
+export type EmisoraPrestamoMifiView = {
+  id: string;
+  transmisionId: string;
+  usuarioId: string;
+  fechaSolicitud: string;
+  fechaTransmision: string;
+  estado: EmisoraPrestamoEstado;
+};
+
+export type EmisoraViaticoView = {
+  id: string;
+  transmisionId: string;
+  usuarioId: string;
+  estado: EmisoraViaticoEstado;
+  referenciaCompromiso: string | null;
+  referenciaOrden: string | null;
+  soporteArchivoId: string | null;
+};
+
 // ===== Tipos health y error =====
 
 export type ReadinessReport = {
@@ -2275,6 +2477,205 @@ export type Paths = {
             'application/json': ProblemDetailsDto;
           };
         };
+      };
+    };
+  };
+  // --- Emisora R.A.C. (E3) ---
+  '/emisora/resoluciones': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraResolucionDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraResolucionView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/resoluciones/{id}/pdf': {
+    get: {
+      parameters: { path: { id: string } };
+      responses: {
+        200: { content: { 'application/json': EmisoraResolucionView } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/patrocinios': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraPatrocinioDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraPatrocinioView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/patrocinios/{id}/transitions': {
+    patch: {
+      parameters: { path: { id: string } };
+      requestBody: { content: { 'application/json': EmisoraPatrocinioTransitionDto } };
+      responses: {
+        200: { content: { 'application/json': EmisoraPatrocinioView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/promos': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraPromoDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraPromoView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/promos/{id}/transitions': {
+    patch: {
+      parameters: { path: { id: string } };
+      requestBody: { content: { 'application/json': EmisoraPromoTransitionDto } };
+      responses: {
+        200: { content: { 'application/json': EmisoraPromoView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/ordenes-emision': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraOrdenEmisionDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraOrdenEmisionView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/ordenes-emision/{id}/transitions': {
+    patch: {
+      parameters: { path: { id: string } };
+      requestBody: { content: { 'application/json': EmisoraOrdenEmisionTransitionDto } };
+      responses: {
+        200: { content: { 'application/json': EmisoraOrdenEmisionView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/publicaciones': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraPublicacionDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraPublicacionView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/publicaciones/{id}/transitions': {
+    patch: {
+      parameters: { path: { id: string } };
+      requestBody: { content: { 'application/json': EmisoraPublicacionTransitionDto } };
+      responses: {
+        200: { content: { 'application/json': EmisoraPublicacionView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/transmisiones': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraTransmisionDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraTransmisionView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/transmisiones/{id}/transitions': {
+    patch: {
+      parameters: { path: { id: string } };
+      requestBody: { content: { 'application/json': EmisoraTransmisionTransitionDto } };
+      responses: {
+        200: { content: { 'application/json': EmisoraTransmisionView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/salidas-equipo': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraSalidaEquipoDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraSalidaEquipoView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/reportes-desplazamiento': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraReporteDesplazamientoDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraReporteDesplazamientoView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/prestamos-mifi': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraPrestamoMifiDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraPrestamoMifiView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/prestamos-mifi/{id}/transitions': {
+    patch: {
+      parameters: { path: { id: string } };
+      requestBody: { content: { 'application/json': EmisoraPrestamoMifiTransitionDto } };
+      responses: {
+        200: { content: { 'application/json': EmisoraPrestamoMifiView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/viaticos': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraViaticoDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraViaticoView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
       };
     };
   };

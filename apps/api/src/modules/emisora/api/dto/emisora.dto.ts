@@ -23,15 +23,27 @@ import {
   FRANJA_TIPOS,
   GRABACION_ESTADOS,
   INCENTIVO_ESTADOS,
+  ORDEN_EMISION_ESTADOS,
+  PATROCINIO_ESTADOS,
+  PRESTAMO_ESTADOS,
+  PROMO_ESTADOS,
   PROGRAMACION_ESTADOS,
+  PUBLICACION_ESTADOS,
   REJILLA_ESTADOS,
+  TRANSMISION_ESTADOS,
   type AsistenciaEstado,
   type AudioTipo,
   type FranjaTipo,
   type GrabacionEstado,
   type IncentivoEstado,
+  type OrdenEmisionEstado,
+  type PatrocinioEstado,
+  type PrestamoEstado,
+  type PromoEstado,
   type ProgramacionEstado,
+  type PublicacionEstado,
   type RejillaEstado,
+  type TransmisionEstado,
 } from '../../domain/emisora-states.js';
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/u;
@@ -417,4 +429,264 @@ export class AudioQueryDto {
   @IsOptional()
   @IsUUID()
   sesionId?: string;
+}
+
+/* --------------------------------- E3 ------------------------------------ */
+
+const FECHA_HORA_ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})$/u;
+
+export class CreateResolucionDto {
+  @ApiProperty({ type: String, format: 'uuid', description: 'Incentivo resuelto.' })
+  @IsUUID()
+  incentivoId!: string;
+
+  @ApiProperty({ type: String, description: 'Periodo YYYY o YYYY-MM del oficio.', example: '2026' })
+  @Matches(/^\d{4}(-\d{2})?$/u)
+  periodo!: string;
+}
+
+export class CreatePatrocinioDto {
+  @ApiProperty({ type: String, example: 'Cultura en la plaza' })
+  @IsString()
+  @MinLength(1)
+  nombre!: string;
+
+  @ApiProperty({ type: String, example: 'Alcaldía municipal' })
+  @IsString()
+  @MinLength(1)
+  entidad!: string;
+
+  @ApiPropertyOptional({ type: String, example: '2026-01-19' })
+  @IsOptional()
+  @Matches(FECHA)
+  fechaInicio?: string;
+
+  @ApiPropertyOptional({ type: String, example: '2026-12-18' })
+  @IsOptional()
+  @Matches(FECHA)
+  fechaFin?: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Contrato PDF ya cargado.' })
+  @IsOptional()
+  @IsUUID()
+  contratoArchivoId?: string;
+}
+
+export class PatrocinioTransitionDto {
+  @ApiProperty({ type: String, enum: PATROCINIO_ESTADOS })
+  @IsIn(PATROCINIO_ESTADOS)
+  to!: PatrocinioEstado;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Contrato PDF para aprobar.' })
+  @IsOptional()
+  @IsUUID()
+  contratoArchivoId?: string;
+}
+
+export class CreatePromoDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  patrocinioId!: string;
+
+  @ApiProperty({ type: String, example: 'Promo de la semana cultural' })
+  @IsString()
+  @MinLength(1)
+  nombre!: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  guion?: string;
+
+  @ApiProperty({ type: Number, minimum: 1 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  duracionSegundos!: number;
+}
+
+export class PromoTransitionDto {
+  @ApiProperty({ type: String, enum: PROMO_ESTADOS })
+  @IsIn(PROMO_ESTADOS)
+  to!: PromoEstado;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Audio limpio para producir.' })
+  @IsOptional()
+  @IsUUID()
+  audioArchivoId?: string;
+}
+
+export class CreateOrdenEmisionDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  promoId!: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  programacionItemId?: string;
+
+  @ApiPropertyOptional({ type: String, example: '2026-01-19' })
+  @IsOptional()
+  @Matches(FECHA)
+  fechaEmision?: string;
+}
+
+export class OrdenEmisionTransitionDto {
+  @ApiProperty({ type: String, enum: ORDEN_EMISION_ESTADOS })
+  @IsIn(ORDEN_EMISION_ESTADOS)
+  to!: OrdenEmisionEstado;
+}
+
+export class CreatePublicacionDto {
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  promoId?: string;
+
+  @ApiProperty({ type: String, example: 'facebook' })
+  @IsString()
+  @MinLength(1)
+  canal!: string;
+
+  @ApiProperty({ type: String, example: '2026-01-20' })
+  @Matches(FECHA)
+  fechaPublicacion!: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  archivoId?: string;
+}
+
+export class PublicacionTransitionDto {
+  @ApiProperty({ type: String, enum: PUBLICACION_ESTADOS })
+  @IsIn(PUBLICACION_ESTADOS)
+  to!: PublicacionEstado;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  archivoId?: string;
+}
+
+export class CreateTransmisionDto {
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  programacionItemId?: string;
+
+  @ApiProperty({ type: String, example: '2026-01-19' })
+  @Matches(FECHA)
+  fechaTransmision!: string;
+
+  @ApiProperty({ type: Boolean })
+  @IsBoolean()
+  esFueraCiudad!: boolean;
+
+  @ApiPropertyOptional({ type: String, example: 'Villa de Leyva' })
+  @IsOptional()
+  @IsString()
+  destino?: string;
+}
+
+export class TransmisionTransitionDto {
+  @ApiProperty({ type: String, enum: TRANSMISION_ESTADOS })
+  @IsIn(TRANSMISION_ESTADOS)
+  to!: TransmisionEstado;
+}
+
+export class CreateSalidaEquipoDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  transmisionId!: string;
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    example: 'dddddddd-0000-4000-8000-000000000001',
+  })
+  @IsUUID()
+  equipoId!: string;
+
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  responsableId!: string;
+
+  @ApiPropertyOptional({ type: String, example: '2026-01-19T06:00:00Z' })
+  @IsOptional()
+  @Matches(FECHA_HORA_ISO)
+  fechaSalida?: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  observaciones?: string;
+}
+
+export class CreateReporteDesplazamientoDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  transmisionId!: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  conductorId?: string;
+
+  @ApiProperty({ type: String, example: 'Vehículo 01' })
+  @IsString()
+  @MinLength(1)
+  vehiculo!: string;
+
+  @ApiPropertyOptional({ type: String, example: '2026-01-19T05:30:00Z' })
+  @IsOptional()
+  @Matches(FECHA_HORA_ISO)
+  horaSalida?: string;
+
+  @ApiPropertyOptional({ type: String, example: '2026-01-19T06:00:00Z' })
+  @IsOptional()
+  @Matches(FECHA_HORA_ISO)
+  horaLlegada?: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  novedades?: string;
+}
+
+export class CreatePrestamoMifiDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  transmisionId!: string;
+
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  usuarioId!: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  observaciones?: string;
+}
+
+export class PrestamoMifiTransitionDto {
+  @ApiProperty({ type: String, enum: PRESTAMO_ESTADOS })
+  @IsIn(PRESTAMO_ESTADOS)
+  to!: PrestamoEstado;
+}
+
+export class CreateViaticoDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  transmisionId!: string;
+
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  usuarioId!: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  soporteArchivoId?: string;
 }

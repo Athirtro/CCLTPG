@@ -24,6 +24,38 @@ export type GrabacionEstado = (typeof GRABACION_ESTADOS)[number];
 export const INCENTIVO_ESTADOS = ['calificado', 'asignado', 'resuelto', 'solicitud_cdp'] as const;
 export type IncentivoEstado = (typeof INCENTIVO_ESTADOS)[number];
 
+export const PATROCINIO_ESTADOS = ['propuesto', 'aprobado', 'rechazado'] as const;
+export type PatrocinioEstado = (typeof PATROCINIO_ESTADOS)[number];
+
+export const PROMO_ESTADOS = ['borrador', 'producida'] as const;
+export type PromoEstado = (typeof PROMO_ESTADOS)[number];
+
+export const ORDEN_EMISION_ESTADOS = ['borrador', 'programada', 'emitida'] as const;
+export type OrdenEmisionEstado = (typeof ORDEN_EMISION_ESTADOS)[number];
+
+export const PUBLICACION_ESTADOS = ['programada', 'publicada'] as const;
+export type PublicacionEstado = (typeof PUBLICACION_ESTADOS)[number];
+
+export const TRANSMISION_ESTADOS = ['programada', 'autorizada', 'realizada', 'cancelada'] as const;
+export type TransmisionEstado = (typeof TRANSMISION_ESTADOS)[number];
+
+export const PRESTAMO_ESTADOS = [
+  'solicitado',
+  'autorizado',
+  'entregado',
+  'devuelto',
+  'rechazado',
+] as const;
+export type PrestamoEstado = (typeof PRESTAMO_ESTADOS)[number];
+
+export const VIATICO_ESTADOS = [
+  'solicitado',
+  'resuelto',
+  'comprometido',
+  'orden_generada',
+] as const;
+export type ViaticoEstado = (typeof VIATICO_ESTADOS)[number];
+
 export const FRANJA_TIPOS = ['programa', 'promo', 'mencion', 'espacio'] as const;
 export type FranjaTipo = (typeof FRANJA_TIPOS)[number];
 
@@ -60,4 +92,33 @@ export function canTransicionarIncentivo(from: IncentivoEstado, to: IncentivoEst
     (from === 'calificado' && to === 'asignado') ||
     (from === 'asignado' && (to === 'resuelto' || to === 'solicitud_cdp'))
   );
+}
+
+/** Tabla cerrada de transiciones E3; la misma forma que las de E2. */
+const TRANSICIONES_E3 = {
+  patrocinio: { propuesto: ['aprobado', 'rechazado'], aprobado: [], rechazado: [] },
+  promo: { borrador: ['producida'], producida: [] },
+  orden: { borrador: ['programada'], programada: ['emitida'], emitida: [] },
+  publicacion: { programada: ['publicada'], publicada: [] },
+  transmision: {
+    programada: ['autorizada', 'cancelada'],
+    autorizada: ['realizada', 'cancelada'],
+    realizada: [],
+    cancelada: [],
+  },
+  prestamo: {
+    solicitado: ['autorizado', 'rechazado'],
+    autorizado: ['entregado', 'rechazado'],
+    entregado: ['devuelto'],
+    devuelto: [],
+    rechazado: [],
+  },
+} as const;
+
+export type AgregadoE3 = keyof typeof TRANSICIONES_E3;
+
+/** RF-04…RF-06: valida la transición antes de escribir y dentro de la UoW. */
+export function canTransicionarE3(agregado: AgregadoE3, from: string, to: string): boolean {
+  const permitidas = TRANSICIONES_E3[agregado] as Record<string, readonly string[]>;
+  return permitidas[from]?.includes(to) ?? false;
 }

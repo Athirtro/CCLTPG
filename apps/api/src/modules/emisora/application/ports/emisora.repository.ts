@@ -6,6 +6,12 @@ import type {
   FranjaTipo,
   GrabacionEstado,
   IncentivoEstado,
+  OrdenEmisionEstado,
+  PatrocinioEstado,
+  PrestamoEstado,
+  PromoEstado,
+  PublicacionEstado,
+  TransmisionEstado,
 } from '../../domain/emisora-states.js';
 import type {
   AsistenciaRecord,
@@ -15,12 +21,22 @@ import type {
   GrabacionRecord,
   IncentivoRecord,
   InformeRecord,
+  OrdenEmisionRecord,
+  PatrocinioRecord,
+  PrestamoMifiRecord,
   ProgramacionItemRecord,
   ProgramacionRecord,
+  PromoRecord,
   ProyectoRecord,
+  PublicacionRecord,
   RealizadorRecord,
+  ReporteDesplazamientoRecord,
+  ResolucionRecord,
   RejillaItemRecord,
   RejillaRecord,
+  SalidaEquipoRecord,
+  TransmisionRecord,
+  ViaticoRecord,
 } from '../emisora.types.js';
 
 export interface NewConvocatoria {
@@ -118,9 +134,93 @@ export interface NewInforme {
   observaciones: string | null;
 }
 
+export interface NewResolucion {
+  id: string;
+  incentivoId: string;
+  pdfArchivoId: string;
+  referenciaCdp: string;
+}
+
+export interface NewPatrocinio {
+  id: string;
+  nombre: string;
+  entidad: string;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  contratoArchivoId: string | null;
+}
+
+export interface NewPromo {
+  id: string;
+  patrocinioId: string | null;
+  nombre: string;
+  guion: string | null;
+  duracionSegundos: number;
+  audioArchivoId: string | null;
+}
+
+export interface NewOrdenEmision {
+  id: string;
+  promoId: string;
+  programacionItemId: string | null;
+  fechaEmision: string | null;
+}
+
+export interface NewPublicacion {
+  id: string;
+  promoId: string | null;
+  canal: string;
+  fechaPublicacion: string;
+  archivoId: string | null;
+}
+
+export interface NewTransmision {
+  id: string;
+  programacionItemId: string | null;
+  fechaTransmision: string;
+  esFueraCiudad: boolean;
+  destino: string | null;
+}
+
+export interface NewSalidaEquipo {
+  id: string;
+  transmisionId: string;
+  equipoId: string;
+  responsableId: string;
+  fechaSalida: Date;
+  observaciones: string | null;
+}
+
+export interface NewReporteDesplazamiento {
+  id: string;
+  transmisionId: string;
+  conductorId: string | null;
+  vehiculo: string;
+  horaSalida: Date | null;
+  horaLlegada: Date | null;
+  novedades: string | null;
+}
+
+export interface NewPrestamoMifi {
+  id: string;
+  transmisionId: string;
+  usuarioId: string;
+  fechaSolicitud: Date;
+  fechaTransmision: string;
+  observaciones: string | null;
+}
+
+export interface NewViatico {
+  id: string;
+  transmisionId: string;
+  usuarioId: string;
+  soporteArchivoId: string | null;
+}
+
 /**
- * Repositorio de los agregados E2 de la emisora. Todas las escrituras reciben
- * el ejecutor transaccional del `EmisoraUnitOfWork`; nunca abren transacción.
+ * Repositorio de los agregados de la emisora (E2 y E3). Todas las escrituras
+ * reciben el ejecutor transaccional del `EmisoraUnitOfWork`; nunca abren
+ * transacción. Las transiciones filtran por el estado de origen.
  */
 export interface EmisoraRepository {
   createConvocatoria(input: NewConvocatoria): Promise<ConvocatoriaRecord>;
@@ -196,4 +296,77 @@ export interface EmisoraRepository {
     referenciaCdp: string | null,
   ): Promise<IncentivoRecord>;
   listIncentivos(): Promise<readonly IncentivoRecord[]>;
+
+  createResolucion(input: NewResolucion): Promise<ResolucionRecord>;
+  findResolucionById(id: string): Promise<ResolucionRecord | null>;
+  findResolucionByIncentivoId(incentivoId: string): Promise<ResolucionRecord | null>;
+
+  createPatrocinio(input: NewPatrocinio): Promise<PatrocinioRecord>;
+  findPatrocinioById(id: string): Promise<PatrocinioRecord | null>;
+  updatePatrocinioEstado(
+    id: string,
+    from: PatrocinioEstado,
+    estado: PatrocinioEstado,
+    contratoArchivoId: string | null,
+  ): Promise<PatrocinioRecord>;
+
+  createPromo(input: NewPromo): Promise<PromoRecord>;
+  findPromoById(id: string): Promise<PromoRecord | null>;
+  updatePromoEstado(
+    id: string,
+    from: PromoEstado,
+    estado: PromoEstado,
+    audioArchivoId: string | null,
+  ): Promise<PromoRecord>;
+
+  createOrden(input: NewOrdenEmision): Promise<OrdenEmisionRecord>;
+  findOrdenById(id: string): Promise<OrdenEmisionRecord | null>;
+  updateOrdenEstado(
+    id: string,
+    from: OrdenEmisionEstado,
+    estado: OrdenEmisionEstado,
+    emitidaEn: Date | null,
+  ): Promise<OrdenEmisionRecord>;
+
+  createPublicacion(input: NewPublicacion): Promise<PublicacionRecord>;
+  findPublicacionById(id: string): Promise<PublicacionRecord | null>;
+  updatePublicacionEstado(
+    id: string,
+    from: PublicacionEstado,
+    estado: PublicacionEstado,
+    publicadaEn: Date | null,
+    archivoId: string | null,
+  ): Promise<PublicacionRecord>;
+
+  createTransmision(input: NewTransmision): Promise<TransmisionRecord>;
+  findTransmisionById(id: string): Promise<TransmisionRecord | null>;
+  updateTransmisionEstado(
+    id: string,
+    from: TransmisionEstado,
+    estado: TransmisionEstado,
+    autorizadaPor: string | null,
+    autorizadaEn: Date | null,
+  ): Promise<TransmisionRecord>;
+
+  createSalidaEquipo(input: NewSalidaEquipo): Promise<SalidaEquipoRecord>;
+  findSalidaEquipoByTransmision(transmisionId: string): Promise<readonly SalidaEquipoRecord[]>;
+  devolverSalidaEquipo(id: string, fechaDevolucion: Date): Promise<SalidaEquipoRecord>;
+
+  createReporteDesplazamiento(
+    input: NewReporteDesplazamiento,
+  ): Promise<ReporteDesplazamientoRecord>;
+  findReporteDesplazamientoByTransmision(
+    transmisionId: string,
+  ): Promise<ReporteDesplazamientoRecord | null>;
+
+  createPrestamoMifi(input: NewPrestamoMifi): Promise<PrestamoMifiRecord>;
+  findPrestamoMifiById(id: string): Promise<PrestamoMifiRecord | null>;
+  updatePrestamoMifiEstado(
+    id: string,
+    from: PrestamoEstado,
+    estado: PrestamoEstado,
+  ): Promise<PrestamoMifiRecord>;
+
+  createViatico(input: NewViatico): Promise<ViaticoRecord>;
+  findViaticoById(id: string): Promise<ViaticoRecord | null>;
 }

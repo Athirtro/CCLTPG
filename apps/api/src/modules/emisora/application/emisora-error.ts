@@ -15,6 +15,13 @@ export const EMISORA_ERRORS = {
   idempotencyKeyRequired: 'IDEMPOTENCY_KEY_REQUIRED',
   idempotencyKeyReused: 'IDEMPOTENCY_KEY_REUSED',
   idempotencyInProgress: 'IDEMPOTENCY_IN_PROGRESS',
+  mifiAntelacionInsuficiente: 'EMISORA_MIFI_ANTELACION_INSUFICIENTE',
+  viaticoNoFueraCiudad: 'EMISORA_VIATICO_NO_FUERA_CIUDAD',
+  transmisionSinSoportes: 'EMISORA_TRANSMISION_SIN_SOPORTES',
+  patrocinioSinContrato: 'EMISORA_PATROCINIO_SIN_CONTRATO',
+  promoSinAudio: 'EMISORA_PROMO_SIN_AUDIO',
+  resolucionYaExistente: 'EMISORA_RESOLUCION_YA_EXISTENTE',
+  incentivoNoResuelto: 'EMISORA_INCENTIVO_NO_RESUELTO',
 } as const;
 
 export type EmisoraErrorCode = (typeof EMISORA_ERRORS)[keyof typeof EMISORA_ERRORS];
@@ -77,6 +84,63 @@ export class EmisoraError extends AppError {
       EMISORA_ERRORS.idempotencyInProgress,
       HttpStatus.CONFLICT,
       'La operación con esta clave está en curso.',
+    );
+  }
+
+  /** RF-03.7: solo un incentivo resuelto puede derivar en resolución PDF. */
+  static incentivoNoResuelto(): EmisoraError {
+    return new EmisoraError(
+      EMISORA_ERRORS.incentivoNoResuelto,
+      HttpStatus.CONFLICT,
+      'El incentivo debe estar resuelto para generar la resolución.',
+    );
+  }
+
+  static resolucionYaExistente(): EmisoraError {
+    return new EmisoraError(
+      EMISORA_ERRORS.resolucionYaExistente,
+      HttpStatus.CONFLICT,
+      'Ya existe una resolución para este incentivo.',
+    );
+  }
+
+  static patrocinioSinContrato(): EmisoraError {
+    return new EmisoraError(
+      EMISORA_ERRORS.patrocinioSinContrato,
+      HttpStatus.BAD_REQUEST,
+      'Aprobar un patrocinio exige un contrato PDF limpio.',
+    );
+  }
+
+  static promoSinAudio(): EmisoraError {
+    return new EmisoraError(
+      EMISORA_ERRORS.promoSinAudio,
+      HttpStatus.BAD_REQUEST,
+      'Producir una promo exige un archivo de audio limpio.',
+    );
+  }
+
+  static transmisionSinSoportes(): EmisoraError {
+    return new EmisoraError(
+      EMISORA_ERRORS.transmisionSinSoportes,
+      HttpStatus.CONFLICT,
+      'La transmisión exige salida de equipo y reporte de desplazamiento.',
+    );
+  }
+
+  static mifiAntelacionInsuficiente(): EmisoraError {
+    return new EmisoraError(
+      EMISORA_ERRORS.mifiAntelacionInsuficiente,
+      HttpStatus.BAD_REQUEST,
+      'El préstamo de mifi debe solicitarse al menos dos días antes de la transmisión.',
+    );
+  }
+
+  static viaticoNoFueraCiudad(): EmisoraError {
+    return new EmisoraError(
+      EMISORA_ERRORS.viaticoNoFueraCiudad,
+      HttpStatus.BAD_REQUEST,
+      'Los viáticos solo aplican a transmisiones fuera de la ciudad.',
     );
   }
 }

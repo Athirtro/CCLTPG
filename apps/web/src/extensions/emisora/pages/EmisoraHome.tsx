@@ -185,18 +185,24 @@ export default function EmisoraHome() {
 
       <SectionCard
         title="Estado de la extensión"
-        subtitle="Fase E2 — operación de la emisora R.A.C."
+        subtitle="Fases E2 y E3 — operación de la emisora R.A.C."
         sx={{ mt: 3 }}
       >
         {tienePermisoEmisora ? (
           <Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              El recorrido E2 permite registrar el comité, aprobar la rejilla, crear la programación
-              diaria y archivar audios. Cada acción valida sus permisos en la API.
+              El recorrido E2 registra comité, rejilla, programación y audios; el E3 gestiona
+              patrocinios, promos, transmisiones, mifi, viáticos y resoluciones. Cada acción valida
+              sus permisos en la API.
             </Typography>
-            <Button component={RouterLink} to="/emisora/operacion" variant="contained">
-              Abrir operación E2
-            </Button>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Button component={RouterLink} to="/emisora/operacion" variant="contained">
+                Abrir operación E2
+              </Button>
+              <Button component={RouterLink} to="/emisora/operacion-e3" variant="outlined">
+                Abrir operación E3
+              </Button>
+            </Box>
           </Box>
         ) : (
           <Alert severity="info">

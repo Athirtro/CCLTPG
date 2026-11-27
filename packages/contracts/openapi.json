@@ -3313,6 +3313,1116 @@
         "x-scope": "global"
       }
     },
+    "/emisora/resoluciones": {
+      "post": {
+        "description": "RF-03.7: usa la plantilla existente de Exportaciones; no llama a SIIF.",
+        "operationId": "createEmisoraResolucion",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateResolucionDto" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Resolución generada y archivada." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Generar el PDF de la resolución de incentivos",
+        "tags": ["emisora — resoluciones"],
+        "x-access": "permission",
+        "x-audit-event": "resolucion.generada",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "EMISORA_RESOLUCION_YA_EXISTENTE",
+          "EMISORA_INCENTIVO_NO_RESUELTO"
+        ],
+        "x-permission": ["emisora:resolucion:create"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/resoluciones/{id}/pdf": {
+      "get": {
+        "operationId": "getEmisoraResolucionPdf",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Resolución con URL de descarga de Archivos." },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Consultar el PDF de una resolución",
+        "tags": ["emisora — resoluciones"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Consulta de solo lectura sobre el archivo generado.",
+        "x-error-codes": ["PERMISSION_DENIED", "RESOURCE_NOT_FOUND"],
+        "x-permission": ["emisora:resolucion:read"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/patrocinios": {
+      "post": {
+        "operationId": "createEmisoraPatrocinio",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreatePatrocinioDto" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Patrocinio propuesto." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Proponer un patrocinio",
+        "tags": ["emisora — patrocinios"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Registro propuesto: se audita internamente sin evento de notificación.",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["emisora:patrocinio:create"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/patrocinios/{id}/transitions": {
+      "patch": {
+        "operationId": "transitionEmisoraPatrocinio",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PatrocinioTransitionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Estado actualizado." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Aprobar o rechazar un patrocinio",
+        "tags": ["emisora — patrocinios"],
+        "x-access": "permission",
+        "x-audit-event": "patrocinio.aprobado",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "EMISORA_PATROCINIO_SIN_CONTRATO"
+        ],
+        "x-permission": ["emisora:patrocinio:update"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/promos": {
+      "post": {
+        "operationId": "createEmisoraPromo",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreatePromoDto" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Promo registrada en borrador." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Registrar una promo",
+        "tags": ["emisora — promos"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Registro en borrador: se audita internamente sin evento de notificación.",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["emisora:promo:create"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/promos/{id}/transitions": {
+      "patch": {
+        "operationId": "transitionEmisoraPromo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/PromoTransitionDto" } }
+          }
+        },
+        "responses": {
+          "200": { "description": "Promo producida con audio verificado." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Producir una promo",
+        "tags": ["emisora — promos"],
+        "x-access": "permission",
+        "x-audit-event": "promo.producida",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "EMISORA_PROMO_SIN_AUDIO"
+        ],
+        "x-permission": ["emisora:promo:update"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/ordenes-emision": {
+      "post": {
+        "operationId": "createEmisoraOrdenEmision",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateOrdenEmisionDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Orden creada en borrador." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Crear una orden de emisión",
+        "tags": ["emisora — órdenes de emisión"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Registro en borrador: se audita internamente sin evento de notificación.",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["emisora:patrocinio:create"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/ordenes-emision/{id}/transitions": {
+      "patch": {
+        "operationId": "transitionEmisoraOrdenEmision",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OrdenEmisionTransitionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Estado de la orden actualizado." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Programar o emitir la orden",
+        "tags": ["emisora — órdenes de emisión"],
+        "x-access": "permission",
+        "x-audit-event": "orden.emitida",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["emisora:patrocinio:update"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/publicaciones": {
+      "post": {
+        "operationId": "createEmisoraPublicacion",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreatePublicacionDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Publicación Programada." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Programar una publicación",
+        "tags": ["emisora — publicaciones"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Registro programado: se audita internamente sin evento de notificación.",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["emisora:publicacion:create"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/publicaciones/{id}/transitions": {
+      "patch": {
+        "operationId": "transitionEmisoraPublicacion",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PublicacionTransitionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Publicación realizada." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Marcar una publicación como realizada",
+        "tags": ["emisora — publicaciones"],
+        "x-access": "permission",
+        "x-audit-event": "publicacion.realizada",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["emisora:publicacion:update"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/transmisiones": {
+      "post": {
+        "operationId": "createEmisoraTransmision",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateTransmisionDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Transmisión programada." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Programar una transmisión",
+        "tags": ["emisora — transmisiones"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Registro programado: se audita internamente sin evento de notificación.",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["emisora:transmision:create"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/transmisiones/{id}/transitions": {
+      "patch": {
+        "operationId": "transitionEmisoraTransmision",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TransmisionTransitionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Transmisión autorizada con soportes verificados." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Autorizar una transmisión",
+        "tags": ["emisora — transmisiones"],
+        "x-access": "permission",
+        "x-audit-event": "transmision.autorizada",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "EMISORA_TRANSMISION_SIN_SOPORTES"
+        ],
+        "x-permission": ["emisora:transmision:update"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/salidas-equipo": {
+      "post": {
+        "operationId": "createEmisoraSalidaEquipo",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateSalidaEquipoDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Salida de equipo registrada." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Registrar la salida de equipo",
+        "tags": ["emisora — salidas de equipo"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Registro de soporte: se audita internamente sin evento de notificación.",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["emisora:transmision:create"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/reportes-desplazamiento": {
+      "post": {
+        "operationId": "createEmisoraReporteDesplazamiento",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateReporteDesplazamientoDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Reporte de desplazamiento registrado." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Registrar el reporte de desplazamiento",
+        "tags": ["emisora — desplazamientos"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Registro de soporte: se audita internamente sin evento de notificación.",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["emisora:transmision:create"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/prestamos-mifi": {
+      "post": {
+        "operationId": "createEmisoraPrestamoMifi",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreatePrestamoMifiDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Préstamo solicitado." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Solicitar un préstamo de mifi con dos días de antelación",
+        "tags": ["emisora — préstamos de mifi"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Solicitud registrada: se audita internamente sin evento de notificación.",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "EMISORA_MIFI_ANTELACION_INSUFICIENTE"
+        ],
+        "x-permission": ["emisora:prestamo:create"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/prestamos-mifi/{id}/transitions": {
+      "patch": {
+        "operationId": "transitionEmisoraPrestamoMifi",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PrestamoMifiTransitionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Estado del préstamo actualizado." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Autorizar un préstamo de mifi",
+        "tags": ["emisora — préstamos de mifi"],
+        "x-access": "permission",
+        "x-audit-event": "prestamo.autorizado",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS"
+        ],
+        "x-permission": ["emisora:prestamo:update"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/viaticos": {
+      "post": {
+        "operationId": "createEmisoraViatico",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateViaticoDto" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Viático solicitado (sin importes)." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Solicitar viático solo para transmisiones fuera de la ciudad",
+        "tags": ["emisora — viáticos"],
+        "x-access": "permission",
+        "x-audit-event": "viatico.solicitado",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "EMISORA_VIATICO_NO_FUERA_CIUDAD"
+        ],
+        "x-permission": ["emisora:viatico:create"],
+        "x-scope": "global"
+      }
+    },
     "/files": {
       "post": {
         "description": "10 MB máximo, lista blanca de MIME, verificación por bytes mágicos, escaneo y cuarentena. `Idempotency-Key` obligatoria.",
@@ -3431,6 +4541,215 @@
         "x-audit-event": "archivo.descargado",
         "x-error-codes": ["RESOURCE_NOT_FOUND", "PERMISSION_DENIED", "FILE_STORAGE_UNAVAILABLE"],
         "x-permission": ["files:document:read", "files:document:read_own"],
+        "x-scope": "mixed"
+      }
+    },
+    "/exports": {
+      "post": {
+        "description": "Plantillas cerradas en código, entrada JSON validada y salida registrada como archivo descargable por `GET /files/{id}/download`.",
+        "operationId": "createExport",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateExportDto" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ExportResponseDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "413": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "415": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Genera un reporte exportable (PDF, XLSX o CSV)",
+        "tags": ["exportaciones"],
+        "x-access": "permission",
+        "x-audit-event": "reporte.generado",
+        "x-error-codes": [
+          "EXPORT_TEMPLATE_NOT_FOUND",
+          "EXPORT_FORMAT_NOT_SUPPORTED",
+          "EXPORT_PARAMETERS_INVALID",
+          "EXPORT_TOO_LARGE",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "FILE_STORAGE_UNAVAILABLE",
+          "PERMISSION_DENIED",
+          "VALIDATION_FAILED"
+        ],
+        "x-permission": ["exports:report:export"],
+        "x-scope": "global"
+      }
+    },
+    "/reports/catalog": {
+      "get": {
+        "description": "Cuatro definiciones cerradas en código con sus formatos y columnas.",
+        "operationId": "listReportCatalog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReportCatalogResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Catálogo de reportes académicos",
+        "tags": ["reportes"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Catálogo estático de solo lectura; no expone datos de estudiantes.",
+        "x-error-codes": ["PERMISSION_DENIED"],
+        "x-permission": ["exports:report:create", "exports:report:export"],
+        "x-scope": "global"
+      }
+    },
+    "/reports/{code}/generate": {
+      "post": {
+        "description": "Los datos se consultan en servidor con el ámbito del actor y se entregan mediante el servicio de exportaciones; la generación queda registrada como `reporte.generado`.",
+        "operationId": "generateReport",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "description": "Código del catálogo de reportes: asistencia, desempeno, matricula o desercion.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/GenerateReportDto" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ExportResponseDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "415": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Genera un reporte académico exportable",
+        "tags": ["reportes"],
+        "x-access": "permission",
+        "x-audit-event": "reporte.generado",
+        "x-error-codes": [
+          "REPORT_NOT_FOUND",
+          "RESOURCE_NOT_FOUND",
+          "INVALID_PERIOD",
+          "VALIDATION_FAILED",
+          "EXPORT_FORMAT_NOT_SUPPORTED",
+          "EXPORT_PARAMETERS_INVALID",
+          "EXPORT_TOO_LARGE",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "FILE_STORAGE_UNAVAILABLE",
+          "PERMISSION_DENIED"
+        ],
+        "x-permission": ["exports:report:create"],
         "x-scope": "mixed"
       }
     },
@@ -3716,215 +5035,6 @@
         ],
         "x-permission": ["notifications:preference:update_own"],
         "x-scope": "own"
-      }
-    },
-    "/exports": {
-      "post": {
-        "description": "Plantillas cerradas en código, entrada JSON validada y salida registrada como archivo descargable por `GET /files/{id}/download`.",
-        "operationId": "createExport",
-        "parameters": [
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "description": "Clave única por usuario y operación; TTL 24 h.",
-            "required": true,
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/CreateExportDto" } }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ExportResponseDto" } }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
-            }
-          },
-          "409": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
-            }
-          },
-          "413": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
-            }
-          },
-          "415": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
-            }
-          }
-        },
-        "security": [{ "bearerAuth": [] }],
-        "summary": "Genera un reporte exportable (PDF, XLSX o CSV)",
-        "tags": ["exportaciones"],
-        "x-access": "permission",
-        "x-audit-event": "reporte.generado",
-        "x-error-codes": [
-          "EXPORT_TEMPLATE_NOT_FOUND",
-          "EXPORT_FORMAT_NOT_SUPPORTED",
-          "EXPORT_PARAMETERS_INVALID",
-          "EXPORT_TOO_LARGE",
-          "IDEMPOTENCY_KEY_REQUIRED",
-          "IDEMPOTENCY_KEY_REUSED",
-          "IDEMPOTENCY_IN_PROGRESS",
-          "FILE_STORAGE_UNAVAILABLE",
-          "PERMISSION_DENIED",
-          "VALIDATION_FAILED"
-        ],
-        "x-permission": ["exports:report:export"],
-        "x-scope": "global"
-      }
-    },
-    "/reports/catalog": {
-      "get": {
-        "description": "Cuatro definiciones cerradas en código con sus formatos y columnas.",
-        "operationId": "listReportCatalog",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ReportCatalogResponseDto" }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
-            }
-          }
-        },
-        "security": [{ "bearerAuth": [] }],
-        "summary": "Catálogo de reportes académicos",
-        "tags": ["reportes"],
-        "x-access": "permission",
-        "x-audit-event": "-",
-        "x-audit-exempt": "Catálogo estático de solo lectura; no expone datos de estudiantes.",
-        "x-error-codes": ["PERMISSION_DENIED"],
-        "x-permission": ["exports:report:create", "exports:report:export"],
-        "x-scope": "global"
-      }
-    },
-    "/reports/{code}/generate": {
-      "post": {
-        "description": "Los datos se consultan en servidor con el ámbito del actor y se entregan mediante el servicio de exportaciones; la generación queda registrada como `reporte.generado`.",
-        "operationId": "generateReport",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "path",
-            "description": "Código del catálogo de reportes: asistencia, desempeno, matricula o desercion.",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "description": "Clave única por usuario y operación; TTL 24 h.",
-            "required": true,
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/GenerateReportDto" } }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ExportResponseDto" } }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
-            }
-          },
-          "409": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
-            }
-          },
-          "415": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
-            }
-          }
-        },
-        "security": [{ "bearerAuth": [] }],
-        "summary": "Genera un reporte académico exportable",
-        "tags": ["reportes"],
-        "x-access": "permission",
-        "x-audit-event": "reporte.generado",
-        "x-error-codes": [
-          "REPORT_NOT_FOUND",
-          "RESOURCE_NOT_FOUND",
-          "INVALID_PERIOD",
-          "VALIDATION_FAILED",
-          "EXPORT_FORMAT_NOT_SUPPORTED",
-          "EXPORT_PARAMETERS_INVALID",
-          "EXPORT_TOO_LARGE",
-          "IDEMPOTENCY_KEY_REQUIRED",
-          "IDEMPOTENCY_KEY_REUSED",
-          "IDEMPOTENCY_IN_PROGRESS",
-          "FILE_STORAGE_UNAVAILABLE",
-          "PERMISSION_DENIED"
-        ],
-        "x-permission": ["exports:report:create"],
-        "x-scope": "mixed"
       }
     },
     "/health/live": {
@@ -4976,6 +6086,175 @@
         },
         "required": ["to"]
       },
+      "CreateResolucionDto": {
+        "type": "object",
+        "properties": {
+          "incentivoId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Incentivo resuelto."
+          },
+          "periodo": {
+            "type": "string",
+            "description": "Periodo YYYY o YYYY-MM del oficio.",
+            "example": "2026"
+          }
+        },
+        "required": ["incentivoId", "periodo"]
+      },
+      "CreatePatrocinioDto": {
+        "type": "object",
+        "properties": {
+          "nombre": { "type": "string", "example": "Cultura en la plaza" },
+          "entidad": { "type": "string", "example": "Alcaldía municipal" },
+          "fechaInicio": { "type": "string", "example": "2026-01-19" },
+          "fechaFin": { "type": "string", "example": "2026-12-18" },
+          "contratoArchivoId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Contrato PDF ya cargado."
+          }
+        },
+        "required": ["nombre", "entidad"]
+      },
+      "PatrocinioTransitionDto": {
+        "type": "object",
+        "properties": {
+          "to": { "type": "string", "enum": ["propuesto", "aprobado", "rechazado"] },
+          "contratoArchivoId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Contrato PDF para aprobar."
+          }
+        },
+        "required": ["to"]
+      },
+      "CreatePromoDto": {
+        "type": "object",
+        "properties": {
+          "patrocinioId": { "type": "string", "format": "uuid" },
+          "nombre": { "type": "string", "example": "Promo de la semana cultural" },
+          "guion": { "type": "string" },
+          "duracionSegundos": { "type": "number", "minimum": 1 }
+        },
+        "required": ["patrocinioId", "nombre", "duracionSegundos"]
+      },
+      "PromoTransitionDto": {
+        "type": "object",
+        "properties": {
+          "to": { "type": "string", "enum": ["borrador", "producida"] },
+          "audioArchivoId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Audio limpio para producir."
+          }
+        },
+        "required": ["to"]
+      },
+      "CreateOrdenEmisionDto": {
+        "type": "object",
+        "properties": {
+          "promoId": { "type": "string", "format": "uuid" },
+          "programacionItemId": { "type": "string", "format": "uuid" },
+          "fechaEmision": { "type": "string", "example": "2026-01-19" }
+        },
+        "required": ["promoId"]
+      },
+      "OrdenEmisionTransitionDto": {
+        "type": "object",
+        "properties": { "to": { "type": "string", "enum": ["borrador", "programada", "emitida"] } },
+        "required": ["to"]
+      },
+      "CreatePublicacionDto": {
+        "type": "object",
+        "properties": {
+          "promoId": { "type": "string", "format": "uuid" },
+          "canal": { "type": "string", "example": "facebook" },
+          "fechaPublicacion": { "type": "string", "example": "2026-01-20" },
+          "archivoId": { "type": "string", "format": "uuid" }
+        },
+        "required": ["canal", "fechaPublicacion"]
+      },
+      "PublicacionTransitionDto": {
+        "type": "object",
+        "properties": {
+          "to": { "type": "string", "enum": ["programada", "publicada"] },
+          "archivoId": { "type": "string", "format": "uuid" }
+        },
+        "required": ["to"]
+      },
+      "CreateTransmisionDto": {
+        "type": "object",
+        "properties": {
+          "programacionItemId": { "type": "string", "format": "uuid" },
+          "fechaTransmision": { "type": "string", "example": "2026-01-19" },
+          "esFueraCiudad": { "type": "boolean" },
+          "destino": { "type": "string", "example": "Villa de Leyva" }
+        },
+        "required": ["fechaTransmision", "esFueraCiudad"]
+      },
+      "TransmisionTransitionDto": {
+        "type": "object",
+        "properties": {
+          "to": { "type": "string", "enum": ["programada", "autorizada", "realizada", "cancelada"] }
+        },
+        "required": ["to"]
+      },
+      "CreateSalidaEquipoDto": {
+        "type": "object",
+        "properties": {
+          "transmisionId": { "type": "string", "format": "uuid" },
+          "equipoId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "dddddddd-0000-4000-8000-000000000001"
+          },
+          "responsableId": { "type": "string", "format": "uuid" },
+          "fechaSalida": { "type": "string", "example": "2026-01-19T06:00:00Z" },
+          "observaciones": { "type": "string" }
+        },
+        "required": ["transmisionId", "equipoId", "responsableId"]
+      },
+      "CreateReporteDesplazamientoDto": {
+        "type": "object",
+        "properties": {
+          "transmisionId": { "type": "string", "format": "uuid" },
+          "conductorId": { "type": "string", "format": "uuid" },
+          "vehiculo": { "type": "string", "example": "Vehículo 01" },
+          "horaSalida": { "type": "string", "example": "2026-01-19T05:30:00Z" },
+          "horaLlegada": { "type": "string", "example": "2026-01-19T06:00:00Z" },
+          "novedades": { "type": "string" }
+        },
+        "required": ["transmisionId", "vehiculo"]
+      },
+      "CreatePrestamoMifiDto": {
+        "type": "object",
+        "properties": {
+          "transmisionId": { "type": "string", "format": "uuid" },
+          "usuarioId": { "type": "string", "format": "uuid" },
+          "observaciones": { "type": "string" }
+        },
+        "required": ["transmisionId", "usuarioId"]
+      },
+      "PrestamoMifiTransitionDto": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string",
+            "enum": ["solicitado", "autorizado", "entregado", "devuelto", "rechazado"]
+          }
+        },
+        "required": ["to"]
+      },
+      "CreateViaticoDto": {
+        "type": "object",
+        "properties": {
+          "transmisionId": { "type": "string", "format": "uuid" },
+          "usuarioId": { "type": "string", "format": "uuid" },
+          "soporteArchivoId": { "type": "string", "format": "uuid" }
+        },
+        "required": ["transmisionId", "usuarioId"]
+      },
       "FileResponseDto": {
         "type": "object",
         "properties": {
@@ -4996,6 +6275,90 @@
           "estadoEscaneo",
           "creadoEn"
         ]
+      },
+      "CreateExportDto": {
+        "type": "object",
+        "properties": {
+          "plantilla": { "type": "string", "example": "matriculas-por-programa" },
+          "formato": { "type": "string", "enum": ["pdf", "xlsx", "csv"] },
+          "parametros": {
+            "type": "object",
+            "example": {
+              "periodo": "2026-1",
+              "filas": [{ "programa": "Música", "matriculados": 30, "activos": 28 }]
+            }
+          }
+        },
+        "required": ["plantilla", "formato", "parametros"]
+      },
+      "ExportResponseDto": {
+        "type": "object",
+        "properties": {
+          "archivoId": { "type": "string", "format": "uuid" },
+          "nombre": { "type": "string" },
+          "mime": { "type": "string" },
+          "tamano": { "type": "number" },
+          "formato": { "type": "string", "enum": ["pdf", "xlsx", "csv"] },
+          "hashSha256": { "type": "string" },
+          "descargaUrl": {
+            "type": "string",
+            "example": "/api/v1/files/00000000-0000-7000-8000-000000000000/download"
+          }
+        },
+        "required": [
+          "archivoId",
+          "nombre",
+          "mime",
+          "tamano",
+          "formato",
+          "hashSha256",
+          "descargaUrl"
+        ]
+      },
+      "ReportColumnDto": {
+        "type": "object",
+        "properties": { "key": { "type": "string" }, "label": { "type": "string" } },
+        "required": ["key", "label"]
+      },
+      "ReportCatalogItemDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["asistencia", "desempeno", "matricula", "desercion"]
+          },
+          "nombre": { "type": "string" },
+          "descripcion": { "type": "string" },
+          "formatos": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["pdf", "xlsx", "csv"] }
+          },
+          "columnas": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ReportColumnDto" }
+          }
+        },
+        "required": ["code", "nombre", "descripcion", "formatos", "columnas"]
+      },
+      "ReportCatalogResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ReportCatalogItemDto" }
+          }
+        },
+        "required": ["items"]
+      },
+      "GenerateReportDto": {
+        "type": "object",
+        "properties": {
+          "periodo": { "type": "string", "example": "2026-1" },
+          "formato": { "type": "string", "enum": ["pdf", "xlsx", "csv"] },
+          "programaId": { "type": "string", "format": "uuid", "nullable": true },
+          "grupoId": { "type": "string", "format": "uuid", "nullable": true }
+        },
+        "required": ["periodo", "formato"]
       },
       "KpiBreakdownItemDto": {
         "type": "object",
@@ -5122,90 +6485,6 @@
           }
         },
         "required": ["preferencias"]
-      },
-      "CreateExportDto": {
-        "type": "object",
-        "properties": {
-          "plantilla": { "type": "string", "example": "matriculas-por-programa" },
-          "formato": { "type": "string", "enum": ["pdf", "xlsx", "csv"] },
-          "parametros": {
-            "type": "object",
-            "example": {
-              "periodo": "2026-1",
-              "filas": [{ "programa": "Música", "matriculados": 30, "activos": 28 }]
-            }
-          }
-        },
-        "required": ["plantilla", "formato", "parametros"]
-      },
-      "ExportResponseDto": {
-        "type": "object",
-        "properties": {
-          "archivoId": { "type": "string", "format": "uuid" },
-          "nombre": { "type": "string" },
-          "mime": { "type": "string" },
-          "tamano": { "type": "number" },
-          "formato": { "type": "string", "enum": ["pdf", "xlsx", "csv"] },
-          "hashSha256": { "type": "string" },
-          "descargaUrl": {
-            "type": "string",
-            "example": "/api/v1/files/00000000-0000-7000-8000-000000000000/download"
-          }
-        },
-        "required": [
-          "archivoId",
-          "nombre",
-          "mime",
-          "tamano",
-          "formato",
-          "hashSha256",
-          "descargaUrl"
-        ]
-      },
-      "ReportColumnDto": {
-        "type": "object",
-        "properties": { "key": { "type": "string" }, "label": { "type": "string" } },
-        "required": ["key", "label"]
-      },
-      "ReportCatalogItemDto": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string",
-            "enum": ["asistencia", "desempeno", "matricula", "desercion"]
-          },
-          "nombre": { "type": "string" },
-          "descripcion": { "type": "string" },
-          "formatos": {
-            "type": "array",
-            "items": { "type": "string", "enum": ["pdf", "xlsx", "csv"] }
-          },
-          "columnas": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/ReportColumnDto" }
-          }
-        },
-        "required": ["code", "nombre", "descripcion", "formatos", "columnas"]
-      },
-      "ReportCatalogResponseDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/ReportCatalogItemDto" }
-          }
-        },
-        "required": ["items"]
-      },
-      "GenerateReportDto": {
-        "type": "object",
-        "properties": {
-          "periodo": { "type": "string", "example": "2026-1" },
-          "formato": { "type": "string", "enum": ["pdf", "xlsx", "csv"] },
-          "programaId": { "type": "string", "format": "uuid", "nullable": true },
-          "grupoId": { "type": "string", "format": "uuid", "nullable": true }
-        },
-        "required": ["periodo", "formato"]
       },
       "LivenessResponseDto": {
         "type": "object",
