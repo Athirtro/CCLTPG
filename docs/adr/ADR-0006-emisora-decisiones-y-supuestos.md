@@ -1,6 +1,6 @@
 # ADR-0006 — Decisiones EM-D y supuestos EM-PA de la Emisora R.A.C.
 
-- **Estado:** Propuesta para aprobación en E0; **no modifica** ADR-0001…ADR-0005 ni los contratos congelados.
+- **Estado:** Propuesta para aprobación en E0; **supuestos cerrados en E5** (§6); **no modifica** ADR-0001…ADR-0005 ni los contratos congelados.
 - **Fecha:** 2026-11-27
 - **Decisores:** Rol B (arquitectura y seguridad); Rol A (datos y retención); Secretaría de Cultura y Jefe de emisora (negocio); aprobación humana en E0.
 - **Trazabilidad:** `docs/diseno-emisora.md` §§8, 14, 15 y 18; ADR-0005; enmiendas `cambio-emisora-contexto.md` y `cambio-emisora-eventos.md`; matriz `matriz-autorizacion-emisora-v1.md`.
@@ -89,3 +89,31 @@ La tabla siguiente reproduce la matriz del §14 del plan. Todo evento mencionado
 - **E2:** aplicar EM-PA-05/06; compuerta de la primera demo convocatoria→rejilla→programación→audio.
 - **E3/E4:** aplicar EM-D-01 en oficios PDF y EM-PA-07 en reportes de obras; verificar que no haya lógica financiera (EM-D-02).
 - **E5:** cerrar todas las preguntas, actualizar la trazabilidad RF→código→prueba y ejecutar la regresión completa en verde.
+
+## 6. Cierre en E5
+
+E5 cierra los diez supuestos con el valor por defecto ya ejecutado, sin cambiar
+ningún contrato congelado. La "deuda" de `Consecuencias` queda así saldada:
+EM-PA-07 se aplicó en E4 y EM-PA-10 se aplicó en E1 con el valor confirmado en
+`.env.example`; si el negocio o el proveedor cambian esos valores, el cambio se
+registra aquí **antes** de tocar código, contratos o pruebas.
+
+| ID | Valor cerrado | Evidencia verificable | Estado |
+| --- | --- | --- | --- |
+| EM-PA-01 | Política opt-in `emisora-audio` en Archivos; sin bucket propio. `POST /api/v1/files` y `MAX_FILE_BYTES` intactos | `apps/api/src/modules/files/domain/file-policy-emisora.ts`; `shared/integration/file-uploader.port.ts`; `file-type-inspector.spec.ts` | Cerrado en E1, ratificado en E5 |
+| EM-PA-02 | Los perfiles emisora viven en `PROFILE_SEEDS` de identidad; la semilla de emisora solo carga datos de negocio | `apps/api/src/modules/identity/domain/perfiles.ts`; `apps/api/src/database/seeds/identity.seed.ts`; `apps/api/src/database/seeds/emisora.seed.ts` | Cerrado en E0, ratificado en E5 |
+| EM-PA-03 | 13 perfiles de emisora mapeados 1:1 (16 perfiles en total con los 3 generales); sin cambios a permisos preexistentes | `apps/api/src/modules/identity/domain/perfiles.ts`; `perfiles.spec.ts`; `apps/api/test/api/authorization-matrix.spec.ts` | Cerrado en E0, ratificado en E5 |
+| EM-PA-04 | Solo referencias y estados; sin importes calculados, asientos ni ejecución de pagos | DTOs y servicios de `apps/api/src/modules/emisora/` (sin campos de monto); `integration/emisora-report-exporter.ts` | Cerrado en E0/E4, ratificado en E5 |
+| EM-PA-05 | Rejilla no versionada; el año anterior no se consulta en UI y el histórico vive en auditoría | `domain/emisora-rules.ts` (`verificarContraRejilla`); `apps/web/src/extensions/emisora/pages/EmisoraHome.tsx`; `evento_auditoria` | Cerrado en E2, ratificado en E5 |
+| EM-PA-06 | Identidad temporal con `valid_until` y MFA según la política de temporales | `apps/api/src/database/seeds/identity.seed.ts` (identidad de 30 días); `apps/api/src/modules/identity/domain/login-state.ts` | Cerrado en E2, ratificado en E5 |
+| EM-PA-07 | `emisora.parametro_reporte` con `entidad = sayco` y periodicidad mensual por defecto | `apps/api/src/database/migrations/emisora/0003_create_emisora_reporting.ts:105-113` | Cerrado en E4, ratificado en E5 |
+| EM-PA-08 | Se conserva la ruta acordada: migración aditiva `public/0009_emisora_notification_templates.ts` con `down` por `codigo`. La alternativa local sigue registrada y requiere decisión explícita para cambiar | `apps/api/src/database/migrations/public/0009_emisora_notification_templates.ts`; `apps/api/test/integration/migrator.spec.ts` | Cerrado en E1, ratificado en E5 |
+| EM-PA-09 | `America/Bogota`, plazos en días calendario con ambos límites inclusivos, oct/nov sobre `date` | `apps/api/src/modules/emisora/domain/emisora-rules.ts`; `emisora-rules.spec.ts`; `apps/api/test/integration/emisora-transitions.spec.ts` | Cerrado en E0, ratificado en E5 |
+| EM-PA-10 | `EMISORA_MAX_AUDIO_BYTES=26214400` en `.env.example`; MIME `audio/mpeg`, `audio/wav`, `audio/ogg` | `.env.example:29`; `apps/api/src/shared/config/env.ts:78`; `modules/files/domain/file-policy-emisora.ts` | Cerrado en E1, ratificado en E5 |
+
+**Compuerta de cierre:** la regresión completa de E5 está en verde y la
+trazabilidad RF→código→prueba se publica en `docs/emisora-trazabilidad.md`.
+RNF-06 se ejecutó como compuerta manual (`k6/emisora-programacion.js` y
+`docs/runbook/emisora.md`) el 2026-11-27: 200 VUs, p95 9,82 ms, 0,00 % de
+peticiones fallidas y 0 errores 5xx. El limitador se desactivó solo en la
+instancia de carga, según el procedimiento acordado.

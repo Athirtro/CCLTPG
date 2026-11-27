@@ -20,6 +20,7 @@
     "test:security": "node --test scripts/*.test.mjs",
     "test:contracts": "node --test packages/contracts/scripts/contract.test.mjs packages/contracts/scripts/client-contract.test.mjs",
     "test:e2e": "playwright test",
+    "load:emisora": "k6 run k6/emisora-programacion.js",
     "security:secrets": "node scripts/secret-scan.mjs",
     "arch:check": "pnpm --filter @ccltpg/api exec depcruise src --config ../../.dependency-cruiser.mjs",
     "contracts:generate": "pnpm --filter @ccltpg/api openapi:generate && node packages/contracts/scripts/generate-events.mjs",

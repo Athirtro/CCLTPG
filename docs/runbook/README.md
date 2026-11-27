@@ -1,6 +1,6 @@
 # Runbooks de operación — CCLTPG
 
-- **Ámbito:** Iteraciones 1 a 3 (esqueleto caminante; identidad, RBAC y auditoría; archivos, notificaciones y exportaciones). Los procedimientos de academia se amplían en C4.
+- **Ámbito:** Iteraciones 1 a 3 (esqueleto caminante; identidad, RBAC y auditoría; archivos, notificaciones y exportaciones). Los procedimientos de academia se amplían en C4 y la compuerta manual de carga de la Emisora R.A.C. en E5.
 - **Responsable:** Rol B — seguridad, identidad y operación.
 - **Regla:** ningún procedimiento de este directorio sustituye una decisión de equipo. Las decisiones pendientes se registran en `docs/tasks/rol-b/rol-b-it3-registro.md`.
 
@@ -17,6 +17,7 @@
 | [Archivos y almacenamiento](archivos.md) | Hay que cargar, descargar, diagnosticar o poner en cuarentena un archivo. |
 | [Notificaciones y outbox](notificaciones.md) | La bandeja no recibe eventos, hay entregas fallidas o se reprocesa la outbox. |
 | [Exportaciones](exportaciones.md) | Hay que generar, diagnosticar o descargar un reporte PDF/XLSX/CSV. |
+| [Carga de la Emisora R.A.C.](emisora.md) | Hay que ejecutar la compuerta manual k6 de 200 VUs (RNF-06) o interpretar su resultado. |
 
 ## Estado de verificación
 

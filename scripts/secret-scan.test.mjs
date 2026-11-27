@@ -50,3 +50,8 @@ test('excluye artefactos generados y documentación congelada', () => {
   assert.equal(isExcluded('pnpm-lock.yaml'), true);
   assert.equal(isExcluded('apps/api/src/main.ts'), false);
 });
+
+test('excluye las credenciales deterministas de las fixtures E2E', () => {
+  assert.equal(isExcluded('e2e/fixtures.ts'), true);
+  assert.equal(isExcluded('e2e/emisora.spec.ts'), false);
+});

@@ -109,7 +109,7 @@ Esta tabla es la lista completa de archivos existentes que se tocan. Los cambios
 | 28 | `apps/web/src/App.tsx` | Una ruta hija `/emisora/*` dentro del shell | No modifica rutas actuales | `test:e2e`, a11y |
 | 29 | `apps/web/src/components/layout/SideDrawer.tsx` | Una sección de navegación filtrada por permiso | Usuarios sin permisos emisora ven exactamente el menú actual | `common.test.tsx`, E2E |
 | 30 | `e2e/fixtures.ts` | **I8:** extender `E2eUserKey` (`:9`) y `E2eUserFixture.perfil` (`:16`) con los perfiles emisora usados en E2E, y añadir entradas a `E2E_USERS` | Solo tipos/fixtures nuevos; las fixtures actuales quedan igual | `pnpm test:e2e` |
-| 31 | `.github/workflows/ci.yml` | Añadir `test:e2e` (y opcionalmente k6) a un job separado; hoy el job `integration` (`:160-164`) solo corre `test:integration` | Sin esto los recorridos emisora nunca se ejecutan en CI | CI |
+| 31 | `.github/workflows/ci.yml` | **Verificado en E5:** el job `e2e` ya existe desde E0 y ejecuta migraciones, semilla, Chromium y `pnpm test:e2e` (recorridos E2/E3/E4). No se duplica. k6 queda fuera del CI por decisión RNF-06 (§21) | El plan se escribió cuando se creía que solo existía el job `integration`; la comprobación real prevalece sobre la suposición | CI |
 | 32 | `docs/adr/ADR-0005-emisora-contexto-delimitado.md` (nuevo) | Registra contexto, esquema, puertos y decisión I4 | No edita ADR-0001…0004 | Revisión de compuerta |
 | 33 | `docs/contratos/cambios/cambio-emisora-contexto.md` (nuevo) | Enmienda de gramática: contexto `emisora` | No edita el cap. 8 congelado | Revisión de compuerta |
 | 34 | `docs/contratos/cambios/cambio-emisora-eventos.md` (nuevo) | Enmienda con tabla bajo `## 3.` y eventos en backticks; nombres `^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$` (M3: sin guiones) | `catalog.mjs:15` solo lee esa sección y ese patrón; si se incumple, `events.json` no los detecta | `contracts:generate` + `validate` |
@@ -688,3 +688,53 @@ unidireccionales y un segundo intento devuelve 409; (e) el archivo de emisora
 rechaza un `archivo_id` inexistente o no limpio; (f) los 101 eventos del
 catálogo no se duplican al regenerar contratos y las operaciones nuevas son
 estrictamente aditivas frente a `7a2d2df`.
+
+## 21. Inventario y cierre del slice E5 (endurecimiento y aceptación)
+
+E5 no añade operaciones, tablas ni permisos. Cierra las preguntas EM-PA-01…EM-PA-10, verifica la cobertura de CI y deja documentadas la compuerta manual de carga y la trazabilidad completa. Es el último slice del plan.
+
+### 21.1 CI E2E: verificación, no duplicación
+
+El punto de contacto 31 de §3 se escribió partiendo de que `.github/workflows/ci.yml` solo tenía el job `integration`. La comprobación en E5 muestra lo contrario: el job `e2e` existe desde E0 y, tras instalar dependencias, aplica `pnpm migrate:up`, ejecuta `pnpm --filter @ccltpg/api db:seed`, instala Chromium, levanta API y SPA y corre `pnpm test:e2e`. Los tres recorridos de emisora (`e2e/emisora.spec.ts`: E2, E3 y E4) se ejecutan por tanto en cada push a `main`. **No se ha añadido un segundo job E2E.**
+
+k6 **no entra en el CI estándar**: RNF-06 es una compuerta manual de aceptación y su resultado depende del entorno (200 VUs, token compartido con el limitador desactivado). Meterla en el CI añadiría ruido no determinista y competencia por recursos con las pruebas funcionales.
+
+### 21.2 Compuerta manual de carga (RNF-06)
+
+| Elemento | Decisión |
+| --- | --- |
+| Script | `k6/emisora-programacion.js` (nuevo), con atajo `pnpm load:emisora` en `package.json` |
+| Escenario | `ramping-vus`: 0 → 200 en 30 s, 200 sostenidos 1 min, 200 → 0 en 30 s; 1 s de pensamiento por VU |
+| Objetivo | `GET /api/v1/emisora/programacion-diaria?fecha=2026-01-19`, con token Bearer obtenido una sola vez en `setup()` |
+| Umbrales | p95 < 4000 ms en la operación, `http_req_failed` < 1 % y `errores_5xx` con `count < 1` (cero 5xx) |
+| Seguridad | Contraseña **solo** por `K6_PASSWORD`; el script falla en `setup()` si no está definida. Sin secretos versionados |
+| Limitador | `AUTH_RATE_LIMIT_ENABLED=false` en el entorno de carga, porque el cupo `api:user` es de 300/min por `userId` y los VUs comparten token. El limitador se prueba en C2, no aquí |
+| Procedimiento | `docs/runbook/emisora.md`, enlazado desde `docs/runbook/README.md` |
+| Estado | **Ejecutada y superada** el 2026-11-27T09:54Z con k6 v0.54.0: 200 VUs, p95 9,82 ms, 0,00 % fallos y 0 errores 5xx |
+
+### 21.3 Accesibilidad y responsividad
+
+La página E4 (`apps/web/src/extensions/emisora/pages/EmisoraOperacionE4.tsx`) usa `flexWrap: 'wrap'` y anchos flexibles en las seis agrupaciones, dentro del `MainLayout` compartido. Su prueba en `apps/web/src/extensions/emisora/emisora.test.tsx` ya ejecuta `axe-core` con `color-contrast`, `aria-*`, `button-name`, `label`, `landmark-one-main`, `page-has-heading-one` y `nested-interactive` para la ruta E4 con permisos; la landing se comprueba con y sin permisos. La responsividad del shell se cubre en `apps/web/src/accessibility/responsive.test.tsx` a 360/768/1024/1440 px. No hacía falta añadir pruebas nuevas: se verifica la cobertura existente y se registra aquí.
+
+### 21.4 Cierre de EM-PA-01…EM-PA-10
+
+El registro normativo de los cierres está en `docs/adr/ADR-0006-emisora-decisiones-y-supuestos.md` §6. Resumen ejecutivo:
+
+| ID | Cierre aplicado |
+| --- | --- |
+| EM-PA-01 | Política opt-in `emisora-audio` en Archivos; sin bucket propio |
+| EM-PA-02 | Perfiles en `PROFILE_SEEDS` de identidad; `seedEmisora` solo datos de negocio |
+| EM-PA-03 | 13 perfiles de emisora mapeados 1:1; sin cambios de permisos existentes |
+| EM-PA-04 | Sin importes ni asientos en viáticos, incentivos ni derechos |
+| EM-PA-05 | Rejilla no versionada; histórico por auditoría, sin consulta de año anterior en UI |
+| EM-PA-06 | Identidad temporal con `valid_until`, MFA según política de temporales |
+| EM-PA-07 | `emisora.parametro_reporte` con entidad por defecto `sayco` y periodicidad mensual |
+| EM-PA-08 | Migración aditiva `public/0009_emisora_notification_templates.ts`; se conserva la alternativa documentada |
+| EM-PA-09 | `America/Bogota`, días calendario inclusivos y ventana oct/nov sobre `date` |
+| EM-PA-10 | `EMISORA_MAX_AUDIO_BYTES=26214400` en `.env.example`; MIME `audio/mpeg`, `audio/wav`, `audio/ogg` |
+
+### 21.5 Trazabilidad y compuerta final
+
+`docs/emisora-trazabilidad.md` enlaza RF-01…RF-12 y RNF-01…RNF-06 con operaciones, archivos de aplicación y pruebas. La regresión repetida en E5 queda en verde: `format:check`, `lint`, `typecheck`, 2302 tests API, 57 tests web, 60 de integración, `arch:check`, 3 de arquitectura, 16 de contratos, `contracts:generate/validate/lint` (118 operaciones, 4 públicas, 101 eventos), `build` y 23 E2E. La aditividad frente a `7a2d2df` se mantiene: +28 operaciones, 0 eliminadas, 0 modificadas, `events.json` y `public-routes.json` byte-idénticos.
+
+**Aceptación:** funcional, contractual y operativamente completa. RNF-06 se ejecutó en compuerta manual con 200 VUs, p95 de 9,82 ms, 0,00 % de peticiones fallidas y 0 errores 5xx; 17 960 peticiones y 53 880 checks superados. El detalle y la evidencia están en `docs/emisora-trazabilidad.md` §4 y `docs/runbook/emisora.md` §6. La compuerta sigue siendo manual y fuera del CI: un cambio de entorno obliga a repetirla.

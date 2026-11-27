@@ -12,6 +12,9 @@ const EXCLUDED_PATHS = [
   /^scripts\/secret-scan\.test\.mjs$/,
   /^docs\//,
   /^apps\/api\/test\/fixtures\//,
+  // Credenciales deterministas de la suite E2E: se crean y se usan solo contra
+  // la base local sembrada por e2e/global-setup.ts. Nunca son secretos de CI.
+  /^e2e\/fixtures\.ts$/,
   /(^|\/)node_modules\//,
   /(^|\/)dist\//,
   /\.(png|jpg|jpeg|gif|webp|ico|pdf|lock)$/i,
