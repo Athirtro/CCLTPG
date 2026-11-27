@@ -18,7 +18,8 @@
     "test:integration": "pnpm --filter @ccltpg/api test:integration",
     "test:architecture": "pnpm --filter @ccltpg/api test:architecture",
     "test:security": "node --test scripts/*.test.mjs",
-    "test:contracts": "node --test packages/contracts/scripts/contract.test.mjs",
+    "test:contracts": "node --test packages/contracts/scripts/contract.test.mjs packages/contracts/scripts/client-contract.test.mjs",
+    "test:e2e": "playwright test",
     "security:secrets": "node scripts/secret-scan.mjs",
     "arch:check": "pnpm --filter @ccltpg/api exec depcruise src --config ../../.dependency-cruiser.mjs",
     "contracts:generate": "pnpm --filter @ccltpg/api openapi:generate && node packages/contracts/scripts/generate-events.mjs",
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@ccltpg/config": "workspace:*",
+    "@playwright/test": "^1.65.1",
     "@stoplight/spectral-cli": "6.17.1",
     "prettier": "3.10.1",
     "typescript": "5.9.3"

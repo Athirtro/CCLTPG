@@ -15,7 +15,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run src test/api",
     "test:watch": "vitest",
-    "test:integration": "vitest run test/integration --no-file-parallelism",
+    "test:integration": "vitest run test/integration --no-file-parallelism --config vitest.integration.config.ts",
     "test:architecture": "vitest run test/architecture",
     "migrate:up": "tsx src/database/migrator/migrate.ts up",
     "migrate:down": "tsx src/database/migrator/migrate.ts down",
