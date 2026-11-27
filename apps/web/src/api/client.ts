@@ -27,6 +27,61 @@ export type LoginResponseDto = {
   profiles: ProfileSummaryDto[];
 };
 
+// ===== Identidad administrativa (OP-06…OP-10) =====
+
+export type UserEstado = 'activo' | 'inactivo' | 'bloqueado';
+
+export type AdminUserDto = {
+  id: string;
+  email: string;
+  nombre: string;
+  estado: UserEstado;
+  mfaHabilitado: boolean;
+  debeCambiarPassword: boolean;
+  creadoEn: string;
+  actualizadoEn: string;
+};
+
+export type ListUsersResponseDto = {
+  items: AdminUserDto[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type CreateUserProfileDto = {
+  codigo: string;
+  validUntil?: string;
+};
+
+export type CreateUserDto = {
+  email: string;
+  nombre: string;
+  password: string;
+  estado?: UserEstado;
+  profiles: CreateUserProfileDto[];
+};
+
+export type UpdateUserDto = {
+  nombre?: string;
+  password?: string;
+  resetMfa?: boolean;
+};
+
+export type TransitionDto = {
+  to: UserEstado;
+  motivo?: string;
+};
+
+export type AssignProfileDto = {
+  codigo: string;
+  validUntil?: string;
+};
+
+export type AssignProfileResponseDto = {
+  ok: boolean;
+};
+
 export type MeResponseDto = {
   userId: string;
   email: string;
@@ -276,6 +331,16 @@ export type ScheduleResponseDto = {
   items: SesionHorarioDto[];
 };
 
+export type ScheduleSlotDto = {
+  diaSemana: number;
+  horaInicio: string;
+  horaFin: string;
+};
+
+export type ReplaceScheduleDto = {
+  franjas: ScheduleSlotDto[];
+};
+
 export type SesionDto = {
   id: string;
   grupoId: string;
@@ -337,6 +402,9 @@ export type PaginatedEvaluacionesDto = {
   data: EvaluacionDto[];
 };
 
+/** `/me/evaluations` devuelve la lista plana, no una página. */
+export type MyEvaluacionesResponseDto = MyEvaluacionDto[];
+
 export type CrearEvaluacionDto = {
   matriculaId: string;
   indicadorId: string;
@@ -374,8 +442,8 @@ export type KpisResponseDto = {
 // ===== Tipos reportes (Iteración 6) =====
 
 export type ReportColumnDto = {
-  nombre: string;
-  tipo: string;
+  key: string;
+  label: string;
 };
 
 export type ReportCatalogItemDto = {
@@ -505,6 +573,7 @@ export type Paths = {
           'application/json': {
             currentPassword: string;
             newPassword: string;
+            sessionToken?: string;
           };
         };
       };
@@ -527,6 +596,13 @@ export type Paths = {
   };
   '/auth/mfa/enroll': {
     post: {
+      requestBody: {
+        content: {
+          'application/json': {
+            sessionToken?: string;
+          };
+        };
+      };
       responses: {
         200: {
           content: {
@@ -610,7 +686,13 @@ export type Paths = {
     };
   };
   '/me/enrollments': {
-    get: {
+    get: {      parameters?: {
+        query?: {
+        page?: number;
+        pageSize?: number;
+        };
+      };
+
       responses: {
         200: {
           content: {
@@ -636,7 +718,134 @@ export type Paths = {
       responses: {
         200: {
           content: {
-            'application/json': PaginatedEvaluacionesDto;
+            'application/json': MyEvaluacionesResponseDto;
+          };
+        };
+      };
+    };
+  };
+
+  // --- Identidad: administración de usuarios (OP-06…OP-10) ---
+  '/identity/users': {
+    get: {
+      parameters?: {
+        query?: {
+          search?: string;
+          estado?: UserEstado;
+          limit?: number;
+          offset?: number;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': ListUsersResponseDto;
+          };
+        };
+        401: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+    post: {
+      requestBody: {
+        content: {
+          'application/json': CreateUserDto;
+        };
+      };
+      responses: {
+        201: {
+          content: {
+            'application/json': AdminUserDto;
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/identity/users/{id}': {
+    patch: {
+      parameters: {
+        path: { id: string };
+      };
+      requestBody: {
+        content: {
+          'application/json': UpdateUserDto;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': AdminUserDto;
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/identity/users/{id}/transitions': {
+    post: {
+      parameters: {
+        path: { id: string };
+      };
+      requestBody: {
+        content: {
+          'application/json': TransitionDto;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': AdminUserDto;
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/identity/users/{id}/profiles': {
+    post: {
+      parameters: {
+        path: { id: string };
+      };
+      requestBody: {
+        content: {
+          'application/json': AssignProfileDto;
+        };
+      };
+      responses: {
+        201: {
+          content: {
+            'application/json': AssignProfileResponseDto;
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
           };
         };
       };
@@ -726,7 +935,14 @@ export type Paths = {
 
   // --- Notificaciones ---
   '/notifications': {
-    get: {
+    get: {      parameters?: {
+        query?: {
+        soloNoLeidas?: boolean;
+        limit?: number;
+        offset?: number;
+        };
+      };
+
       responses: {
         200: {
           content: {
@@ -778,7 +994,7 @@ export type Paths = {
     put: {
       requestBody: {
         content: {
-          'application/json': ActualizarPreferenciaDto[];
+          'application/json': { preferencias: ActualizarPreferenciaDto[] };
         };
       };
       responses: {
@@ -846,7 +1062,13 @@ export type Paths = {
 
   // --- Académico: Programas ---
   '/academic/programs': {
-    get: {
+    get: {      parameters?: {
+        query?: {
+        page?: number;
+        pageSize?: number;
+        };
+      };
+
       responses: {
         200: {
           content: {
@@ -914,7 +1136,13 @@ export type Paths = {
 
   // --- Académico: Grupos ---
   '/academic/groups': {
-    get: {
+    get: {      parameters?: {
+        query?: {
+        page?: number;
+        pageSize?: number;
+        };
+      };
+
       responses: {
         200: {
           content: {
@@ -983,6 +1211,10 @@ export type Paths = {
     get: {
       parameters: {
         path: { groupId: string };
+        query?: {
+          page?: number;
+          pageSize?: number;
+        };
       };
       responses: {
         200: {
@@ -1006,11 +1238,49 @@ export type Paths = {
         };
       };
     };
+    put: {
+      parameters: {
+        path: { id: string };
+      };
+      requestBody: {
+        content: {
+          'application/json': ReplaceScheduleDto;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': ScheduleResponseDto;
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
   };
 
   // --- Académico: Estudiantes ---
   '/academic/students': {
-    get: {
+    get: {      parameters?: {
+        query?: {
+        page?: number;
+        pageSize?: number;
+        };
+      };
+
       responses: {
         200: {
           content: {
@@ -1044,29 +1314,16 @@ export type Paths = {
       };
     };
   };
-  '/academic/students/{id}': {
-    get: {
-      parameters: {
-        path: { id: string };
-      };
-      responses: {
-        200: {
-          content: {
-            'application/json': EstudianteDto;
-          };
-        };
-        404: {
-          content: {
-            'application/json': ProblemDetailsDto;
-          };
-        };
-      };
-    };
-  };
 
   // --- Académico: Matrículas ---
   '/academic/enrollments': {
-    get: {
+    get: {      parameters?: {
+        query?: {
+        page?: number;
+        pageSize?: number;
+        };
+      };
+
       responses: {
         200: {
           content: {
@@ -1279,7 +1536,13 @@ export type Paths = {
         };
       };
     };
-    get: {
+    get: {      parameters?: {
+        query?: {
+        page?: number;
+        pageSize?: number;
+        };
+      };
+
       responses: {
         200: {
           content: {
@@ -1293,6 +1556,14 @@ export type Paths = {
   // --- Analytics ---
   '/analytics/kpis': {
     get: {
+      parameters?: {
+        query?: {
+          periodo: string;
+          programaId?: string;
+          grupoId?: string;
+          kpi?: string;
+        };
+      };
       responses: {
         200: {
           content: {
@@ -1319,6 +1590,16 @@ export type Paths = {
     post: {
       parameters: {
         path: { code: string };
+      };
+      requestBody: {
+        content: {
+          'application/json': {
+            periodo: string;
+            formato: 'pdf' | 'xlsx' | 'csv';
+            programaId?: string;
+            grupoId?: string;
+          };
+        };
       };
       responses: {
         201: {

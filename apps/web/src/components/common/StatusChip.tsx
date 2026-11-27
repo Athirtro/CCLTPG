@@ -6,6 +6,7 @@ const ESTADOS: Record<string, { label: string; tone: StatusTone }> = {
   activo: { label: 'Activo', tone: 'success' },
   activa: { label: 'Activa', tone: 'success' },
   inactivo: { label: 'Inactivo', tone: 'neutral' },
+  bloqueado: { label: 'Bloqueado', tone: 'error' },
   pendiente: { label: 'Pendiente', tone: 'warning' },
   aprobado: { label: 'Aprobado', tone: 'success' },
   rechazado: { label: 'Rechazado', tone: 'error' },
