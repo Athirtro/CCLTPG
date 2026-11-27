@@ -129,13 +129,25 @@ async function seedEmisoraParaE2E(client: QueryableClient): Promise<void> {
        (id, anio, fecha_apertura, fecha_cierre, estado, bases_archivo_id)
      VALUES ('cccccccc-0000-4000-8000-000000000001', $1,
              DATE '2026-01-15', DATE '2026-02-05', 'abierta', NULL)
-     ON CONFLICT (anio) DO NOTHING`,
+     ON CONFLICT (anio) DO UPDATE SET
+       fecha_apertura = EXCLUDED.fecha_apertura,
+       fecha_cierre = EXCLUDED.fecha_cierre,
+       estado = 'abierta',
+       bases_archivo_id = NULL`,
     [anio],
   );
   await client.query(
     `INSERT INTO emisora.rejilla_anual (id, anio, estado)
      VALUES ('cccccccc-0000-4000-8000-000000000002', $1, 'borrador')
-     ON CONFLICT (anio) DO NOTHING`,
+     ON CONFLICT (anio) DO UPDATE SET
+       estado = 'borrador', comite_id = NULL, aprobada_en = NULL`,
+    [anio],
+  );
+  // La franja se repone por completo: un recorrido anterior pudo dejar horas
+  // distintas y la verificación RF-01.3 daría un resultado no determinista.
+  await client.query(
+    `DELETE FROM emisora.rejilla_anual_item
+      WHERE rejilla_anual_id = (SELECT id FROM emisora.rejilla_anual WHERE anio = $1)`,
     [anio],
   );
   await client.query(
@@ -144,11 +156,7 @@ async function seedEmisoraParaE2E(client: QueryableClient): Promise<void> {
      SELECT 'cccccccc-0000-4000-8000-00000000000a', r.id, NULL, 1,
             TIME '06:00', TIME '07:00', 'programa', 'Franja E2E'
        FROM emisora.rejilla_anual r
-       WHERE r.anio = $1
-         AND NOT EXISTS (
-           SELECT 1 FROM emisora.rejilla_anual_item i WHERE i.rejilla_anual_id = r.id
-         )
-     ON CONFLICT (id) DO NOTHING`,
+       WHERE r.anio = $1`,
     [anio],
   );
 

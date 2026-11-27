@@ -28,7 +28,12 @@ import {
   type IncentivoEstado,
   type RejillaEstado,
 } from '../domain/emisora-states.js';
-import { esAperturaAnioValida, esFechaValida, esVentanaInforme } from '../domain/emisora-rules.js';
+import {
+  esAperturaAnioValida,
+  esFechaValida,
+  esVentanaInforme,
+  plazoVeintiunDias,
+} from '../domain/emisora-rules.js';
 import { EmisoraError } from './emisora-error.js';
 import type {
   ActorContext,
@@ -139,6 +144,9 @@ export class ConvocatoriaService {
     }
     // RF-03.1: cierre derivado, nunca recibido del cliente, para garantizar 21 días.
     const fechaCierre = sumar21(input.fechaApertura);
+    if (!plazoVeintiunDias(input.fechaApertura, fechaCierre)) {
+      throw EmisoraError.invalidInput('El plazo de la convocatoria debe ser de 21 días.');
+    }
 
     return runIdempotentCreate(
       {
@@ -392,6 +400,13 @@ export class ConvocatoriaService {
           if (!convocatoria) {
             throw EmisoraError.notFound('Convocatoria');
           }
+          const rejilla = await tx.emisora.findRejillaByAnio(convocatoria.anio);
+          if (rejilla?.estado === 'aprobada') {
+            throw EmisoraError.conflict(
+              'INVALID_STATE_TRANSITION',
+              'La rejilla del año ya está aprobada; no se puede sustituir el acta del comité.',
+            );
+          }
           const comite = await tx.emisora.createComite({
             id: uuidv7(),
             convocatoriaId: convocatoria.id,
@@ -423,8 +438,8 @@ export class ConvocatoriaService {
           });
           // RF-03.3: el acta del comité queda vinculada a la rejilla del año de
           // la convocatoria; sin ese vínculo la aprobación no puede verificarla.
-          const rejilla = await tx.emisora.findRejillaByAnio(convocatoria.anio);
-          if (rejilla) {
+          // Solo una rejilla en borrador puede cambiar de acta.
+          if (rejilla?.estado === 'borrador') {
             await tx.emisora.vincularComiteRejilla(rejilla.id, comite.id);
           }
           return comite;
@@ -503,7 +518,7 @@ export class ConvocatoriaService {
   ): Promise<{ id: string; proyectoId: string; estado: string }> {
     await this.validarArchivo(input.archivoId, 'Informe del realizador');
     if (!esVentanaInforme(input.fechaInforme)) {
-      throw EmisoraError.invalidInput('El informe debe fecharse en octubre o noviembre.');
+      throw EmisoraError.fueraVentanaInforme();
     }
 
     return runIdempotentCreate(
@@ -520,6 +535,10 @@ export class ConvocatoriaService {
           if (!proyecto) {
             throw EmisoraError.notFound('Proyecto');
           }
+          const realizador = await tx.emisora.findRealizadorById(proyecto.realizadorId);
+          if (!realizador) {
+            throw EmisoraError.notFound('Realizador');
+          }
           const informe = await tx.emisora.createInforme({
             id: uuidv7(),
             proyectoId: proyecto.id,
@@ -528,7 +547,12 @@ export class ConvocatoriaService {
             archivoId: input.archivoId,
             observaciones: input.observaciones,
           });
-          const rejilla = await tx.emisora.findRejillaByAnio(new Date().getUTCFullYear());
+          // La rejilla se busca por el año de la convocatoria del proyecto, no
+          // por el año de la petición: el informe puede llegar en enero del año
+          // siguiente y seguir perteneciendo a la convocatoria anterior.
+          const convocatoria = await tx.emisora.findConvocatoriaById(proyecto.convocatoriaId);
+          const anio = convocatoria?.anio ?? Number(input.fechaInforme.slice(0, 4));
+          const rejilla = await tx.emisora.findRejillaByAnio(anio);
           await tx.emisora.createIncentivo({
             id: uuidv7(),
             informeId: informe.id,
@@ -549,7 +573,7 @@ export class ConvocatoriaService {
               {
                 tipo: 'informe.recibido',
                 payload: { informeId: informe.id, proyectoId: informe.proyectoId },
-                usuarioIds: [informe.realizadorId],
+                ...(realizador.usuarioId ? { usuarioIds: [realizador.usuarioId] } : {}),
               },
             ],
           });
@@ -577,32 +601,66 @@ export class ConvocatoriaService {
     input: UpdateIncentivoInput,
     actor: ActorContext,
   ): Promise<IncentivoView> {
-    const incentivo = await this.repository.findIncentivoById(id);
-    if (!incentivo) {
-      throw EmisoraError.notFound('Incentivo');
-    }
-    if (!canTransicionarIncentivo(incentivo.estado, input.to)) {
-      throw EmisoraError.invalidTransition(incentivo.estado, input.to);
-    }
-    if (
-      (input.to === 'asignado' || input.to === 'resuelto') &&
-      (input.calificacion === null || input.calificacion < 0 || input.calificacion > 100)
-    ) {
-      throw EmisoraError.invalidInput('La calificación debe estar entre 0 y 100.');
-    }
-    if (input.to === 'resuelto' && !input.referenciaCdp?.trim()) {
-      throw EmisoraError.invalidInput('La resolución exige referencia de CDP.');
-    }
-
     const actualizado = await this.unitOfWork.run(async (tx) => {
+      // La validación y la escritura comparten transacción: un cambio
+      // concurrente no puede colarse entre ambas ni duplicar la auditoría.
+      const incentivo = await tx.emisora.findIncentivoById(id);
+      if (!incentivo) {
+        throw EmisoraError.notFound('Incentivo');
+      }
+      if (!canTransicionarIncentivo(incentivo.estado, input.to)) {
+        throw EmisoraError.invalidTransition(incentivo.estado, input.to);
+      }
+      if (
+        (input.to === 'asignado' || input.to === 'resuelto') &&
+        (input.calificacion === null || input.calificacion < 0 || input.calificacion > 100)
+      ) {
+        throw EmisoraError.invalidInput('La calificación debe estar entre 0 y 100.');
+      }
+      if (input.to === 'resuelto' && !input.referenciaCdp?.trim()) {
+        throw EmisoraError.invalidInput('La resolución exige referencia de CDP.');
+      }
+
       const row = await tx.emisora.updateIncentivo(
         id,
+        incentivo.estado,
         input.to,
         input.calificacion,
         input.referenciaCdp?.trim() || null,
       );
+      const realizador = await tx.emisora.findRealizadorById(row.realizadorId);
+      const usuarioIds = realizador?.usuarioId ? [realizador.usuarioId] : undefined;
+
+      const destino =
+        input.to === 'asignado'
+          ? {
+              accion: 'incentivo.asignado',
+              tipo: 'incentivo.asignado',
+              payload: {
+                incentivoId: id,
+                informeId: row.informeId,
+                realizadorId: row.realizadorId,
+                estado: row.estado,
+              },
+            }
+          : input.to === 'resuelto'
+            ? {
+                accion: 'resolucion.generada',
+                tipo: 'resolucion.generada',
+                payload: {
+                  incentivoId: id,
+                  informeId: row.informeId,
+                  referenciaCdp: row.referenciaCdp,
+                },
+              }
+            : {
+                accion: 'incentivo.cdp_solicitado',
+                tipo: null,
+                payload: {},
+              };
+
       await registrarEvento(tx, {
-        accion: 'incentivo.asignado',
+        accion: destino.accion,
         recurso: 'incentivo',
         recursoId: id,
         actor,
@@ -615,18 +673,15 @@ export class ConvocatoriaService {
           calificacion: row.calificacion,
           tieneReferenciaCdp: Boolean(row.referenciaCdp),
         },
-        eventos: [
-          {
-            tipo: 'incentivo.asignado',
-            payload: {
-              incentivoId: id,
-              informeId: row.informeId,
-              realizadorId: row.realizadorId,
-              estado: row.estado,
-            },
-            usuarioIds: [row.realizadorId],
-          },
-        ],
+        eventos: destino.tipo
+          ? [
+              {
+                tipo: destino.tipo,
+                payload: destino.payload,
+                ...(usuarioIds ? { usuarioIds } : {}),
+              },
+            ]
+          : [],
       });
       return row;
     });

@@ -14,6 +14,7 @@ import {
   IDENTITY_DIRECTORY,
   type IdentityDirectory,
 } from '../../../shared/integration/identity-directory.port.js';
+import { sha256Hex } from '../../../shared/idempotency/canonical-hash.js';
 import {
   IDEMPOTENCY_STORE,
   type IdempotencyStore,
@@ -142,16 +143,17 @@ export class GrabacionService {
   }
 
   async transition(id: string, to: GrabacionEstado, actor: ActorContext): Promise<GrabacionView> {
-    const grabacion = await this.repository.findGrabacionById(id);
-    if (!grabacion) {
-      throw EmisoraError.notFound('Sesión de grabación');
-    }
-    if (!canTransicionarGrabacion(grabacion.estado, to)) {
-      throw EmisoraError.invalidTransition(grabacion.estado, to);
-    }
-
     await this.unitOfWork.run(async (tx) => {
-      const row = await tx.emisora.updateGrabacionEstado(id, to, actor.userId);
+      // Leer, validar y escribir en la misma transacción evita que otra
+      // petición cambie el estado entre la comprobación y la actualización.
+      const grabacion = await tx.emisora.findGrabacionById(id);
+      if (!grabacion) {
+        throw EmisoraError.notFound('Sesión de grabación');
+      }
+      if (!canTransicionarGrabacion(grabacion.estado, to)) {
+        throw EmisoraError.invalidTransition(grabacion.estado, to);
+      }
+      const row = await tx.emisora.updateGrabacionEstado(id, grabacion.estado, to, actor.userId);
       await registrarEvento(tx, {
         accion: 'grabacion.aprobada',
         recurso: 'sesion_grabacion',
@@ -264,6 +266,9 @@ export class GrabacionService {
           nombreOriginal: input.archivo.nombreOriginal,
           mime: input.archivo.mime,
           tamano: input.archivo.buffer.length,
+          // El hash distingue dos contenidos con igual metadato: la misma
+          // clave con bytes distintos debe resolverse como reutilización.
+          hashContenido: sha256Hex(input.archivo.buffer),
         },
       },
       async () => {

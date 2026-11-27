@@ -21,10 +21,15 @@ import PageHeader from '../../../components/common/PageHeader';
 import SectionCard from '../../../components/common/SectionCard';
 import StatusChip from '../../../components/common/StatusChip';
 
+// Valores iniciales del recorrido E2; al cargar, el año y la fecha se derivan
+// de la rejilla, la programación y las grabaciones existentes.
 const ANIO = 2026;
 const FECHA = '2026-01-19';
 const HORA_INICIO = '06:00';
 const HORA_FIN = '07:00';
+const FECHA_COMITE = '2026-02-10';
+const DURACION_SEGUNDOS = '60';
+const TIPO_AUDIO = 'programa';
 
 function guardar(mensaje: string): never {
   throw new Error(mensaje);
@@ -43,8 +48,14 @@ export default function EmisoraOperacion() {
   const [grabaciones, setGrabaciones] = useState<EmisoraGrabacionView[]>([]);
   const [audios, setAudios] = useState<EmisoraAudioView[]>([]);
   const [actaArchivoId, setActaArchivoId] = useState('');
+  const [fechaComite, setFechaComite] = useState(FECHA_COMITE);
+  const [duracionSegundos, setDuracionSegundos] = useState(DURACION_SEGUNDOS);
+  const [tipoAudio, setTipoAudio] = useState(TIPO_AUDIO);
   const [audio, setAudio] = useState<File | null>(null);
   const [confirmarRejilla, setConfirmarRejilla] = useState(false);
+
+  const anio = rejilla?.anio ?? convocatorias[0]?.anio ?? ANIO;
+  const fecha = programacion?.fecha ?? grabaciones[0]?.fecha ?? FECHA;
 
   const cargar = useCallback(async () => {
     try {
@@ -56,10 +67,14 @@ export default function EmisoraOperacion() {
           apiClient.GET('/emisora/grabaciones'),
           apiClient.GET('/emisora/audios', { params: { query: {} } }),
         ]);
-      if (convocatoriasRes.error || rejillaRes.error || programacionRes.error) {
-        guardar(
-          getErrorMessage(convocatoriasRes.error ?? rejillaRes.error ?? programacionRes.error),
-        );
+      const errorCarga =
+        convocatoriasRes.error ??
+        rejillaRes.error ??
+        programacionRes.error ??
+        grabacionesRes.error ??
+        audiosRes.error;
+      if (errorCarga) {
+        guardar(getErrorMessage(errorCarga));
       }
       setConvocatorias(convocatoriasRes.data ?? []);
       setRejilla(rejillaRes.data ?? null);
@@ -94,7 +109,7 @@ export default function EmisoraOperacion() {
   }
 
   async function registrarComite(): Promise<void> {
-    const convocatoria = convocatorias[0];
+    const convocatoria = convocatorias.find((entrada) => entrada.anio === anio);
     if (!convocatoria) guardar('No hay convocatoria disponible para registrar el comité.');
     if (!actaArchivoId.trim()) guardar('Indica el identificador del acta PDF ya cargada.');
     const {
@@ -104,7 +119,7 @@ export default function EmisoraOperacion() {
     } = await apiClient.POST('/emisora/comites', {
       body: {
         convocatoriaId: convocatoria.id,
-        fecha: '2026-02-10',
+        fecha: fechaComite,
         actaArchivoId: actaArchivoId.trim(),
         integrantes: [user?.id ?? ''],
       },
@@ -139,10 +154,10 @@ export default function EmisoraOperacion() {
     } = await apiClient.POST('/emisora/programacion-diaria', {
       body: {
         rejillaAnualId: rejilla.id,
-        fecha: FECHA,
+        fecha,
         items: [
           {
-            fecha: FECHA,
+            fecha,
             horaInicio: HORA_INICIO,
             horaFin: HORA_FIN,
             tipo: 'programa',
@@ -180,7 +195,7 @@ export default function EmisoraOperacion() {
       error: apiError,
       response,
     } = await apiClient.POST('/emisora/grabaciones', {
-      body: { programacionItemId: item.id, fecha: FECHA },
+      body: { programacionItemId: item.id, fecha },
       headers: { 'Idempotency-Key': crypto.randomUUID() },
     });
     if (apiError || response?.status !== 201 || !data) {
@@ -209,9 +224,9 @@ export default function EmisoraOperacion() {
     if (!audio) guardar('Selecciona un archivo de audio.');
     const cuerpo = new FormData();
     cuerpo.set('sesionGrabacionId', grabacion.id);
-    cuerpo.set('tipo', 'programa');
-    cuerpo.set('duracionSegundos', '60');
-    cuerpo.set('fecha', FECHA);
+    cuerpo.set('tipo', tipoAudio);
+    cuerpo.set('duracionSegundos', duracionSegundos);
+    cuerpo.set('fecha', fecha);
     cuerpo.set('file', audio);
     const {
       data,
@@ -329,6 +344,14 @@ export default function EmisoraOperacion() {
                 placeholder="UUID del archivo cargado en Archivos"
                 sx={{ flex: '1 1 320px' }}
               />
+              <TextField
+                label="Fecha del comité"
+                type="date"
+                value={fechaComite}
+                onChange={(event) => setFechaComite(event.target.value)}
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{ flex: '1 1 200px' }}
+              />
               <Button
                 variant="outlined"
                 disabled={enviando || !hasPermission('emisora:comite:create')}
@@ -359,7 +382,7 @@ export default function EmisoraOperacion() {
                 ariaLabel="Rejilla anual"
               />
             ) : (
-              <EmptyState title="Sin rejilla" description={`No hay rejilla para ${ANIO}.`} />
+              <EmptyState title="Sin rejilla" description={`No hay rejilla para ${anio}.`} />
             )}
           </SectionCard>
 
@@ -411,7 +434,7 @@ export default function EmisoraOperacion() {
             ) : (
               <EmptyState
                 title="Sin programación"
-                description={`No hay programación para ${FECHA}.`}
+                description={`No hay programación para ${fecha}.`}
               />
             )}
           </SectionCard>
@@ -445,6 +468,20 @@ export default function EmisoraOperacion() {
               >
                 Registrar asistencia
               </Button>
+              <TextField
+                label="Tipo de audio"
+                value={tipoAudio}
+                onChange={(event) => setTipoAudio(event.target.value)}
+                sx={{ flex: '1 1 160px' }}
+              />
+              <TextField
+                label="Duración (segundos)"
+                type="number"
+                value={duracionSegundos}
+                onChange={(event) => setDuracionSegundos(event.target.value)}
+                slotProps={{ htmlInput: { min: 1 } }}
+                sx={{ flex: '1 1 160px' }}
+              />
               <Box sx={{ flex: '1 1 260px' }}>
                 <Typography component="label" htmlFor="audio-emisora" variant="body2">
                   Archivo de audio (MP3, WAV u OGG)

@@ -164,6 +164,7 @@ export interface EmisoraRepository {
   listGrabaciones(): Promise<readonly GrabacionRecord[]>;
   updateGrabacionEstado(
     id: string,
+    from: GrabacionEstado,
     estado: GrabacionEstado,
     aprobadaPor: string,
   ): Promise<GrabacionRecord>;
@@ -189,6 +190,7 @@ export interface EmisoraRepository {
   findIncentivoById(id: string): Promise<IncentivoRecord | null>;
   updateIncentivo(
     id: string,
+    from: IncentivoEstado,
     estado: IncentivoEstado,
     calificacion: number | null,
     referenciaCdp: string | null,

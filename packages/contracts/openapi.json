@@ -2280,7 +2280,7 @@
           "CONVOCATORIA_DUPLICADA",
           "CONVOCATORIA_CERRADA",
           "REJILLA_SIN_ACTA",
-          "INFORME_FUERA_VENTANA"
+          "EMISORA_FUERA_VENTANA_INFORME"
         ],
         "x-permission": ["emisora:convocatoria:create"],
         "x-scope": "global"
@@ -2376,7 +2376,7 @@
           "CONVOCATORIA_DUPLICADA",
           "CONVOCATORIA_CERRADA",
           "REJILLA_SIN_ACTA",
-          "INFORME_FUERA_VENTANA"
+          "EMISORA_FUERA_VENTANA_INFORME"
         ],
         "x-permission": ["emisora:proyecto:create"],
         "x-scope": "global"
@@ -2499,7 +2499,7 @@
           "CONVOCATORIA_DUPLICADA",
           "CONVOCATORIA_CERRADA",
           "REJILLA_SIN_ACTA",
-          "INFORME_FUERA_VENTANA"
+          "EMISORA_FUERA_VENTANA_INFORME"
         ],
         "x-permission": ["emisora:comite:create"],
         "x-scope": "global"
@@ -2606,7 +2606,7 @@
           "CONVOCATORIA_DUPLICADA",
           "CONVOCATORIA_CERRADA",
           "REJILLA_SIN_ACTA",
-          "INFORME_FUERA_VENTANA"
+          "EMISORA_FUERA_VENTANA_INFORME"
         ],
         "x-permission": ["emisora:rejilla:update"],
         "x-scope": "global"
@@ -2674,7 +2674,7 @@
           "CONVOCATORIA_DUPLICADA",
           "CONVOCATORIA_CERRADA",
           "REJILLA_SIN_ACTA",
-          "INFORME_FUERA_VENTANA"
+          "EMISORA_FUERA_VENTANA_INFORME"
         ],
         "x-permission": ["emisora:informe:create"],
         "x-scope": "global"
@@ -2777,7 +2777,7 @@
           "CONVOCATORIA_DUPLICADA",
           "CONVOCATORIA_CERRADA",
           "REJILLA_SIN_ACTA",
-          "INFORME_FUERA_VENTANA"
+          "EMISORA_FUERA_VENTANA_INFORME"
         ],
         "x-permission": ["emisora:incentivo:update"],
         "x-scope": "global"

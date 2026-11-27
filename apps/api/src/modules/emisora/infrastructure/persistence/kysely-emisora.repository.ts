@@ -243,11 +243,19 @@ export class KyselyEmisoraRepository implements EmisoraRepository {
   }
 
   async vincularComiteRejilla(rejillaId: string, comiteId: string): Promise<void> {
-    await this.db
+    const row = await this.db
       .updateTable('emisora.rejilla_anual')
       .set({ comite_id: comiteId })
       .where('id', '=', rejillaId)
-      .execute();
+      .where('estado', '=', 'borrador')
+      .returning('id')
+      .executeTakeFirst();
+    if (!row) {
+      throw EmisoraError.conflict(
+        'INVALID_STATE_TRANSITION',
+        'La rejilla ya no está en borrador y no puede cambiar de acta.',
+      );
+    }
   }
 
   async listRejillaItems(rejillaId: string): Promise<readonly RejillaItemRecord[]> {
@@ -422,6 +430,7 @@ export class KyselyEmisoraRepository implements EmisoraRepository {
 
   async updateGrabacionEstado(
     id: string,
+    from: GrabacionRecord['estado'],
     estado: GrabacionRecord['estado'],
     aprobadaPor: string,
   ): Promise<GrabacionRecord> {
@@ -429,8 +438,12 @@ export class KyselyEmisoraRepository implements EmisoraRepository {
       .updateTable('emisora.sesion_grabacion')
       .set({ estado, aprobada_por: aprobadaPor })
       .where('id', '=', id)
+      .where('estado', '=', from)
       .returningAll()
-      .executeTakeFirstOrThrow();
+      .executeTakeFirst();
+    if (!row) {
+      throw EmisoraError.invalidTransition(from, estado);
+    }
     return mapGrabacion(row);
   }
 
@@ -577,6 +590,7 @@ export class KyselyEmisoraRepository implements EmisoraRepository {
 
   async updateIncentivo(
     id: string,
+    from: IncentivoEstado,
     estado: IncentivoEstado,
     calificacion: number | null,
     referenciaCdp: string | null,
@@ -585,8 +599,12 @@ export class KyselyEmisoraRepository implements EmisoraRepository {
       .updateTable('emisora.incentivo')
       .set({ estado, calificacion, referencia_cdp: referenciaCdp })
       .where('id', '=', id)
+      .where('estado', '=', from)
       .returningAll()
-      .executeTakeFirstOrThrow();
+      .executeTakeFirst();
+    if (!row) {
+      throw EmisoraError.invalidTransition(from, estado);
+    }
     return mapIncentivo(row);
   }
 

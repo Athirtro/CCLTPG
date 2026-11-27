@@ -10,9 +10,8 @@ export const EMISORA_ERRORS = {
   convocatoriaDuplicate: 'CONVOCATORIA_DUPLICADA',
   convocatoriaClosed: 'CONVOCATORIA_CERRADA',
   rejillaSinActa: 'REJILLA_SIN_ACTA',
-  rejillaMismatch: 'REJILLA_MISMATCH',
   scheduleOverlap: 'SCHEDULE_OVERLAP',
-  informeFueraVentana: 'INFORME_FUERA_VENTANA',
+  fueraVentanaInforme: 'EMISORA_FUERA_VENTANA_INFORME',
   idempotencyKeyRequired: 'IDEMPOTENCY_KEY_REQUIRED',
   idempotencyKeyReused: 'IDEMPOTENCY_KEY_REUSED',
   idempotencyInProgress: 'IDEMPOTENCY_IN_PROGRESS',
@@ -46,6 +45,14 @@ export class EmisoraError extends AppError {
       EMISORA_ERRORS.invalidStateTransition,
       HttpStatus.CONFLICT,
       `Transición no permitida de "${from}" a "${to}".`,
+    );
+  }
+
+  static fueraVentanaInforme(): EmisoraError {
+    return new EmisoraError(
+      EMISORA_ERRORS.fueraVentanaInforme,
+      HttpStatus.BAD_REQUEST,
+      'El informe debe fecharse en octubre o noviembre.',
     );
   }
 

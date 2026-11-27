@@ -6,7 +6,12 @@ import {
   type FranjaTipo,
   type ProgramacionEstado,
 } from '../domain/emisora-states.js';
-import { esFechaValida, esHoraValida, verificarContraRejilla } from '../domain/emisora-rules.js';
+import {
+  esFechaValida,
+  esHoraValida,
+  haySolape,
+  verificarContraRejilla,
+} from '../domain/emisora-rules.js';
 import { EmisoraError } from './emisora-error.js';
 import type { ActorContext, ProgramacionView } from './emisora.types.js';
 import { runIdempotentCreate } from './idempotent-create.js';
@@ -65,6 +70,11 @@ export class ProgramacionService {
       ) {
         throw EmisoraError.invalidInput('Cada franja debe tener horas válidas y ordenadas.');
       }
+    }
+    // Validación primaria de solapes; la restricción de exclusión de la base
+    // sigue siendo la red de seguridad para escrituras concurrentes.
+    if (haySolape(input.items)) {
+      throw EmisoraError.conflict('SCHEDULE_OVERLAP', 'Las franjas propuestas se solapan.');
     }
 
     const rejilla = await this.repository.findRejillaById(input.rejillaAnualId);
