@@ -601,3 +601,90 @@ Las acciones de auditoría de creación y rechazo (`patrocinio.propuesto`,
 gramática `recurso.accion`, pero no se publican en la outbox: el catálogo de
 eventos queda intacto. La descarga del PDF se hace con el cliente autenticado
 (token en memoria), no con un enlace plano que recibiría un 401.
+
+---
+
+## 20. Inventario y compuerta del slice E4
+
+### 20.1 Alcance
+
+E4 cierra RF-07…RF-12 sin tocar migraciones ni contratos congelados: las
+19 tablas de `0003_create_emisora_reporting.ts` y sus tipos en `schema.ts` ya
+están migrados desde E1. Se añaden estados/tipos al dominio, métodos al puerto
+y al repositorio Kysely, un servicio de gestión, controladores/DTOs, el
+adaptador de exportaciones, la página `/emisora/operacion-e4` y pruebas. No se
+modifican permisos existentes: E4 solo consume el catálogo cerrado ya declarado
+(`turno`, `lectura`, `bitacora`, `obra`, `derecho`, `equipo`, `inversion`,
+`proyeccion`, `actividad`, `permiso-salida`, `tramite`, `planilla`,
+`archivo-emisora`). Todos los eventos que emite ya están en `events.json` (101).
+
+### 20.2 Reglas implementadas
+
+1. **RF-07.** Un turno va `planificado → confirmado → realizado`; la lectura
+   técnica es única por (`transmisor_id`, `fecha`) y un duplicado devuelve
+   `409 EMISORA_LECTURA_DUPLICADA` (también ante carrera, vía `23505`). La
+   bitácora guarda `actor_id` y `request_id` del contexto autenticado.
+2. **RF-08.** La obra exige título, compositor/autor, duración positiva y fecha
+   de inclusión. El reporte agrupa obras por entidad (`sayco`/`acinpro`) y
+   periodo, valida `fecha_fin >= fecha_inicio` y genera PDF con la plantilla
+   `emisora-reporte-obras` (Idempotency-Key obligatoria). El pago de derechos
+   es solo trazabilidad: soporte PDF limpio + referencia + estado; sin importes
+   ni ejecución.
+3. **RF-09.** Hoja de vida por número de serie único; actualización tecnológica
+   `solicitada → aprobada|rechazada → implementada`, con soporte opcional;
+   proyección anual única por año (`borrador → aprobada`); seguimiento de
+   inversión `proyectada → aprobada → en_seguimiento → cerrada` con referencia
+   de contrato, sin contabilidad; versión de software y asignación de equipo
+   como registros de trazabilidad.
+4. **RF-10/11.** La actividad cultural se registra con fecha y responsable; el
+   permiso de gobierno exige oficio PDF limpio generado con
+   `emisora-oficio-salida`. El archivo de emisora guarda solo metadatos y
+   valida contra `FILE_DIRECTORY` que el binario exista, esté limpio y tenga
+   MIME compatible con el tipo; `tipo = audio` publica `audio.archivado`. La
+   planilla es única por fecha, se genera con `emisora-planilla-emision` y
+   `registrada` publica `planilla.registrada`.
+5. **RF-12.** El trámite nace `radicado` (Idempotency-Key obligatoria) y sigue
+   `en_tramite → respondido → archivado`; cada soporte exige archivo limpio y
+   emite `soporte.adjuntado`. El `destino` es un enum cerrado.
+6. **Transiciones.** Igual que E2/E3: se validan en dominio dentro de la UoW y
+   el `UPDATE` filtra por el estado de origen; un conflicto concurrente es
+   409 `INVALID_STATE_TRANSITION`, nunca 500.
+
+### 20.3 Operaciones E4 y trazabilidad
+
+| Operación | Permiso | Evento de dominio | RF |
+| --- | --- | --- | --- |
+| `POST /emisora/turnos`, `PATCH /emisora/turnos/{id}/transitions` | `emisora:turno:create/update` | `turno.asignado` | RF-07.1 |
+| `POST /emisora/lecturas`, `GET /emisora/lecturas` | `emisora:lectura:create/read` | `lectura.registrada` | RF-07.2 |
+| `POST /emisora/bitacoras` | `emisora:bitacora:create` | `bitacora.registrada` | RF-07.3 |
+| `POST /emisora/obras`, `GET /emisora/obras` | `emisora:obra:create/read` | `obra.incluida` | RF-08.1 |
+| `POST /emisora/reportes-obras` | `emisora:derecho:create` | `reporte_obra.generado` + `reporte.generado` (Exportaciones) | RF-08.2 |
+| `POST /emisora/pagos-derechos` | `emisora:derecho:create` | `pago.registrado` | RF-08.3 |
+| `POST /emisora/equipos`, `PATCH /emisora/equipos/{id}/estado`, `POST /emisora/versiones-software`, `POST /emisora/asignaciones-equipo` | `emisora:equipo:create/update` | `equipo.actualizado` | RF-09.1/09.2/09.4 |
+| `POST /emisora/actualizaciones-tecnologicas`, `PATCH /emisora/actualizaciones-tecnologicas/{id}/transitions` | `emisora:equipo:update` | — | RF-09.2 |
+| `POST /emisora/proyecciones`, `PATCH /emisora/proyecciones/{id}/transitions` | `emisora:proyeccion:create/update` | `proyeccion.generada` | RF-09.3 |
+| `POST /emisora/inversiones`, `PATCH /emisora/inversiones/{id}/transitions` | `emisora:inversion:create/update` | `inversion.registrada` | RF-09.3 |
+| `POST /emisora/actividades`, `GET /emisora/actividades` | `emisora:actividad:create/read` | `actividad.registrada` | RF-10.1 |
+| `POST /emisora/permisos-salida` | `emisora:permiso-salida:create` | `permiso.emitido` | RF-10.2 |
+| `POST /emisora/archivos-emisora` | `emisora:archivo-emisora:create` | `audio.archivado` (solo `tipo=audio`) | RF-11.1 |
+| `POST /emisora/planillas-emision` | `emisora:planilla:create` | `planilla.registrada` | RF-11.2 |
+| `POST /emisora/tramites`, `GET /emisora/tramites`, `POST /emisora/tramites/{id}/soportes`, `PATCH /emisora/tramites/{id}/transitions` | `emisora:tramite:create/read/update` | `tramite.radicado`, `soporte.adjuntado` | RF-12.1/12.2 |
+
+Todas son `x-access=permission`, `x-scope=global` y mantienen
+`public-routes.json` y `events.json` byte-idénticos. La matriz ejecutable añade
+los `operationId` nuevos sin cambiar ningún permiso ni perfil existente: el
+perfil `jefe_emisora` (`emisora:*:manage`) da el caso permitido y los perfiles
+sin esos recursos dan el denegado exigido para `scope: global`.
+
+### 20.4 Compuerta específica de E4
+
+Además de la regresión de §12, E4 verifica: (a) dos lecturas del mismo
+transmisor y fecha fallan con `EMISORA_LECTURA_DUPLICADA` (dominio y `23505`);
+(b) un pago sin soporte PDF limpio y un permiso sin oficio PDF limpio se
+rechazan; (c) el reporte de obras y la planilla generan PDF por Exportaciones
+con clave de idempotencia propia, sin duplicar `reporte.generado` en la outbox
+de emisora; (d) las transiciones de trámite, proyección e inversión son
+unidireccionales y un segundo intento devuelve 409; (e) el archivo de emisora
+rechaza un `archivo_id` inexistente o no limpio; (f) los 101 eventos del
+catálogo no se duplican al regenerar contratos y las operaciones nuevas son
+estrictamente aditivas frente a `7a2d2df`.

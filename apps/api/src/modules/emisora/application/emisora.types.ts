@@ -1,16 +1,27 @@
 import type {
+  ActualizacionEstado,
+  ArchivoEmisoraTipo,
   AsistenciaEstado,
   AudioTipo,
   ConvocatoriaEstado,
+  EntidadReporte,
+  EquipoEstado,
   FranjaTipo,
   GrabacionEstado,
   IncentivoEstado,
+  InversionEstado,
   OrdenEmisionEstado,
   PatrocinioEstado,
+  PermisoEstado,
+  PlanillaEstado,
   PrestamoEstado,
+  ProyeccionEstado,
   PromoEstado,
   PublicacionEstado,
+  TramiteDestino,
+  TramiteEstado,
   TransmisionEstado,
+  TurnoEstado,
   ViaticoEstado,
   ProgramacionEstado,
   ProyectoEstado,
@@ -433,3 +444,213 @@ export interface ViaticoView {
   referenciaOrden: string | null;
   soporteArchivoId: string | null;
 }
+
+/* ------------------------------- Registros E4 ----------------------------- */
+
+export interface TransmisorRecord {
+  id: string;
+  codigo: string;
+  nombre: string;
+  sede: string;
+  frecuencia: string | null;
+  activo: boolean;
+}
+
+export interface TurnoRecord {
+  id: string;
+  transmisorId: string;
+  operadorId: string;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  estado: TurnoEstado;
+}
+
+export interface LecturaRecord {
+  id: string;
+  transmisorId: string;
+  fecha: string;
+  potenciaW: number | null;
+  frecuencia: string | null;
+  observaciones: string | null;
+  registradoPor: string;
+}
+
+export interface BitacoraRecord {
+  id: string;
+  transmisorId: string;
+  turnoId: string | null;
+  fecha: string;
+  incidente: string;
+  accion: string | null;
+  actorId: string;
+  requestId: string | null;
+  ocurridoEn: Date;
+}
+
+export interface ObraRecord {
+  id: string;
+  titulo: string;
+  compositorAutor: string;
+  duracionSegundos: number;
+  fechaInclusion: string;
+  archivoId: string | null;
+}
+
+export interface ReporteObraRecord {
+  id: string;
+  entidad: EntidadReporte;
+  periodo: string;
+  fechaInicio: string;
+  fechaFin: string;
+  archivoId: string | null;
+  generadoEn: Date;
+}
+
+export interface PagoDerechosRecord {
+  id: string;
+  obraId: string;
+  reporteId: string | null;
+  soporteArchivoId: string;
+  referencia: string;
+  estado: 'registrado' | 'en_tramite';
+}
+
+export interface EquipoRecord {
+  id: string;
+  nombre: string;
+  tipo: string;
+  marca: string | null;
+  modelo: string | null;
+  numeroSerie: string;
+  estado: EquipoEstado;
+  fechaAdquisicion: string | null;
+  archivoId: string | null;
+}
+
+export interface ActualizacionRecord {
+  id: string;
+  equipoId: string;
+  descripcion: string;
+  solicitadaPor: string | null;
+  estado: ActualizacionEstado;
+  fecha: string | null;
+  soporteArchivoId: string | null;
+}
+
+export interface ProyeccionRecord {
+  id: string;
+  anio: number;
+  equipoId: string | null;
+  descripcion: string;
+  estado: ProyeccionEstado;
+  archivoId: string | null;
+}
+
+export interface InversionRecord {
+  id: string;
+  proyeccionId: string;
+  contratoRef: string | null;
+  estado: InversionEstado;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+}
+
+export interface VersionSoftwareRecord {
+  id: string;
+  equipoId: string | null;
+  nombre: string;
+  version: string;
+  fechaInstalacion: string;
+  responsableId: string | null;
+}
+
+export interface AsignacionEquipoRecord {
+  id: string;
+  equipoId: string;
+  transmisorId: string | null;
+  usuarioId: string | null;
+  fechaAsignacion: string;
+  fechaDevolucion: string | null;
+  estado: 'asignado' | 'devuelto';
+}
+
+export interface ActividadCulturalRecord {
+  id: string;
+  nombre: string;
+  fecha: string;
+  lugar: string | null;
+  descripcion: string | null;
+  responsableId: string | null;
+  publicada: boolean;
+  archivoId: string | null;
+}
+
+export interface PermisoGobiernoRecord {
+  id: string;
+  actividadId: string;
+  oficioArchivoId: string;
+  destino: string | null;
+  fechaEmision: string | null;
+  estado: PermisoEstado;
+}
+
+export interface TramiteRecord {
+  id: string;
+  destino: TramiteDestino;
+  asunto: string;
+  radicadoRef: string | null;
+  estado: TramiteEstado;
+  fechaRadicacion: string;
+  responsableId: string | null;
+}
+
+export interface SoporteTramiteRecord {
+  id: string;
+  tramiteId: string;
+  archivoId: string;
+  tipo: string | null;
+  descripcion: string | null;
+}
+
+export interface PlanillaRecord {
+  id: string;
+  fecha: string;
+  programacionDiariaId: string | null;
+  operadorId: string | null;
+  archivoId: string | null;
+  estado: PlanillaEstado;
+}
+
+export interface ArchivoEmisoraRecord {
+  id: string;
+  archivoId: string;
+  tipo: ArchivoEmisoraTipo;
+  duracionSegundos: number | null;
+  fecha: string;
+  responsableId: string;
+  hashSha256: string | null;
+  mime: string | null;
+}
+
+/* -------------------------------- Vistas E4 ------------------------------- */
+
+export type TransmisorView = TransmisorRecord;
+export type TurnoView = TurnoRecord;
+export type LecturaView = LecturaRecord;
+export type BitacoraView = BitacoraRecord;
+export type ObraView = ObraRecord;
+export type ReporteObraView = ReporteObraRecord & { descargaUrl: string };
+export type PagoDerechosView = PagoDerechosRecord;
+export type EquipoView = EquipoRecord;
+export type ActualizacionView = ActualizacionRecord;
+export type ProyeccionView = ProyeccionRecord;
+export type InversionView = InversionRecord;
+export type VersionSoftwareView = VersionSoftwareRecord;
+export type AsignacionEquipoView = AsignacionEquipoRecord;
+export type ActividadCulturalView = ActividadCulturalRecord;
+export type PermisoGobiernoView = PermisoGobiernoRecord & { descargaUrl: string };
+export type TramiteView = TramiteRecord;
+export type SoporteTramiteView = SoporteTramiteRecord;
+export type PlanillaView = PlanillaRecord & { descargaUrl: string };
+export type ArchivoEmisoraView = ArchivoEmisoraRecord & { descargaUrl: string };

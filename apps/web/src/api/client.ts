@@ -857,6 +857,192 @@ export type EmisoraViaticoView = {
   soporteArchivoId: string | null;
 };
 
+// ===== Tipos emisora R.A.C. (E4) — DTOs reales del contrato =====
+
+export type EmisoraTurnoEstado = 'planificado' | 'confirmado' | 'realizado';
+export type EmisoraActualizacionEstado = 'solicitada' | 'aprobada' | 'rechazada' | 'implementada';
+export type EmisoraProyeccionEstado = 'borrador' | 'aprobada';
+export type EmisoraInversionEstado = 'proyectada' | 'aprobada' | 'en_seguimiento' | 'cerrada';
+export type EmisoraEquipoEstado = 'disponible' | 'en_uso' | 'mantenimiento' | 'baja';
+export type EmisoraTramiteDestino = 'gobierno' | 'hacienda' | 'saia' | 'secretaria_tic' | 'otro';
+export type EmisoraTramiteEstado = 'radicado' | 'en_tramite' | 'respondido' | 'archivado';
+export type EmisoraEntidadReporte = 'sayco' | 'acinpro';
+export type EmisoraArchivoTipo = 'audio' | 'documento' | 'imagen' | 'acta' | 'formato';
+
+export type CreateEmisoraTurnoDto = {
+  transmisorId: string;
+  operadorId: string;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+};
+export type EmisoraTurnoTransitionDto = { to: EmisoraTurnoEstado };
+export type CreateEmisoraLecturaDto = {
+  transmisorId: string;
+  fecha: string;
+  potenciaW?: number;
+  frecuencia?: string;
+  observaciones?: string;
+};
+export type CreateEmisoraBitacoraDto = {
+  transmisorId: string;
+  turnoId?: string;
+  fecha: string;
+  incidente: string;
+  accion?: string;
+};
+export type CreateEmisoraObraDto = {
+  titulo: string;
+  compositorAutor: string;
+  duracionSegundos: number;
+  fechaInclusion: string;
+  archivoId?: string;
+};
+export type CreateEmisoraReporteObraDto = {
+  entidad: EmisoraEntidadReporte;
+  periodo: string;
+  fechaInicio: string;
+  fechaFin: string;
+};
+export type CreateEmisoraPagoDerechosDto = {
+  obraId: string;
+  reporteId?: string;
+  soporteArchivoId: string;
+  referencia: string;
+};
+export type CreateEmisoraEquipoDto = {
+  nombre: string;
+  tipo: string;
+  marca?: string;
+  modelo?: string;
+  numeroSerie: string;
+  fechaAdquisicion?: string;
+  archivoId?: string;
+};
+export type EmisoraEquipoEstadoDto = { estado: EmisoraEquipoEstado };
+export type CreateEmisoraActualizacionDto = {
+  equipoId: string;
+  descripcion: string;
+  solicitadaPor?: string;
+  fecha?: string;
+  soporteArchivoId?: string;
+};
+export type EmisoraActualizacionTransitionDto = { to: EmisoraActualizacionEstado };
+export type CreateEmisoraProyeccionDto = {
+  anio: number;
+  equipoId?: string;
+  descripcion: string;
+  archivoId?: string;
+};
+export type EmisoraProyeccionTransitionDto = { to: EmisoraProyeccionEstado };
+export type CreateEmisoraInversionDto = {
+  proyeccionId: string;
+  contratoRef?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+};
+export type EmisoraInversionTransitionDto = {
+  to: EmisoraInversionEstado;
+  contratoRef?: string;
+};
+export type CreateEmisoraVersionSoftwareDto = {
+  equipoId?: string;
+  nombre: string;
+  version: string;
+  fechaInstalacion: string;
+  responsableId?: string;
+};
+export type CreateEmisoraAsignacionEquipoDto = {
+  equipoId: string;
+  transmisorId?: string;
+  usuarioId?: string;
+  fechaAsignacion: string;
+  fechaDevolucion?: string;
+};
+export type CreateEmisoraActividadDto = {
+  nombre: string;
+  fecha: string;
+  lugar?: string;
+  descripcion?: string;
+  responsableId?: string;
+  archivoId?: string;
+};
+export type CreateEmisoraPermisoSalidaDto = {
+  actividadId: string;
+  destino: string;
+  referencia: string;
+};
+export type CreateEmisoraArchivoEmisoraDto = {
+  archivoId: string;
+  tipo: EmisoraArchivoTipo;
+  duracionSegundos?: number;
+  fecha: string;
+  responsableId: string;
+};
+export type CreateEmisoraPlanillaDto = {
+  fecha: string;
+  programacionDiariaId?: string;
+  operadorId?: string;
+  programa: string;
+};
+export type CreateEmisoraTramiteDto = {
+  destino: EmisoraTramiteDestino;
+  asunto: string;
+  radicadoRef?: string;
+  fechaRadicacion: string;
+  responsableId?: string;
+};
+export type CreateEmisoraSoporteTramiteDto = {
+  archivoId: string;
+  tipo?: string;
+  descripcion?: string;
+};
+export type EmisoraTramiteTransitionDto = {
+  to: EmisoraTramiteEstado;
+  radicadoRef?: string;
+};
+
+export type EmisoraLecturaView = {
+  id: string;
+  transmisorId: string;
+  fecha: string;
+  potenciaW: number | null;
+  frecuencia: string | null;
+  observaciones: string | null;
+  registradoPor: string;
+};
+export type EmisoraObraView = {
+  id: string;
+  titulo: string;
+  compositorAutor: string;
+  duracionSegundos: number;
+  fechaInclusion: string;
+  archivoId: string | null;
+};
+export type EmisoraActividadView = {
+  id: string;
+  nombre: string;
+  fecha: string;
+  lugar: string | null;
+  descripcion: string | null;
+  responsableId: string | null;
+  publicada: boolean;
+  archivoId: string | null;
+};
+export type EmisoraTramiteView = {
+  id: string;
+  destino: EmisoraTramiteDestino;
+  asunto: string;
+  radicadoRef: string | null;
+  estado: EmisoraTramiteEstado;
+  fechaRadicacion: string;
+  responsableId: string | null;
+};
+export type EmisoraDocumentoGeneradoView = {
+  id: string;
+  descargaUrl: string;
+};
+
 // ===== Tipos health y error =====
 
 export type ReadinessReport = {
@@ -2675,6 +2861,320 @@ export type Paths = {
         201: { content: { 'application/json': EmisoraViaticoView } };
         400: { content: { 'application/json': ProblemDetailsDto } };
         403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  // --- E4: sede, derechos, tecnología, oferta cultural, emisión y trámites ---
+  '/emisora/turnos': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraTurnoDto } };
+      responses: {
+        201: { content: { 'application/json': { id: string } } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/turnos/{id}/transitions': {
+    patch: {
+      parameters: { path: { id: string } };
+      requestBody: { content: { 'application/json': EmisoraTurnoTransitionDto } };
+      responses: {
+        200: { content: { 'application/json': { id: string } } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/lecturas': {
+    get: {
+      parameters: { query: { transmisorId?: string } };
+      responses: {
+        200: { content: { 'application/json': EmisoraLecturaView[] } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraLecturaDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraLecturaView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/bitacoras': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraBitacoraDto } };
+      responses: {
+        201: { content: { 'application/json': { id: string } } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/obras': {
+    get: {
+      responses: {
+        200: { content: { 'application/json': EmisoraObraView[] } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraObraDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraObraView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/reportes-obras': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraReporteObraDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraDocumentoGeneradoView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/pagos-derechos': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraPagoDerechosDto } };
+      responses: {
+        201: { content: { 'application/json': { id: string } } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/equipos': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraEquipoDto } };
+      responses: {
+        201: { content: { 'application/json': { id: string } } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/equipos/{id}/estado': {
+    patch: {
+      parameters: { path: { id: string } };
+      requestBody: { content: { 'application/json': EmisoraEquipoEstadoDto } };
+      responses: {
+        200: { content: { 'application/json': { id: string } } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/actualizaciones-tecnologicas': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraActualizacionDto } };
+      responses: {
+        201: { content: { 'application/json': { id: string } } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/actualizaciones-tecnologicas/{id}/transitions': {
+    patch: {
+      parameters: { path: { id: string } };
+      requestBody: { content: { 'application/json': EmisoraActualizacionTransitionDto } };
+      responses: {
+        200: { content: { 'application/json': { id: string } } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/proyecciones': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraProyeccionDto } };
+      responses: {
+        201: { content: { 'application/json': { id: string } } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/proyecciones/{id}/transitions': {
+    patch: {
+      parameters: { path: { id: string } };
+      requestBody: { content: { 'application/json': EmisoraProyeccionTransitionDto } };
+      responses: {
+        200: { content: { 'application/json': { id: string } } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/inversiones': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraInversionDto } };
+      responses: {
+        201: { content: { 'application/json': { id: string } } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/inversiones/{id}/transitions': {
+    patch: {
+      parameters: { path: { id: string } };
+      requestBody: { content: { 'application/json': EmisoraInversionTransitionDto } };
+      responses: {
+        200: { content: { 'application/json': { id: string } } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/versiones-software': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraVersionSoftwareDto } };
+      responses: {
+        201: { content: { 'application/json': { id: string } } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/asignaciones-equipo': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraAsignacionEquipoDto } };
+      responses: {
+        201: { content: { 'application/json': { id: string } } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/actividades': {
+    get: {
+      responses: {
+        200: { content: { 'application/json': EmisoraActividadView[] } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraActividadDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraActividadView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/permisos-salida': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraPermisoSalidaDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraDocumentoGeneradoView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/archivos-emisora': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraArchivoEmisoraDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraDocumentoGeneradoView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/planillas-emision': {
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraPlanillaDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraDocumentoGeneradoView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/tramites': {
+    get: {
+      responses: {
+        200: { content: { 'application/json': EmisoraTramiteView[] } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+    post: {
+      requestBody: { content: { 'application/json': CreateEmisoraTramiteDto } };
+      responses: {
+        201: { content: { 'application/json': EmisoraTramiteView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/tramites/{id}/soportes': {
+    post: {
+      parameters: { path: { id: string } };
+      requestBody: { content: { 'application/json': CreateEmisoraSoporteTramiteDto } };
+      responses: {
+        201: { content: { 'application/json': { id: string } } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
+        409: { content: { 'application/json': ProblemDetailsDto } };
+      };
+    };
+  };
+  '/emisora/tramites/{id}/transitions': {
+    patch: {
+      parameters: { path: { id: string } };
+      requestBody: { content: { 'application/json': EmisoraTramiteTransitionDto } };
+      responses: {
+        200: { content: { 'application/json': EmisoraTramiteView } };
+        400: { content: { 'application/json': ProblemDetailsDto } };
+        403: { content: { 'application/json': ProblemDetailsDto } };
+        404: { content: { 'application/json': ProblemDetailsDto } };
         409: { content: { 'application/json': ProblemDetailsDto } };
       };
     };

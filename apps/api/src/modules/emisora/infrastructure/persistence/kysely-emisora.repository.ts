@@ -4,26 +4,47 @@ import { v7 as uuidv7 } from 'uuid';
 
 import type { Database } from '../../../../database/schema.js';
 import type {
+  ActualizacionEstado,
+  EquipoEstado,
   IncentivoEstado,
+  InversionEstado,
   OrdenEmisionEstado,
   PatrocinioEstado,
+  PermisoEstado,
+  PlanillaEstado,
   PrestamoEstado,
+  ProyeccionEstado,
   PromoEstado,
   PublicacionEstado,
+  TramiteEstado,
   TransmisionEstado,
+  TurnoEstado,
 } from '../../domain/emisora-states.js';
 import { EmisoraError } from '../../application/emisora-error.js';
 import type {
+  ActualizacionRecord,
+  ActividadCulturalRecord,
+  ArchivoEmisoraRecord,
+  AsignacionEquipoRecord,
   AsistenciaRecord,
   AudioRecord,
+  BitacoraRecord,
   ComiteRecord,
   ConvocatoriaRecord,
+  EquipoRecord,
   GrabacionRecord,
   IncentivoRecord,
   InformeRecord,
+  InversionRecord,
+  LecturaRecord,
+  ObraRecord,
   OrdenEmisionRecord,
+  PagoDerechosRecord,
   PatrocinioRecord,
+  PermisoGobiernoRecord,
+  PlanillaRecord,
   PrestamoMifiRecord,
+  ProyeccionRecord,
   ProgramacionItemRecord,
   ProgramacionRecord,
   PromoRecord,
@@ -31,38 +52,70 @@ import type {
   PublicacionRecord,
   RealizadorRecord,
   ReporteDesplazamientoRecord,
+  ReporteObraRecord,
   ResolucionRecord,
   RejillaItemRecord,
   RejillaRecord,
   SalidaEquipoRecord,
+  SoporteTramiteRecord,
   TransmisionRecord,
+  TransmisorRecord,
+  TramiteRecord,
+  TurnoRecord,
+  VersionSoftwareRecord,
   ViaticoRecord,
 } from '../../application/emisora.types.js';
 import {
   type EmisoraRepository,
   type NewAsistencia,
   type NewAudio,
+  type NewActualizacion,
+  type NewActividadCultural,
+  type NewArchivoEmisora,
+  type NewAsignacionEquipo,
+  type NewBitacora,
   type NewComite,
   type NewConvocatoria,
+  type NewEquipo,
   type NewGrabacion,
   type NewInforme,
+  type NewInversion,
+  type NewLectura,
+  type NewObra,
   type NewOrdenEmision,
+  type NewPagoDerechos,
   type NewPatrocinio,
+  type NewPermisoGobierno,
+  type NewPlanilla,
   type NewPrestamoMifi,
+  type NewProyeccion,
   type NewProgramacion,
   type NewPromo,
   type NewProyecto,
   type NewPublicacion,
   type NewRealizador,
   type NewReporteDesplazamiento,
+  type NewReporteObra,
   type NewResolucion,
   type NewSalidaEquipo,
+  type NewSoporteTramite,
+  type NewTramite,
   type NewTransmision,
+  type NewTurno,
+  type NewVersionSoftware,
   type NewViatico,
 } from '../../application/ports/emisora.repository.js';
 
 /** Fecha de calendario enlazada como `date`, sin desplazamiento de zona. */
 const dateParam = (valor: string) => sql<Date>`${valor}::date`;
+
+/** La bitácora exige UUID en `request_id`; correlaciona cuando es posible. */
+function requestIdParam(valor: string | null): string {
+  return valor &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(valor)
+    ? valor
+    : uuidv7();
+}
 
 /** node-postgres puede devolver `date` como `Date` local o como texto. */
 function fechaText(valor: Date | string): string {
@@ -76,6 +129,21 @@ function fechaText(valor: Date | string): string {
 
 function textoArray(valor: unknown): string[] {
   return Array.isArray(valor) ? valor.map((entrada) => String(entrada)) : [];
+}
+
+/** Una restricción única es un conflicto de dominio, nunca un 500 (E4). */
+function choqueUnico(error: unknown, constraint: string, conflicto: () => EmisoraError): never {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    error.code === '23505' &&
+    'constraint' in error &&
+    error.constraint === constraint
+  ) {
+    throw conflicto();
+  }
+  throw error;
 }
 
 /** PostgreSQL devuelve `time` como `HH:MM:SS`; el contrato usa `HH:MM`. */
@@ -1045,6 +1113,648 @@ export class KyselyEmisoraRepository implements EmisoraRepository {
       .executeTakeFirst();
     return row ? mapViatico(row) : null;
   }
+
+  /* -------------------------------- E4 ---------------------------------- */
+
+  async findTransmisorById(id: string): Promise<TransmisorRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.transmisor')
+      .selectAll()
+      .where('id', '=', id)
+      .where('deleted_at', 'is', null)
+      .executeTakeFirst();
+    return row ? mapTransmisor(row) : null;
+  }
+
+  async createTurno(input: NewTurno): Promise<TurnoRecord> {
+    const row = await this.db
+      .insertInto('emisora.turno_operador')
+      .values({
+        id: input.id,
+        transmisor_id: input.transmisorId,
+        operador_id: input.operadorId,
+        fecha: dateParam(input.fecha),
+        hora_inicio: input.horaInicio,
+        hora_fin: input.horaFin,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapTurno(row);
+  }
+
+  async findTurnoById(id: string): Promise<TurnoRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.turno_operador')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst();
+    return row ? mapTurno(row) : null;
+  }
+
+  async updateTurnoEstado(
+    id: string,
+    from: TurnoEstado,
+    estado: TurnoEstado,
+  ): Promise<TurnoRecord> {
+    const row = await this.db
+      .updateTable('emisora.turno_operador')
+      .set({ estado })
+      .where('id', '=', id)
+      .where('estado', '=', from)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) throw EmisoraError.invalidTransition(from, estado);
+    return mapTurno(row);
+  }
+
+  async createLectura(input: NewLectura): Promise<LecturaRecord> {
+    try {
+      const row = await this.db
+        .insertInto('emisora.lectura_transmisor')
+        .values({
+          id: input.id,
+          transmisor_id: input.transmisorId,
+          fecha: dateParam(input.fecha),
+          potencia_w: input.potenciaW,
+          frecuencia: input.frecuencia,
+          observaciones: input.observaciones,
+          registrado_por: input.registradoPor,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      return mapLectura(row);
+    } catch (error) {
+      choqueUnico(error, 'lectura_transmisor_transmisor_fecha_key', () =>
+        EmisoraError.lecturaDuplicada(),
+      );
+    }
+  }
+
+  async findLecturaByTransmisorFecha(
+    transmisorId: string,
+    fecha: string,
+  ): Promise<LecturaRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.lectura_transmisor')
+      .selectAll()
+      .where('transmisor_id', '=', transmisorId)
+      .where('fecha', '=', dateParam(fecha))
+      .executeTakeFirst();
+    return row ? mapLectura(row) : null;
+  }
+
+  async listLecturas(transmisorId: string | null): Promise<readonly LecturaRecord[]> {
+    let consulta = this.db.selectFrom('emisora.lectura_transmisor').selectAll();
+    if (transmisorId) {
+      consulta = consulta.where('transmisor_id', '=', transmisorId);
+    }
+    const rows = await consulta.orderBy('fecha', 'desc').execute();
+    return rows.map(mapLectura);
+  }
+
+  async createBitacora(input: NewBitacora): Promise<BitacoraRecord> {
+    const row = await this.db
+      .insertInto('emisora.bitacora_sede')
+      .values({
+        id: input.id,
+        transmisor_id: input.transmisorId,
+        turno_id: input.turnoId,
+        fecha: dateParam(input.fecha),
+        incidente: input.incidente,
+        accion: input.accion,
+        actor_id: input.actorId,
+        request_id: requestIdParam(input.requestId),
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapBitacora(row);
+  }
+
+  async createObra(input: NewObra): Promise<ObraRecord> {
+    const row = await this.db
+      .insertInto('emisora.obra')
+      .values({
+        id: input.id,
+        titulo: input.titulo,
+        compositor_autor: input.compositorAutor,
+        duracion_segundos: input.duracionSegundos,
+        fecha_inclusion: dateParam(input.fechaInclusion),
+        archivo_id: input.archivoId,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapObra(row);
+  }
+
+  async findObraById(id: string): Promise<ObraRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.obra')
+      .selectAll()
+      .where('id', '=', id)
+      .where('deleted_at', 'is', null)
+      .executeTakeFirst();
+    return row ? mapObra(row) : null;
+  }
+
+  async listObras(): Promise<readonly ObraRecord[]> {
+    const rows = await this.db
+      .selectFrom('emisora.obra')
+      .selectAll()
+      .where('deleted_at', 'is', null)
+      .orderBy('fecha_inclusion', 'desc')
+      .execute();
+    return rows.map(mapObra);
+  }
+
+  async createReporteObra(input: NewReporteObra): Promise<ReporteObraRecord> {
+    const row = await this.db
+      .insertInto('emisora.reporte_obra')
+      .values({
+        id: input.id,
+        entidad: input.entidad,
+        periodo: input.periodo,
+        fecha_inicio: dateParam(input.fechaInicio),
+        fecha_fin: dateParam(input.fechaFin),
+        archivo_id: input.archivoId,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapReporteObra(row);
+  }
+
+  async createPagoDerechos(input: NewPagoDerechos): Promise<PagoDerechosRecord> {
+    const row = await this.db
+      .insertInto('emisora.pago_derechos')
+      .values({
+        id: input.id,
+        obra_id: input.obraId,
+        reporte_id: input.reporteId,
+        soporte_archivo_id: input.soporteArchivoId,
+        referencia: input.referencia,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapPago(row);
+  }
+
+  async findPagoDerechosById(id: string): Promise<PagoDerechosRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.pago_derechos')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst();
+    return row ? mapPago(row) : null;
+  }
+
+  async createEquipo(input: NewEquipo): Promise<EquipoRecord> {
+    try {
+      const row = await this.db
+        .insertInto('emisora.hoja_vida_equipo')
+        .values({
+          id: input.id,
+          nombre: input.nombre,
+          tipo: input.tipo,
+          marca: input.marca,
+          modelo: input.modelo,
+          numero_serie: input.numeroSerie,
+          fecha_adquisicion: input.fechaAdquisicion ? dateParam(input.fechaAdquisicion) : null,
+          archivo_id: input.archivoId,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      return mapEquipo(row);
+    } catch (error) {
+      choqueUnico(error, 'hoja_vida_equipo_serie_key', () => EmisoraError.equipoDuplicado());
+    }
+  }
+
+  async findEquipoById(id: string): Promise<EquipoRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.hoja_vida_equipo')
+      .selectAll()
+      .where('id', '=', id)
+      .where('deleted_at', 'is', null)
+      .executeTakeFirst();
+    return row ? mapEquipo(row) : null;
+  }
+
+  async updateEquipoEstado(id: string, estado: EquipoEstado): Promise<EquipoRecord> {
+    const row = await this.db
+      .updateTable('emisora.hoja_vida_equipo')
+      .set({ estado })
+      .where('id', '=', id)
+      .where('deleted_at', 'is', null)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) throw EmisoraError.notFound('Equipo');
+    return mapEquipo(row);
+  }
+
+  async createActualizacion(input: NewActualizacion): Promise<ActualizacionRecord> {
+    const row = await this.db
+      .insertInto('emisora.actualizacion_tecnologica')
+      .values({
+        id: input.id,
+        equipo_id: input.equipoId,
+        descripcion: input.descripcion,
+        solicitada_por: input.solicitadaPor,
+        fecha: input.fecha ? dateParam(input.fecha) : null,
+        soporte_archivo_id: input.soporteArchivoId,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapActualizacion(row);
+  }
+
+  async findActualizacionById(id: string): Promise<ActualizacionRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.actualizacion_tecnologica')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst();
+    return row ? mapActualizacion(row) : null;
+  }
+
+  async updateActualizacionEstado(
+    id: string,
+    from: ActualizacionEstado,
+    estado: ActualizacionEstado,
+  ): Promise<ActualizacionRecord> {
+    const row = await this.db
+      .updateTable('emisora.actualizacion_tecnologica')
+      .set({ estado })
+      .where('id', '=', id)
+      .where('estado', '=', from)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) throw EmisoraError.invalidTransition(from, estado);
+    return mapActualizacion(row);
+  }
+
+  async createProyeccion(input: NewProyeccion): Promise<ProyeccionRecord> {
+    try {
+      const row = await this.db
+        .insertInto('emisora.proyeccion_anual')
+        .values({
+          id: input.id,
+          anio: input.anio,
+          equipo_id: input.equipoId,
+          descripcion: input.descripcion,
+          archivo_id: input.archivoId,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      return mapProyeccion(row);
+    } catch (error) {
+      choqueUnico(error, 'proyeccion_anual_anio_key', () => EmisoraError.proyeccionDuplicada());
+    }
+  }
+
+  async findProyeccionById(id: string): Promise<ProyeccionRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.proyeccion_anual')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst();
+    return row ? mapProyeccion(row) : null;
+  }
+
+  async findProyeccionByAnio(anio: number): Promise<ProyeccionRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.proyeccion_anual')
+      .selectAll()
+      .where('anio', '=', anio)
+      .executeTakeFirst();
+    return row ? mapProyeccion(row) : null;
+  }
+
+  async updateProyeccionEstado(
+    id: string,
+    from: ProyeccionEstado,
+    estado: ProyeccionEstado,
+  ): Promise<ProyeccionRecord> {
+    const row = await this.db
+      .updateTable('emisora.proyeccion_anual')
+      .set({ estado })
+      .where('id', '=', id)
+      .where('estado', '=', from)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) throw EmisoraError.invalidTransition(from, estado);
+    return mapProyeccion(row);
+  }
+
+  async createInversion(input: NewInversion): Promise<InversionRecord> {
+    const row = await this.db
+      .insertInto('emisora.inversion_seguimiento')
+      .values({
+        id: input.id,
+        proyeccion_id: input.proyeccionId,
+        contrato_ref: input.contratoRef,
+        fecha_inicio: input.fechaInicio ? dateParam(input.fechaInicio) : null,
+        fecha_fin: input.fechaFin ? dateParam(input.fechaFin) : null,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapInversion(row);
+  }
+
+  async findInversionById(id: string): Promise<InversionRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.inversion_seguimiento')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst();
+    return row ? mapInversion(row) : null;
+  }
+
+  async updateInversionEstado(
+    id: string,
+    from: InversionEstado,
+    estado: InversionEstado,
+    contratoRef: string | null,
+  ): Promise<InversionRecord> {
+    const row = await this.db
+      .updateTable('emisora.inversion_seguimiento')
+      .set({ estado, contrato_ref: contratoRef ?? undefined })
+      .where('id', '=', id)
+      .where('estado', '=', from)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) throw EmisoraError.invalidTransition(from, estado);
+    return mapInversion(row);
+  }
+
+  async createVersionSoftware(input: NewVersionSoftware): Promise<VersionSoftwareRecord> {
+    const row = await this.db
+      .insertInto('emisora.version_software')
+      .values({
+        id: input.id,
+        equipo_id: input.equipoId,
+        nombre: input.nombre,
+        version: input.version,
+        fecha_instalacion: dateParam(input.fechaInstalacion),
+        responsable_id: input.responsableId,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapVersionSoftware(row);
+  }
+
+  async createAsignacionEquipo(input: NewAsignacionEquipo): Promise<AsignacionEquipoRecord> {
+    const row = await this.db
+      .insertInto('emisora.asignacion_equipo')
+      .values({
+        id: input.id,
+        equipo_id: input.equipoId,
+        transmisor_id: input.transmisorId,
+        usuario_id: input.usuarioId,
+        fecha_asignacion: dateParam(input.fechaAsignacion),
+        fecha_devolucion: input.fechaDevolucion ? dateParam(input.fechaDevolucion) : null,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapAsignacion(row);
+  }
+
+  async createActividad(input: NewActividadCultural): Promise<ActividadCulturalRecord> {
+    const row = await this.db
+      .insertInto('emisora.actividad_cultural')
+      .values({
+        id: input.id,
+        nombre: input.nombre,
+        fecha: dateParam(input.fecha),
+        lugar: input.lugar,
+        descripcion: input.descripcion,
+        responsable_id: input.responsableId,
+        archivo_id: input.archivoId,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapActividad(row);
+  }
+
+  async findActividadById(id: string): Promise<ActividadCulturalRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.actividad_cultural')
+      .selectAll()
+      .where('id', '=', id)
+      .where('deleted_at', 'is', null)
+      .executeTakeFirst();
+    return row ? mapActividad(row) : null;
+  }
+
+  async listActividades(): Promise<readonly ActividadCulturalRecord[]> {
+    const rows = await this.db
+      .selectFrom('emisora.actividad_cultural')
+      .selectAll()
+      .where('deleted_at', 'is', null)
+      .orderBy('fecha', 'desc')
+      .execute();
+    return rows.map(mapActividad);
+  }
+
+  async createPermisoGobierno(input: NewPermisoGobierno): Promise<PermisoGobiernoRecord> {
+    const row = await this.db
+      .insertInto('emisora.permiso_gobierno')
+      .values({
+        id: input.id,
+        actividad_id: input.actividadId,
+        oficio_archivo_id: input.oficioArchivoId,
+        destino: input.destino,
+        fecha_emision: input.fechaEmision ? dateParam(input.fechaEmision) : null,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapPermiso(row);
+  }
+
+  async findPermisoGobiernoById(id: string): Promise<PermisoGobiernoRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.permiso_gobierno')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst();
+    return row ? mapPermiso(row) : null;
+  }
+
+  async updatePermisoEstado(
+    id: string,
+    from: PermisoEstado,
+    estado: PermisoEstado,
+  ): Promise<PermisoGobiernoRecord> {
+    const row = await this.db
+      .updateTable('emisora.permiso_gobierno')
+      .set({ estado })
+      .where('id', '=', id)
+      .where('estado', '=', from)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) throw EmisoraError.invalidTransition(from, estado);
+    return mapPermiso(row);
+  }
+
+  async createTramite(input: NewTramite): Promise<TramiteRecord> {
+    const row = await this.db
+      .insertInto('emisora.tramite_externo')
+      .values({
+        id: input.id,
+        destino: input.destino,
+        asunto: input.asunto,
+        radicado_ref: input.radicadoRef,
+        fecha_radicacion: dateParam(input.fechaRadicacion),
+        responsable_id: input.responsableId,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapTramite(row);
+  }
+
+  async findTramiteById(id: string): Promise<TramiteRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.tramite_externo')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst();
+    return row ? mapTramite(row) : null;
+  }
+
+  async listTramites(): Promise<readonly TramiteRecord[]> {
+    const rows = await this.db
+      .selectFrom('emisora.tramite_externo')
+      .selectAll()
+      .orderBy('fecha_radicacion', 'desc')
+      .execute();
+    return rows.map(mapTramite);
+  }
+
+  async updateTramiteEstado(
+    id: string,
+    from: TramiteEstado,
+    estado: TramiteEstado,
+    radicadoRef: string | null,
+  ): Promise<TramiteRecord> {
+    const row = await this.db
+      .updateTable('emisora.tramite_externo')
+      .set({ estado, radicado_ref: radicadoRef ?? undefined })
+      .where('id', '=', id)
+      .where('estado', '=', from)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) throw EmisoraError.invalidTransition(from, estado);
+    return mapTramite(row);
+  }
+
+  async createSoporteTramite(input: NewSoporteTramite): Promise<SoporteTramiteRecord> {
+    const row = await this.db
+      .insertInto('emisora.soporte_tramite')
+      .values({
+        id: input.id,
+        tramite_id: input.tramiteId,
+        archivo_id: input.archivoId,
+        tipo: input.tipo,
+        descripcion: input.descripcion,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return mapSoporte(row);
+  }
+
+  async listSoportesTramite(tramiteId: string): Promise<readonly SoporteTramiteRecord[]> {
+    const rows = await this.db
+      .selectFrom('emisora.soporte_tramite')
+      .selectAll()
+      .where('tramite_id', '=', tramiteId)
+      .execute();
+    return rows.map(mapSoporte);
+  }
+
+  async createPlanilla(input: NewPlanilla): Promise<PlanillaRecord> {
+    try {
+      const row = await this.db
+        .insertInto('emisora.planilla_emision')
+        .values({
+          id: input.id,
+          fecha: dateParam(input.fecha),
+          programacion_diaria_id: input.programacionDiariaId,
+          operador_id: input.operadorId,
+          archivo_id: input.archivoId,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      return mapPlanilla(row);
+    } catch (error) {
+      choqueUnico(error, 'planilla_emision_fecha_key', () => EmisoraError.planillaDuplicada());
+    }
+  }
+
+  async findPlanillaByFecha(fecha: string): Promise<PlanillaRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.planilla_emision')
+      .selectAll()
+      .where('fecha', '=', dateParam(fecha))
+      .executeTakeFirst();
+    return row ? mapPlanilla(row) : null;
+  }
+
+  async findPlanillaById(id: string): Promise<PlanillaRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.planilla_emision')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst();
+    return row ? mapPlanilla(row) : null;
+  }
+
+  async updatePlanillaEstado(
+    id: string,
+    from: PlanillaEstado,
+    estado: PlanillaEstado,
+  ): Promise<PlanillaRecord> {
+    const row = await this.db
+      .updateTable('emisora.planilla_emision')
+      .set({ estado })
+      .where('id', '=', id)
+      .where('estado', '=', from)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) throw EmisoraError.invalidTransition(from, estado);
+    return mapPlanilla(row);
+  }
+
+  async createArchivoEmisora(input: NewArchivoEmisora): Promise<ArchivoEmisoraRecord> {
+    try {
+      const row = await this.db
+        .insertInto('emisora.archivo_emisora')
+        .values({
+          id: input.id,
+          archivo_id: input.archivoId,
+          tipo: input.tipo,
+          duracion_segundos: input.duracionSegundos,
+          fecha: dateParam(input.fecha),
+          responsable_id: input.responsableId,
+          hash_sha256: input.hashSha256,
+          mime: input.mime,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      return mapArchivoEmisora(row);
+    } catch (error) {
+      choqueUnico(error, 'archivo_emisora_archivo_key', () =>
+        EmisoraError.invalidInput('El archivo ya está registrado en la emisora.'),
+      );
+    }
+  }
+
+  async findArchivoEmisoraByArchivoId(archivoId: string): Promise<ArchivoEmisoraRecord | null> {
+    const row = await this.db
+      .selectFrom('emisora.archivo_emisora')
+      .selectAll()
+      .where('archivo_id', '=', archivoId)
+      .where('deleted_at', 'is', null)
+      .executeTakeFirst();
+    return row ? mapArchivoEmisora(row) : null;
+  }
 }
 
 /* ------------------------------- Mapeadores ------------------------------ */
@@ -1494,5 +2204,381 @@ function mapViatico(row: {
     referenciaCompromiso: row.referencia_compromiso,
     referenciaOrden: row.referencia_orden,
     soporteArchivoId: row.soporte_archivo_id,
+  };
+}
+
+/* ------------------------------ Mapeadores E4 ---------------------------- */
+
+type FilaFecha = Date | string;
+
+function mapTransmisor(row: {
+  id: string;
+  codigo: string;
+  nombre: string;
+  sede: string;
+  frecuencia: string | null;
+  activo: boolean;
+}): TransmisorRecord {
+  return {
+    id: row.id,
+    codigo: row.codigo,
+    nombre: row.nombre,
+    sede: row.sede,
+    frecuencia: row.frecuencia,
+    activo: row.activo,
+  };
+}
+
+function mapTurno(row: {
+  id: string;
+  transmisor_id: string;
+  operador_id: string;
+  fecha: FilaFecha;
+  hora_inicio: string;
+  hora_fin: string;
+  estado: TurnoEstado;
+}): TurnoRecord {
+  return {
+    id: row.id,
+    transmisorId: row.transmisor_id,
+    operadorId: row.operador_id,
+    fecha: fechaText(row.fecha),
+    horaInicio: row.hora_inicio,
+    horaFin: row.hora_fin,
+    estado: row.estado,
+  };
+}
+
+function mapLectura(row: {
+  id: string;
+  transmisor_id: string;
+  fecha: FilaFecha;
+  potencia_w: number | null;
+  frecuencia: string | null;
+  observaciones: string | null;
+  registrado_por: string;
+}): LecturaRecord {
+  return {
+    id: row.id,
+    transmisorId: row.transmisor_id,
+    fecha: fechaText(row.fecha),
+    potenciaW: row.potencia_w,
+    frecuencia: row.frecuencia,
+    observaciones: row.observaciones,
+    registradoPor: row.registrado_por,
+  };
+}
+
+function mapBitacora(row: {
+  id: string;
+  transmisor_id: string;
+  turno_id: string | null;
+  fecha: FilaFecha;
+  incidente: string;
+  accion: string | null;
+  actor_id: string;
+  request_id: string | null;
+  ocurrido_en: Date;
+}): BitacoraRecord {
+  return {
+    id: row.id,
+    transmisorId: row.transmisor_id,
+    turnoId: row.turno_id,
+    fecha: fechaText(row.fecha),
+    incidente: row.incidente,
+    accion: row.accion,
+    actorId: row.actor_id,
+    requestId: row.request_id,
+    ocurridoEn: row.ocurrido_en,
+  };
+}
+
+function mapObra(row: {
+  id: string;
+  titulo: string;
+  compositor_autor: string;
+  duracion_segundos: number;
+  fecha_inclusion: FilaFecha;
+  archivo_id: string | null;
+}): ObraRecord {
+  return {
+    id: row.id,
+    titulo: row.titulo,
+    compositorAutor: row.compositor_autor,
+    duracionSegundos: row.duracion_segundos,
+    fechaInclusion: fechaText(row.fecha_inclusion),
+    archivoId: row.archivo_id,
+  };
+}
+
+function mapReporteObra(row: {
+  id: string;
+  entidad: ReporteObraRecord['entidad'];
+  periodo: string;
+  fecha_inicio: FilaFecha;
+  fecha_fin: FilaFecha;
+  archivo_id: string | null;
+  generado_en: Date;
+}): ReporteObraRecord {
+  return {
+    id: row.id,
+    entidad: row.entidad,
+    periodo: row.periodo,
+    fechaInicio: fechaText(row.fecha_inicio),
+    fechaFin: fechaText(row.fecha_fin),
+    archivoId: row.archivo_id,
+    generadoEn: row.generado_en,
+  };
+}
+
+function mapPago(row: {
+  id: string;
+  obra_id: string;
+  reporte_id: string | null;
+  soporte_archivo_id: string;
+  referencia: string;
+  estado: PagoDerechosRecord['estado'];
+}): PagoDerechosRecord {
+  return {
+    id: row.id,
+    obraId: row.obra_id,
+    reporteId: row.reporte_id,
+    soporteArchivoId: row.soporte_archivo_id,
+    referencia: row.referencia,
+    estado: row.estado,
+  };
+}
+
+function mapEquipo(row: {
+  id: string;
+  nombre: string;
+  tipo: string;
+  marca: string | null;
+  modelo: string | null;
+  numero_serie: string;
+  estado: EquipoEstado;
+  fecha_adquisicion: FilaFecha | null;
+  archivo_id: string | null;
+}): EquipoRecord {
+  return {
+    id: row.id,
+    nombre: row.nombre,
+    tipo: row.tipo,
+    marca: row.marca,
+    modelo: row.modelo,
+    numeroSerie: row.numero_serie,
+    estado: row.estado,
+    fechaAdquisicion: row.fecha_adquisicion ? fechaText(row.fecha_adquisicion) : null,
+    archivoId: row.archivo_id,
+  };
+}
+
+function mapActualizacion(row: {
+  id: string;
+  equipo_id: string;
+  descripcion: string;
+  solicitada_por: string | null;
+  estado: ActualizacionEstado;
+  fecha: FilaFecha | null;
+  soporte_archivo_id: string | null;
+}): ActualizacionRecord {
+  return {
+    id: row.id,
+    equipoId: row.equipo_id,
+    descripcion: row.descripcion,
+    solicitadaPor: row.solicitada_por,
+    estado: row.estado,
+    fecha: row.fecha ? fechaText(row.fecha) : null,
+    soporteArchivoId: row.soporte_archivo_id,
+  };
+}
+
+function mapProyeccion(row: {
+  id: string;
+  anio: number;
+  equipo_id: string | null;
+  descripcion: string;
+  estado: ProyeccionRecord['estado'];
+  archivo_id: string | null;
+}): ProyeccionRecord {
+  return {
+    id: row.id,
+    anio: row.anio,
+    equipoId: row.equipo_id,
+    descripcion: row.descripcion,
+    estado: row.estado,
+    archivoId: row.archivo_id,
+  };
+}
+
+function mapInversion(row: {
+  id: string;
+  proyeccion_id: string;
+  contrato_ref: string | null;
+  estado: InversionEstado;
+  fecha_inicio: FilaFecha | null;
+  fecha_fin: FilaFecha | null;
+}): InversionRecord {
+  return {
+    id: row.id,
+    proyeccionId: row.proyeccion_id,
+    contratoRef: row.contrato_ref,
+    estado: row.estado,
+    fechaInicio: row.fecha_inicio ? fechaText(row.fecha_inicio) : null,
+    fechaFin: row.fecha_fin ? fechaText(row.fecha_fin) : null,
+  };
+}
+
+function mapVersionSoftware(row: {
+  id: string;
+  equipo_id: string | null;
+  nombre: string;
+  version: string;
+  fecha_instalacion: FilaFecha;
+  responsable_id: string | null;
+}): VersionSoftwareRecord {
+  return {
+    id: row.id,
+    equipoId: row.equipo_id,
+    nombre: row.nombre,
+    version: row.version,
+    fechaInstalacion: fechaText(row.fecha_instalacion),
+    responsableId: row.responsable_id,
+  };
+}
+
+function mapAsignacion(row: {
+  id: string;
+  equipo_id: string;
+  transmisor_id: string | null;
+  usuario_id: string | null;
+  fecha_asignacion: FilaFecha;
+  fecha_devolucion: FilaFecha | null;
+  estado: AsignacionEquipoRecord['estado'];
+}): AsignacionEquipoRecord {
+  return {
+    id: row.id,
+    equipoId: row.equipo_id,
+    transmisorId: row.transmisor_id,
+    usuarioId: row.usuario_id,
+    fechaAsignacion: fechaText(row.fecha_asignacion),
+    fechaDevolucion: row.fecha_devolucion ? fechaText(row.fecha_devolucion) : null,
+    estado: row.estado,
+  };
+}
+
+function mapActividad(row: {
+  id: string;
+  nombre: string;
+  fecha: FilaFecha;
+  lugar: string | null;
+  descripcion: string | null;
+  responsable_id: string | null;
+  publicada: boolean;
+  archivo_id: string | null;
+}): ActividadCulturalRecord {
+  return {
+    id: row.id,
+    nombre: row.nombre,
+    fecha: fechaText(row.fecha),
+    lugar: row.lugar,
+    descripcion: row.descripcion,
+    responsableId: row.responsable_id,
+    publicada: row.publicada,
+    archivoId: row.archivo_id,
+  };
+}
+
+function mapPermiso(row: {
+  id: string;
+  actividad_id: string;
+  oficio_archivo_id: string;
+  destino: string | null;
+  fecha_emision: FilaFecha | null;
+  estado: PermisoEstado;
+}): PermisoGobiernoRecord {
+  return {
+    id: row.id,
+    actividadId: row.actividad_id,
+    oficioArchivoId: row.oficio_archivo_id,
+    destino: row.destino,
+    fechaEmision: row.fecha_emision ? fechaText(row.fecha_emision) : null,
+    estado: row.estado,
+  };
+}
+
+function mapTramite(row: {
+  id: string;
+  destino: TramiteRecord['destino'];
+  asunto: string;
+  radicado_ref: string | null;
+  estado: TramiteEstado;
+  fecha_radicacion: FilaFecha;
+  responsable_id: string | null;
+}): TramiteRecord {
+  return {
+    id: row.id,
+    destino: row.destino,
+    asunto: row.asunto,
+    radicadoRef: row.radicado_ref,
+    estado: row.estado,
+    fechaRadicacion: fechaText(row.fecha_radicacion),
+    responsableId: row.responsable_id,
+  };
+}
+
+function mapSoporte(row: {
+  id: string;
+  tramite_id: string;
+  archivo_id: string;
+  tipo: string | null;
+  descripcion: string | null;
+}): SoporteTramiteRecord {
+  return {
+    id: row.id,
+    tramiteId: row.tramite_id,
+    archivoId: row.archivo_id,
+    tipo: row.tipo,
+    descripcion: row.descripcion,
+  };
+}
+
+function mapPlanilla(row: {
+  id: string;
+  fecha: FilaFecha;
+  programacion_diaria_id: string | null;
+  operador_id: string | null;
+  archivo_id: string | null;
+  estado: PlanillaEstado;
+}): PlanillaRecord {
+  return {
+    id: row.id,
+    fecha: fechaText(row.fecha),
+    programacionDiariaId: row.programacion_diaria_id,
+    operadorId: row.operador_id,
+    archivoId: row.archivo_id,
+    estado: row.estado,
+  };
+}
+
+function mapArchivoEmisora(row: {
+  id: string;
+  archivo_id: string;
+  tipo: ArchivoEmisoraRecord['tipo'];
+  duracion_segundos: number | null;
+  fecha: FilaFecha;
+  responsable_id: string;
+  hash_sha256: string | null;
+  mime: string | null;
+}): ArchivoEmisoraRecord {
+  return {
+    id: row.id,
+    archivoId: row.archivo_id,
+    tipo: row.tipo,
+    duracionSegundos: row.duracion_segundos,
+    fecha: fechaText(row.fecha),
+    responsableId: row.responsable_id,
+    hashSha256: row.hash_sha256,
+    mime: row.mime,
   };
 }

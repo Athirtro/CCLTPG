@@ -6,6 +6,7 @@ import type { Database } from '../../database/schema.js';
 import { EmisoraIntegrationModule } from '../../integration/emisora-integration.module.js';
 import { EMISORA_OWNERSHIP_POLICY } from '../../shared/integration/ownership.port.js';
 import { ConvocatoriaService } from './application/convocatoria.service.js';
+import { EmisoraGestionService } from './application/gestion.service.js';
 import { GrabacionService } from './application/grabacion.service.js';
 import { ProgramacionService } from './application/programacion.service.js';
 import { EmisoraOperacionService } from './application/operacion.service.js';
@@ -21,6 +22,25 @@ import {
   RealizadoresController,
   RejillaController,
 } from './api/convocatorias.controller.js';
+import {
+  ActividadesController,
+  ActualizacionesController,
+  ArchivosEmisoraController,
+  AsignacionesEquipoController,
+  BitacorasController,
+  EquiposController,
+  InversionesController,
+  LecturasController,
+  ObrasController,
+  PagosDerechosController,
+  PermisosSalidaController,
+  PlanillasController,
+  ProyeccionesController,
+  ReportesObrasController,
+  TramitesController,
+  TurnosController,
+  VersionesSoftwareController,
+} from './api/gestion.controller.js';
 import { ProgramacionController } from './api/programacion.controller.js';
 import {
   OrdenesEmisionController,
@@ -70,6 +90,23 @@ import { KyselyEmisoraUnitOfWork } from './infrastructure/persistence/kysely-uni
     ReportesDesplazamientoController,
     PrestamosMifiController,
     ViaticosController,
+    TurnosController,
+    LecturasController,
+    BitacorasController,
+    ObrasController,
+    ReportesObrasController,
+    PagosDerechosController,
+    EquiposController,
+    ActualizacionesController,
+    ProyeccionesController,
+    InversionesController,
+    VersionesSoftwareController,
+    AsignacionesEquipoController,
+    ActividadesController,
+    PermisosSalidaController,
+    ArchivosEmisoraController,
+    PlanillasController,
+    TramitesController,
   ],
   providers: [
     {
@@ -84,6 +121,7 @@ import { KyselyEmisoraUnitOfWork } from './infrastructure/persistence/kysely-uni
     ProgramacionService,
     GrabacionService,
     EmisoraOperacionService,
+    EmisoraGestionService,
   ],
   exports: [EMISORA_OWNERSHIP_POLICY],
 })

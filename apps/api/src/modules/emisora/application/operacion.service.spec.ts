@@ -9,7 +9,6 @@ import { canTransicionarE3 } from '../domain/emisora-states.js';
 import { EMISORA_ERRORS } from './emisora-error.js';
 import type { ActorContext } from './emisora.types.js';
 import { EmisoraOperacionService } from './operacion.service.js';
-import type { EmisoraReportExporter } from './ports/report-exporter.port.js';
 import type {
   EmisoraRepository,
   NewPrestamoMifi,
@@ -70,7 +69,6 @@ function crearServicio(
   opciones: {
     repo?: RepositorioMock;
     archivos?: Pick<FileDirectory, 'findById'>;
-    exportador?: Pick<EmisoraReportExporter, 'generarResolucion'>;
     idempotencia?: IdempotencyStore;
   } = {},
 ) {
@@ -110,12 +108,18 @@ function crearServicio(
       estadoEscaneo: 'limpio',
     }),
   };
-  const exportador = opciones.exportador ?? {
-    generarResolucion: vi.fn().mockResolvedValue({
-      archivoId: 'archivo-pdf-1',
-      nombre: 'resolucion.pdf',
-      descargaUrl: '/api/v1/files/archivo-pdf-1/download',
-    }),
+  const documento = {
+    archivoId: 'archivo-pdf-1',
+    nombre: 'documento.pdf',
+    descargaUrl: '/api/v1/files/archivo-pdf-1/download',
+  };
+  // Se expone la función suelta para evitar `unbound-method` al verificarla.
+  const generarResolucion = vi.fn().mockResolvedValue(documento);
+  const exportador = {
+    generarResolucion,
+    generarReporteObras: vi.fn().mockResolvedValue(documento),
+    generarOficioSalida: vi.fn().mockResolvedValue(documento),
+    generarPlanilla: vi.fn().mockResolvedValue(documento),
   };
 
   const service = new EmisoraOperacionService(
@@ -125,7 +129,7 @@ function crearServicio(
     archivos,
     exportador,
   );
-  return { service, repo, audit, outbox, archivos, exportador, idempotencia };
+  return { service, repo, audit, outbox, archivos, generarResolucion, idempotencia };
 }
 
 function incentivo(estado: string, referenciaCdp: string | null = 'CDP-2026-001') {
@@ -209,7 +213,7 @@ describe('RF-03.7: resolución PDF', () => {
       'clave-resolucion',
     );
 
-    expect(ctx.exportador.generarResolucion).toHaveBeenCalledWith({
+    expect(ctx.generarResolucion).toHaveBeenCalledWith({
       periodo: '2026',
       filas: [
         {
@@ -237,7 +241,7 @@ describe('RF-03.7: resolución PDF', () => {
     await expect(
       ctx.service.createResolucion({ incentivoId: 'incentivo-1', periodo: '2026' }, ACTOR, 'c1'),
     ).rejects.toMatchObject({ code: EMISORA_ERRORS.incentivoNoResuelto });
-    expect(ctx.exportador.generarResolucion).not.toHaveBeenCalled();
+    expect(ctx.generarResolucion).not.toHaveBeenCalled();
 
     ctx.repo.findIncentivoById.mockResolvedValue(incentivo('resuelto'));
     ctx.repo.findResolucionByIncentivoId.mockResolvedValue({
@@ -287,7 +291,7 @@ describe('RF-03.7: resolución PDF', () => {
       ctx.service.createResolucion({ incentivoId: 'incentivo-1', periodo: '2026' }, ACTOR, 'c1'),
     ).resolves.toEqual(respuesta);
     expect(ctx.repo.findIncentivoById).not.toHaveBeenCalled();
-    expect(ctx.exportador.generarResolucion).not.toHaveBeenCalled();
+    expect(ctx.generarResolucion).not.toHaveBeenCalled();
   });
 
   it('exige la clave antes de informar de una resolución duplicada', async () => {
@@ -312,7 +316,7 @@ describe('RF-03.7: resolución PDF', () => {
     await expect(
       ctx.service.createResolucion({ incentivoId: 'incentivo-1', periodo: '2026-99' }, ACTOR, 'c3'),
     ).rejects.toMatchObject({ code: EMISORA_ERRORS.validationFailed });
-    expect(ctx.exportador.generarResolucion).not.toHaveBeenCalled();
+    expect(ctx.generarResolucion).not.toHaveBeenCalled();
   });
 });
 

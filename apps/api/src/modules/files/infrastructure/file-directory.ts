@@ -19,6 +19,7 @@ export class SharedFileDirectory implements FileDirectory {
       mime: record.mime,
       tamano: record.tamano,
       estadoEscaneo: record.estadoEscaneo,
+      hashSha256: record.hashSha256,
     };
   }
 }

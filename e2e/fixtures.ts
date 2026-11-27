@@ -121,6 +121,17 @@ export const E2E_EMISORA = {
   incentivoId: 'cccccccc-0000-4000-8000-00000000000d',
 } as const;
 
+/** Datos reservados para el recorrido E4 (RF-07…RF-12). */
+export const E2E_EMISORA_E4 = {
+  transmisorId: 'dddddddd-0000-4000-8000-000000000001',
+  transmisorCodigo: 'E2E-TX-01',
+  operadorId: '55555555-5555-4555-8555-555555555555',
+  fechaOperacion: '2026-01-19',
+  anio: 2026,
+  serieEquipo: 'E2E-EQUIPO-001',
+  radicadoRef: 'RAD-E2E-2026-001',
+} as const;
+
 export const userByKey = (key: E2eUserKey): E2eUserFixture => {
   const found = E2E_USERS.find((user) => user.key === key);
   if (!found) throw new Error(`Fixture E2E desconocida: ${key}`);

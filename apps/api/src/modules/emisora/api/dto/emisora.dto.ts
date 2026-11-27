@@ -18,32 +18,50 @@ import {
 } from 'class-validator';
 
 import {
+  ACTUALIZACION_ESTADOS,
+  ARCHIVO_EMISORA_TIPOS,
   ASISTENCIA_ESTADOS,
   AUDIO_TIPOS,
+  ENTIDADES_REPORTE,
+  EQUIPO_ESTADOS,
   FRANJA_TIPOS,
   GRABACION_ESTADOS,
   INCENTIVO_ESTADOS,
+  INVERSION_ESTADOS,
   ORDEN_EMISION_ESTADOS,
   PATROCINIO_ESTADOS,
   PRESTAMO_ESTADOS,
+  PROYECCION_ESTADOS,
   PROMO_ESTADOS,
   PROGRAMACION_ESTADOS,
   PUBLICACION_ESTADOS,
   REJILLA_ESTADOS,
+  TRAMITE_DESTINOS,
+  TRAMITE_ESTADOS,
   TRANSMISION_ESTADOS,
+  TURNO_ESTADOS,
+  type ActualizacionEstado,
+  type ArchivoEmisoraTipo,
   type AsistenciaEstado,
   type AudioTipo,
+  type EntidadReporte,
+  type EquipoEstado,
   type FranjaTipo,
   type GrabacionEstado,
   type IncentivoEstado,
+  type InversionEstado,
   type OrdenEmisionEstado,
   type PatrocinioEstado,
   type PrestamoEstado,
+  type ProyeccionEstado,
   type PromoEstado,
   type ProgramacionEstado,
   type PublicacionEstado,
   type RejillaEstado,
+  type TramiteDestino,
+  type TramiteEstado,
   type TransmisionEstado,
+  type TurnoEstado,
 } from '../../domain/emisora-states.js';
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/u;
@@ -689,4 +707,491 @@ export class CreateViaticoDto {
   @IsOptional()
   @IsUUID()
   soporteArchivoId?: string;
+}
+
+/* ---------------------------------- E4 ----------------------------------- */
+
+export class CreateTurnoDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  transmisorId!: string;
+
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  operadorId!: string;
+
+  @ApiProperty({ type: String, example: '2026-01-19' })
+  @Matches(FECHA)
+  fecha!: string;
+
+  @ApiProperty({ type: String, example: '06:00' })
+  @Matches(HORA)
+  horaInicio!: string;
+
+  @ApiProperty({ type: String, example: '07:00' })
+  @Matches(HORA)
+  horaFin!: string;
+}
+
+export class TurnoTransitionDto {
+  @ApiProperty({ type: String, enum: TURNO_ESTADOS })
+  @IsIn(TURNO_ESTADOS)
+  to!: TurnoEstado;
+}
+
+export class CreateLecturaDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  transmisorId!: string;
+
+  @ApiProperty({ type: String, example: '2026-01-19' })
+  @Matches(FECHA)
+  fecha!: string;
+
+  @ApiPropertyOptional({ type: Number, example: 1000 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  potenciaW?: number;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  frecuencia?: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  observaciones?: string;
+}
+
+export class LecturaQueryDto {
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Filtra por transmisor.',
+    format: 'uuid',
+  })
+  @IsOptional()
+  @IsUUID()
+  transmisorId?: string;
+}
+
+export class CreateBitacoraDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  transmisorId!: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  turnoId?: string;
+
+  @ApiProperty({ type: String, example: '2026-01-19' })
+  @Matches(FECHA)
+  fecha!: string;
+
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  incidente!: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  accion?: string;
+}
+
+export class CreateObraDto {
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  titulo!: string;
+
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  compositorAutor!: string;
+
+  @ApiProperty({ type: Number, example: 210 })
+  @IsInt()
+  @Min(1)
+  duracionSegundos!: number;
+
+  @ApiProperty({ type: String, example: '2026-01-19' })
+  @Matches(FECHA)
+  fechaInclusion!: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  archivoId?: string;
+}
+
+export class CreateReporteObraDto {
+  @ApiProperty({ type: String, enum: ENTIDADES_REPORTE })
+  @IsIn(ENTIDADES_REPORTE)
+  entidad!: EntidadReporte;
+
+  @ApiProperty({ type: String, example: '2026-01' })
+  @Matches(/^\d{4}(-(0[1-9]|1[0-2]))?$/u)
+  periodo!: string;
+
+  @ApiProperty({ type: String, example: '2026-01-01' })
+  @Matches(FECHA)
+  fechaInicio!: string;
+
+  @ApiProperty({ type: String, example: '2026-01-31' })
+  @Matches(FECHA)
+  fechaFin!: string;
+}
+
+export class CreatePagoDerechosDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  obraId!: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  reporteId?: string;
+
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  soporteArchivoId!: string;
+
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  referencia!: string;
+}
+
+export class CreateEquipoDto {
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  nombre!: string;
+
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  tipo!: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  marca?: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  modelo?: string;
+
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  numeroSerie!: string;
+
+  @ApiPropertyOptional({ type: String, example: '2026-01-19' })
+  @IsOptional()
+  @Matches(FECHA)
+  fechaAdquisicion?: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  archivoId?: string;
+}
+
+export class EquipoEstadoDto {
+  @ApiProperty({ type: String, enum: EQUIPO_ESTADOS })
+  @IsIn(EQUIPO_ESTADOS)
+  estado!: EquipoEstado;
+}
+
+export class CreateActualizacionDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  equipoId!: string;
+
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  descripcion!: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  solicitadaPor?: string;
+
+  @ApiPropertyOptional({ type: String, example: '2026-01-19' })
+  @IsOptional()
+  @Matches(FECHA)
+  fecha?: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  soporteArchivoId?: string;
+}
+
+export class ActualizacionTransitionDto {
+  @ApiProperty({ type: String, enum: ACTUALIZACION_ESTADOS })
+  @IsIn(ACTUALIZACION_ESTADOS)
+  to!: ActualizacionEstado;
+}
+
+export class CreateProyeccionDto {
+  @ApiProperty({ type: Number, example: 2026 })
+  @IsInt()
+  @Min(2000)
+  @Max(2100)
+  anio!: number;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  equipoId?: string;
+
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  descripcion!: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  archivoId?: string;
+}
+
+export class ProyeccionTransitionDto {
+  @ApiProperty({ type: String, enum: PROYECCION_ESTADOS })
+  @IsIn(PROYECCION_ESTADOS)
+  to!: ProyeccionEstado;
+}
+
+export class CreateInversionDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  proyeccionId!: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  contratoRef?: string;
+
+  @ApiPropertyOptional({ type: String, example: '2026-01-01' })
+  @IsOptional()
+  @Matches(FECHA)
+  fechaInicio?: string;
+
+  @ApiPropertyOptional({ type: String, example: '2026-12-31' })
+  @IsOptional()
+  @Matches(FECHA)
+  fechaFin?: string;
+}
+
+export class InversionTransitionDto {
+  @ApiProperty({ type: String, enum: INVERSION_ESTADOS })
+  @IsIn(INVERSION_ESTADOS)
+  to!: InversionEstado;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  contratoRef?: string;
+}
+
+export class CreateVersionSoftwareDto {
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  equipoId?: string;
+
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  nombre!: string;
+
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  version!: string;
+
+  @ApiProperty({ type: String, example: '2026-01-19' })
+  @Matches(FECHA)
+  fechaInstalacion!: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  responsableId?: string;
+}
+
+export class CreateAsignacionEquipoDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  equipoId!: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  transmisorId?: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  usuarioId?: string;
+
+  @ApiProperty({ type: String, example: '2026-01-19' })
+  @Matches(FECHA)
+  fechaAsignacion!: string;
+
+  @ApiPropertyOptional({ type: String, example: '2026-01-20' })
+  @IsOptional()
+  @Matches(FECHA)
+  fechaDevolucion?: string;
+}
+
+export class CreateActividadDto {
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  nombre!: string;
+
+  @ApiProperty({ type: String, example: '2026-01-19' })
+  @Matches(FECHA)
+  fecha!: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  lugar?: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  descripcion?: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  responsableId?: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  archivoId?: string;
+}
+
+export class CreatePermisoSalidaDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  actividadId!: string;
+
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  destino!: string;
+
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  referencia!: string;
+}
+
+export class CreateArchivoEmisoraDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  archivoId!: string;
+
+  @ApiProperty({ type: String, enum: ARCHIVO_EMISORA_TIPOS })
+  @IsIn(ARCHIVO_EMISORA_TIPOS)
+  tipo!: ArchivoEmisoraTipo;
+
+  @ApiPropertyOptional({ type: Number, example: 210 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  duracionSegundos?: number;
+
+  @ApiProperty({ type: String, example: '2026-01-19' })
+  @Matches(FECHA)
+  fecha!: string;
+
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  responsableId!: string;
+}
+
+export class CreatePlanillaDto {
+  @ApiProperty({ type: String, example: '2026-01-19' })
+  @Matches(FECHA)
+  fecha!: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  programacionDiariaId?: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  operadorId?: string;
+
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  programa!: string;
+}
+
+export class CreateTramiteDto {
+  @ApiProperty({ type: String, enum: TRAMITE_DESTINOS })
+  @IsIn(TRAMITE_DESTINOS)
+  destino!: TramiteDestino;
+
+  @ApiProperty({ type: String })
+  @IsString()
+  @MinLength(1)
+  asunto!: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  radicadoRef?: string;
+
+  @ApiProperty({ type: String, example: '2026-01-19' })
+  @Matches(FECHA)
+  fechaRadicacion!: string;
+
+  @ApiPropertyOptional({ type: String, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  responsableId?: string;
+}
+
+export class CreateSoporteTramiteDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  @IsUUID()
+  archivoId!: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  tipo?: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  descripcion?: string;
+}
+
+export class TramiteTransitionDto {
+  @ApiProperty({ type: String, enum: TRAMITE_ESTADOS })
+  @IsIn(TRAMITE_ESTADOS)
+  to!: TramiteEstado;
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  radicadoRef?: string;
 }

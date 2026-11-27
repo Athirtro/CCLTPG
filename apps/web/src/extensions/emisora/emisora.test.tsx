@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import axe from 'axe-core';
@@ -121,6 +121,33 @@ const usuarioOperadorE3: User = {
     'emisora:prestamo:update',
     'emisora:viatico:create',
     'emisora:resolucion:create',
+  ],
+};
+
+const usuarioOperadorE4: User = {
+  ...usuarioConPermiso,
+  permissions: [
+    'emisora:turno:create',
+    'emisora:turno:update',
+    'emisora:lectura:create',
+    'emisora:lectura:read',
+    'emisora:bitacora:create',
+    'emisora:obra:create',
+    'emisora:derecho:create',
+    'emisora:equipo:create',
+    'emisora:equipo:update',
+    'emisora:proyeccion:create',
+    'emisora:proyeccion:update',
+    'emisora:inversion:create',
+    'emisora:inversion:update',
+    'emisora:actividad:create',
+    'emisora:actividad:read',
+    'emisora:permiso-salida:create',
+    'emisora:archivo-emisora:create',
+    'emisora:planilla:create',
+    'emisora:tramite:create',
+    'emisora:tramite:read',
+    'emisora:tramite:update',
   ],
 };
 
@@ -276,5 +303,100 @@ describe('Extensión Emisora R.A.C.', () => {
     ]) {
       expect(screen.getByRole('button', { name: boton })).toBeDisabled();
     }
+  });
+
+  it('la landing enlaza con la operación E4', () => {
+    renderEmisora();
+
+    expect(screen.getByRole('link', { name: 'Abrir operación E4' })).toHaveAttribute(
+      'href',
+      '/emisora/operacion-e4',
+    );
+  });
+
+  it('la ruta E4 muestra las seis agrupaciones y respeta los permisos', async () => {
+    const { container } = renderEmisora('/emisora/operacion-e4', usuarioOperadorE4);
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Operación E4 de la emisora' }),
+    ).toBeInTheDocument();
+    for (const titulo of [
+      'Sede de transmisores',
+      'Derechos de autor',
+      'Tecnología e inversión',
+      'Oferta cultural y permisos',
+      'Emisión y archivo',
+      'Trámites externos',
+    ]) {
+      expect(screen.getByRole('heading', { level: 2, name: titulo })).toBeInTheDocument();
+    }
+    for (const boton of [
+      'Asignar turno',
+      'Registrar lectura',
+      'Incluir obra',
+      'Registrar equipo',
+      'Registrar proyección',
+      'Registrar actividad',
+      'Archivar audio',
+      'Radicar trámite',
+    ]) {
+      expect(screen.getByRole('button', { name: boton })).toBeEnabled();
+    }
+    for (const boton of [
+      'Confirmar turno',
+      'Registrar pago',
+      'Aprobar proyección',
+      'Emitir permiso',
+      'Adjuntar soporte',
+    ]) {
+      expect(screen.getByRole('button', { name: boton })).toBeDisabled();
+    }
+    await checkAccessibility(container, 'EmisoraOperacionE4 con permisos');
+  });
+
+  it('la ruta E4 deshabilita todas las acciones del usuario sin permisos', () => {
+    renderEmisora('/emisora/operacion-e4', usuarioSinPermiso);
+
+    for (const boton of [
+      'Asignar turno',
+      'Registrar lectura',
+      'Incluir obra',
+      'Registrar equipo',
+      'Registrar actividad',
+      'Archivar audio',
+      'Radicar trámite',
+    ]) {
+      expect(screen.getByRole('button', { name: boton })).toBeDisabled();
+    }
+  });
+
+  it('la ruta E4 asigna un turno con Idempotency-Key', async () => {
+    const POST = vi.spyOn(apiClient, 'POST').mockResolvedValue({
+      data: { id: 'turno-e4-ui' },
+      error: undefined,
+      response: { status: 201 },
+    });
+
+    renderEmisora('/emisora/operacion-e4', usuarioOperadorE4);
+    fireEvent.click(screen.getByRole('button', { name: 'Asignar turno' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent('Turno asignado.');
+    });
+    expect(POST).toHaveBeenCalledTimes(1);
+    // `POST` es genérico: Vitest infiere sus argumentos como `never`, por eso
+    // se inspeccionan como `unknown` y se estrechan explícitamente.
+    const argumentos = POST.mock.calls[0] as unknown[] | undefined;
+    const opciones = argumentos?.[1];
+    const cabeceras =
+      typeof opciones === 'object' && opciones !== null
+        ? (opciones as { headers?: unknown }).headers
+        : undefined;
+    expect(
+      typeof cabeceras === 'object' &&
+        cabeceras !== null &&
+        typeof (cabeceras as Record<string, unknown>)['Idempotency-Key'] === 'string',
+    ).toBe(true);
+    expect(screen.getByText(/Turno activo: turno-e4-ui/)).toBeInTheDocument();
   });
 });

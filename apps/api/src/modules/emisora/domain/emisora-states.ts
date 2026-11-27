@@ -67,6 +67,46 @@ export type AudioTipo = (typeof AUDIO_TIPOS)[number];
 export const ASISTENCIA_ESTADOS = ['presente', 'ausente', 'tarde', 'excusa'] as const;
 export type AsistenciaEstado = (typeof ASISTENCIA_ESTADOS)[number];
 
+/* ------------------------------- Estados E4 ------------------------------ */
+
+export const TURNO_ESTADOS = ['planificado', 'confirmado', 'realizado'] as const;
+export type TurnoEstado = (typeof TURNO_ESTADOS)[number];
+
+export const EQUIPO_ESTADOS = ['disponible', 'en_uso', 'mantenimiento', 'baja'] as const;
+export type EquipoEstado = (typeof EQUIPO_ESTADOS)[number];
+
+export const ACTUALIZACION_ESTADOS = [
+  'solicitada',
+  'aprobada',
+  'rechazada',
+  'implementada',
+] as const;
+export type ActualizacionEstado = (typeof ACTUALIZACION_ESTADOS)[number];
+
+export const PROYECCION_ESTADOS = ['borrador', 'aprobada'] as const;
+export type ProyeccionEstado = (typeof PROYECCION_ESTADOS)[number];
+
+export const INVERSION_ESTADOS = ['proyectada', 'aprobada', 'en_seguimiento', 'cerrada'] as const;
+export type InversionEstado = (typeof INVERSION_ESTADOS)[number];
+
+export const PERMISO_ESTADOS = ['solicitado', 'emitido', 'negado'] as const;
+export type PermisoEstado = (typeof PERMISO_ESTADOS)[number];
+
+export const TRAMITE_ESTADOS = ['radicado', 'en_tramite', 'respondido', 'archivado'] as const;
+export type TramiteEstado = (typeof TRAMITE_ESTADOS)[number];
+
+export const PLANILLA_ESTADOS = ['borrador', 'registrada'] as const;
+export type PlanillaEstado = (typeof PLANILLA_ESTADOS)[number];
+
+export const ARCHIVO_EMISORA_TIPOS = ['audio', 'documento', 'imagen', 'acta', 'formato'] as const;
+export type ArchivoEmisoraTipo = (typeof ARCHIVO_EMISORA_TIPOS)[number];
+
+export const ENTIDADES_REPORTE = ['sayco', 'acinpro'] as const;
+export type EntidadReporte = (typeof ENTIDADES_REPORTE)[number];
+
+export const TRAMITE_DESTINOS = ['gobierno', 'hacienda', 'saia', 'secretaria_tic', 'otro'] as const;
+export type TramiteDestino = (typeof TRAMITE_DESTINOS)[number];
+
 /** RF-03.3: solo borrador → aprobada, y siempre con acta de comité adjunta. */
 export function canTransicionarRejilla(from: RejillaEstado, to: RejillaEstado): boolean {
   return from === 'borrador' && to === 'aprobada';
@@ -122,5 +162,39 @@ export type AgregadoE3 = keyof typeof TRANSICIONES_E3;
 /** RF-04…RF-06: valida la transición antes de escribir y dentro de la UoW. */
 export function canTransicionarE3(agregado: AgregadoE3, from: string, to: string): boolean {
   const permitidas = TRANSICIONES_E3[agregado] as Record<string, readonly string[]>;
+  return permitidas[from]?.includes(to) ?? false;
+}
+
+/** Tabla cerrada de transiciones E4; la misma forma que las de E2 y E3. */
+const TRANSICIONES_E4 = {
+  turno: { planificado: ['confirmado'], confirmado: ['realizado'], realizado: [] },
+  actualizacion: {
+    solicitada: ['aprobada', 'rechazada'],
+    aprobada: ['implementada'],
+    rechazada: [],
+    implementada: [],
+  },
+  proyeccion: { borrador: ['aprobada'], aprobada: [] },
+  inversion: {
+    proyectada: ['aprobada'],
+    aprobada: ['en_seguimiento'],
+    en_seguimiento: ['cerrada'],
+    cerrada: [],
+  },
+  permiso: { solicitado: ['emitido', 'negado'], emitido: [], negado: [] },
+  tramite: {
+    radicado: ['en_tramite'],
+    en_tramite: ['respondido'],
+    respondido: ['archivado'],
+    archivado: [],
+  },
+  planilla: { borrador: ['registrada'], registrada: [] },
+} as const;
+
+export type AgregadoE4 = keyof typeof TRANSICIONES_E4;
+
+/** RF-07…RF-12: valida la transición antes de escribir y dentro de la UoW. */
+export function canTransicionarE4(agregado: AgregadoE4, from: string, to: string): boolean {
+  const permitidas = TRANSICIONES_E4[agregado] as Record<string, readonly string[]>;
   return permitidas[from]?.includes(to) ?? false;
 }

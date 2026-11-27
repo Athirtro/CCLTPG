@@ -4,7 +4,13 @@ import { resolve } from 'node:path';
 
 import type { FullConfig } from '@playwright/test';
 
-import { E2E_EMISORA, E2E_PASSWORD, E2E_TOTP_SECRET, E2E_USERS } from './fixtures.js';
+import {
+  E2E_EMISORA,
+  E2E_EMISORA_E4,
+  E2E_PASSWORD,
+  E2E_TOTP_SECRET,
+  E2E_USERS,
+} from './fixtures.js';
 
 /**
  * Prepara un estado determinista para la suite E2E sin destruir los datos del
@@ -234,6 +240,7 @@ async function seedEmisoraParaE2E(client: QueryableClient): Promise<void> {
     audioPromoArchivoId,
     incentivoId,
   );
+  await sembrarOperacionE4(client, audioPromoArchivoId);
 }
 
 /**
@@ -311,6 +318,85 @@ async function sembrarOperacionE3(
        (id, informe_id, comite_id, realizador_id, estado, calificacion, referencia_cdp)
      VALUES ($1, $2, $3, $4, 'resuelto', 85, 'CDP-E2E-2026')`,
     [incentivoId, informeId, comiteId, realizadorId],
+  );
+}
+
+/**
+ * Estado determinista del recorrido E4: un transmisor reservado y limpieza de
+ * las filas únicas por fecha/año/serie que el recorrido crea. Los soportes PDF
+ * y el audio limpio se reutilizan de las fixtures E3.
+ */
+async function sembrarOperacionE4(
+  client: QueryableClient,
+  audioPromoArchivoId: string,
+): Promise<void> {
+  const { transmisorId, transmisorCodigo, fechaOperacion, anio, serieEquipo } = E2E_EMISORA_E4;
+
+  await client.query('DELETE FROM emisora.bitacora_sede WHERE transmisor_id = $1', [transmisorId]);
+  await client.query(
+    `DELETE FROM emisora.lectura_transmisor WHERE transmisor_id = $1 AND fecha = $2::date`,
+    [transmisorId, fechaOperacion],
+  );
+  await client.query(
+    `DELETE FROM emisora.turno_operador WHERE transmisor_id = $1 AND fecha = $2::date`,
+    [transmisorId, fechaOperacion],
+  );
+  await client.query(`DELETE FROM emisora.planilla_emision WHERE fecha = $1::date`, [
+    fechaOperacion,
+  ]);
+  await client.query(`DELETE FROM emisora.pago_derechos WHERE referencia = 'PAGO-E2E-2026-01'`);
+  await client.query(
+    `DELETE FROM emisora.reporte_obra WHERE periodo = '2026-01' AND entidad = 'sayco'`,
+  );
+  await client.query(
+    `DELETE FROM emisora.obra WHERE titulo = 'Obra E4 de prueba' AND fecha_inclusion = $1::date`,
+    [fechaOperacion],
+  );
+  await client.query(
+    `DELETE FROM emisora.permiso_gobierno WHERE actividad_id IN (
+       SELECT id FROM emisora.actividad_cultural
+       WHERE nombre = 'Festival E4' AND fecha = $1::date
+     )`,
+    [fechaOperacion],
+  );
+  await client.query(
+    `DELETE FROM emisora.actividad_cultural WHERE nombre = 'Festival E4' AND fecha = $1::date`,
+    [fechaOperacion],
+  );
+  await client.query(
+    `DELETE FROM emisora.tramite_externo WHERE asunto = 'Solicitud E4' AND fecha_radicacion = $1::date`,
+    [fechaOperacion],
+  );
+  await client.query(`DELETE FROM emisora.archivo_emisora WHERE archivo_id = $1`, [
+    audioPromoArchivoId,
+  ]);
+
+  await client.query(
+    `DELETE FROM emisora.actualizacion_tecnologica WHERE equipo_id IN (
+       SELECT id FROM emisora.hoja_vida_equipo WHERE numero_serie = $1
+     )`,
+    [serieEquipo],
+  );
+  await client.query(
+    `DELETE FROM emisora.version_software WHERE nombre = 'Firmware E4' AND version = '1.0.0'`,
+  );
+  await client.query(
+    `DELETE FROM emisora.asignacion_equipo WHERE equipo_id IN (
+       SELECT id FROM emisora.hoja_vida_equipo WHERE numero_serie = $1
+     )`,
+    [serieEquipo],
+  );
+  await client.query(`DELETE FROM emisora.hoja_vida_equipo WHERE numero_serie = $1`, [serieEquipo]);
+  await client.query(`DELETE FROM emisora.proyeccion_anual WHERE anio = $1`, [anio]);
+
+  await client.query(`DELETE FROM emisora.transmisor WHERE id = $1 OR codigo = $2`, [
+    transmisorId,
+    transmisorCodigo,
+  ]);
+  await client.query(
+    `INSERT INTO emisora.transmisor (id, codigo, nombre, sede, frecuencia, activo)
+     VALUES ($1, $2, 'Transmisor E2E', 'Sede E2E', '107.9', true)`,
+    [transmisorId, transmisorCodigo],
   );
 }
 

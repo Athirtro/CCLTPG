@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 
-import { E2E_EMISORA, E2E_USERS } from './fixtures.js';
+import { E2E_EMISORA, E2E_EMISORA_E4, E2E_USERS } from './fixtures.js';
 import { loginAs } from './helpers/auth.js';
 import { test } from './helpers/test.js';
 
@@ -185,4 +185,86 @@ test('la operación E3 de la emisora recorre soportes, transmisiones y resoluci�
   expect(ruta).not.toBeNull();
   const contenido = await import('node:fs/promises').then((fs) => fs.readFile(ruta!));
   expect(contenido.subarray(0, 5).toString('ascii')).toBe('%PDF-');
+});
+
+test('la operación E4 recorre sede, derechos, tecnología, archivo y trámites', async ({ page }) => {
+  await loginAs(page, 'jefe_emisora');
+  await page.goto('/emisora/operacion-e4');
+
+  await expect(page.getByRole('heading', { name: 'Operación E4 de la emisora' })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByLabel('ID del transmisor')).toHaveValue(E2E_EMISORA_E4.transmisorId);
+  await expect(page.getByLabel('Fecha de operación')).toHaveValue(E2E_EMISORA_E4.fechaOperacion);
+
+  // RF-07: turno, lectura única por transmisor/fecha y bitácora con actor.
+  await page.getByRole('button', { name: 'Asignar turno' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Turno asignado.');
+  await page.getByRole('button', { name: 'Confirmar turno' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Turno confirmado.');
+  await page.getByRole('button', { name: 'Registrar lectura' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Lectura registrada.');
+  await page.getByRole('button', { name: 'Registrar lectura' }).click();
+  await expect(page.getByRole('alert')).toContainText(
+    'Ya existe una lectura para este transmisor en la fecha indicada.',
+  );
+  await page.getByRole('button', { name: 'Registrar bitácora' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Bitácora registrada.');
+  await page.getByRole('button', { name: 'Listar lecturas' }).click();
+  await expect(page.getByRole('alert')).toHaveText('1 lectura(s) consultada(s).');
+
+  // RF-08: el reporte PDF se genera sobre la obra incluida en el periodo.
+  await page.getByRole('button', { name: 'Incluir obra' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Obra incluida.');
+  await page.getByRole('button', { name: 'Generar reporte de obras' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Reporte de obras generado.');
+  await page.getByRole('button', { name: 'Registrar pago' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Pago de derechos registrado.');
+
+  // RF-09: hoja de vida, actualización, proyección, inversión y software.
+  await page.getByRole('button', { name: 'Registrar equipo' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Equipo registrado.');
+  await page.getByRole('button', { name: 'Actualizar equipo' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Equipo actualizado.');
+  await page.getByRole('button', { name: 'Solicitar actualización' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Actualización solicitada.');
+  await page.getByRole('button', { name: 'Aprobar actualización' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Actualización aprobada.');
+  await page.getByRole('button', { name: 'Registrar proyección' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Proyección registrada.');
+  await page.getByRole('button', { name: 'Aprobar proyección' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Proyección aprobada.');
+  await page.getByRole('button', { name: 'Registrar inversión' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Inversión registrada.');
+  await page.getByRole('button', { name: 'Aprobar inversión' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Inversión aprobada.');
+  await page.getByRole('button', { name: 'Registrar software' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Versión de software registrada.');
+  await page.getByRole('button', { name: 'Asignar equipo' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Equipo asignado.');
+
+  // RF-10/RF-11: oficio de salida, archivo sonoro y planilla única.
+  await page.getByRole('button', { name: 'Registrar actividad' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Actividad registrada.');
+  await page.getByRole('button', { name: 'Listar actividades' }).click();
+  await expect(page.getByRole('alert')).toContainText('actividad(es) consultada(s).');
+  await page.getByRole('button', { name: 'Emitir permiso' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Permiso de salida emitido.');
+  await page.getByRole('button', { name: 'Archivar audio' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Audio archivado.');
+  await page.getByRole('button', { name: 'Generar planilla' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Planilla generada.');
+
+  // RF-12: ciclo completo de radicación, soporte PDF, respuesta y archivo.
+  await page.getByRole('button', { name: 'Radicar trámite' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Trámite radicado.');
+  await page.getByRole('button', { name: 'Listar trámites' }).click();
+  await expect(page.getByRole('alert')).toContainText('trámite(s) consultado(s).');
+  await page.getByRole('button', { name: 'Adjuntar soporte' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Soporte adjuntado.');
+  await page.getByRole('button', { name: 'Poner en trámite' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Trámite en trámite.');
+  await page.getByRole('button', { name: 'Registrar respuesta' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Respuesta registrada.');
+  await page.getByRole('button', { name: 'Archivar trámite' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Trámite archivado.');
 });

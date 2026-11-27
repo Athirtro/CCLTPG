@@ -14,6 +14,8 @@ export interface FileRef {
   mime: string;
   tamano: number;
   estadoEscaneo: 'limpio' | 'infectado' | 'pendiente';
+  /** Metadato opcional usado por RF-11 para la trazabilidad del archivo sonoro. */
+  hashSha256?: string | null;
 }
 
 export interface FileDirectory {

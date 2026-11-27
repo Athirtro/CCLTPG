@@ -22,6 +22,10 @@ export const EMISORA_ERRORS = {
   promoSinAudio: 'EMISORA_PROMO_SIN_AUDIO',
   resolucionYaExistente: 'EMISORA_RESOLUCION_YA_EXISTENTE',
   incentivoNoResuelto: 'EMISORA_INCENTIVO_NO_RESUELTO',
+  lecturaDuplicada: 'EMISORA_LECTURA_DUPLICADA',
+  planillaDuplicada: 'EMISORA_PLANILLA_DUPLICADA',
+  proyeccionDuplicada: 'EMISORA_PROYECCION_DUPLICADA',
+  equipoDuplicado: 'EMISORA_EQUIPO_DUPLICADO',
 } as const;
 
 export type EmisoraErrorCode = (typeof EMISORA_ERRORS)[keyof typeof EMISORA_ERRORS];
@@ -141,6 +145,38 @@ export class EmisoraError extends AppError {
       EMISORA_ERRORS.viaticoNoFueraCiudad,
       HttpStatus.BAD_REQUEST,
       'Los viáticos solo aplican a transmisiones fuera de la ciudad.',
+    );
+  }
+
+  static lecturaDuplicada(): EmisoraError {
+    return new EmisoraError(
+      EMISORA_ERRORS.lecturaDuplicada,
+      HttpStatus.CONFLICT,
+      'Ya existe una lectura para este transmisor en la fecha indicada.',
+    );
+  }
+
+  static planillaDuplicada(): EmisoraError {
+    return new EmisoraError(
+      EMISORA_ERRORS.planillaDuplicada,
+      HttpStatus.CONFLICT,
+      'Ya existe una planilla para esta fecha.',
+    );
+  }
+
+  static proyeccionDuplicada(): EmisoraError {
+    return new EmisoraError(
+      EMISORA_ERRORS.proyeccionDuplicada,
+      HttpStatus.CONFLICT,
+      'Ya existe una proyección para este año.',
+    );
+  }
+
+  static equipoDuplicado(): EmisoraError {
+    return new EmisoraError(
+      EMISORA_ERRORS.equipoDuplicado,
+      HttpStatus.CONFLICT,
+      'Ya existe un equipo con este número de serie.',
     );
   }
 }

@@ -116,7 +116,7 @@ export default function EmisoraHome() {
     <Box>
       <PageHeader
         title="Emisora R.A.C."
-        description="Espacio de la Emisora Cultural. El recorrido de programación, grabación y rejilla ya está disponible; las demás agrupaciones se incorporarán en fases posteriores."
+        description="Espacio de la Emisora Cultural. Los recorridos de programación, grabación, rejilla, operación y sede de transmisores ya están disponibles."
         icon={<RadioIcon />}
         breadcrumbs={[{ label: 'Inicio', to: '/' }, { label: 'Emisora R.A.C.' }]}
       />
@@ -185,15 +185,16 @@ export default function EmisoraHome() {
 
       <SectionCard
         title="Estado de la extensión"
-        subtitle="Fases E2 y E3 — operación de la emisora R.A.C."
+        subtitle="Fases E2, E3 y E4 — operación de la emisora R.A.C."
         sx={{ mt: 3 }}
       >
         {tienePermisoEmisora ? (
           <Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               El recorrido E2 registra comité, rejilla, programación y audios; el E3 gestiona
-              patrocinios, promos, transmisiones, mifi, viáticos y resoluciones. Cada acción valida
-              sus permisos en la API.
+              patrocinios, promos, transmisiones, mifi, viáticos y resoluciones; el E4 cubre la sede
+              de transmisores, derechos, tecnología, archivo y trámites. Cada acción valida sus
+              permisos en la API.
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
               <Button component={RouterLink} to="/emisora/operacion" variant="contained">
@@ -201,6 +202,9 @@ export default function EmisoraHome() {
               </Button>
               <Button component={RouterLink} to="/emisora/operacion-e3" variant="outlined">
                 Abrir operación E3
+              </Button>
+              <Button component={RouterLink} to="/emisora/operacion-e4" variant="outlined">
+                Abrir operación E4
               </Button>
             </Box>
           </Box>
