@@ -17,6 +17,7 @@ const EQUIPO_ID = 'dddddddd-0000-4000-8000-000000000001';
 import {
   apiClient,
   descargarArchivo,
+  type EmisoraIncentivoEstado,
   type EmisoraIncentivoView,
   type EmisoraResolucionView,
 } from '../../../api/client';
@@ -81,7 +82,7 @@ export default function EmisoraOperacionE3() {
   const [periodo, setPeriodo] = useState('2026');
   const [incentivos, setIncentivos] = useState<EmisoraIncentivoView[]>([]);
   const [resolucion, setResolucion] = useState<EmisoraResolucionView | null>(null);
-  const [estadoIncentivo, setEstadoIncentivo] = useState('calificado');
+  const [estadoIncentivo, setEstadoIncentivo] = useState<EmisoraIncentivoEstado>('calificado');
   const [calificacion, setCalificacion] = useState('85');
   const [referenciaCdp, setReferenciaCdp] = useState('');
 
@@ -364,7 +365,7 @@ export default function EmisoraOperacionE3() {
     } = await apiClient.PATCH('/emisora/incentivos/{id}', {
       params: { path: { id: incentivoId.trim() } },
       body: {
-        to: estadoIncentivo as 'calificado' | 'asignado' | 'resuelto' | 'solicitud_cdp',
+        to: estadoIncentivo,
         calificacion: nota,
         ...(referenciaCdp.trim() ? { referenciaCdp: referenciaCdp.trim() } : {}),
       },
@@ -766,10 +767,16 @@ export default function EmisoraOperacionE3() {
           />
           <TextField
             label="Estado destino"
+            select
             value={estadoIncentivo}
-            onChange={(event) => setEstadoIncentivo(event.target.value)}
+            onChange={(event) => setEstadoIncentivo(event.target.value as EmisoraIncentivoEstado)}
             sx={{ flex: '1 1 180px' }}
-          />
+          >
+            <option value="calificado">Calificado</option>
+            <option value="asignado">Asignado</option>
+            <option value="resuelto">Resuelto</option>
+            <option value="solicitud_cdp">Solicitud de CDP</option>
+          </TextField>
           <TextField
             label="Calificación (0-100)"
             type="number"

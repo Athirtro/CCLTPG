@@ -6,6 +6,7 @@ import { apiClient } from '../../../api/client';
 import type {
   EmisoraAudioView,
   EmisoraConvocatoriaView,
+  EmisoraGrabacionEstado,
   EmisoraGrabacionView,
   EmisoraProgramacionView,
   EmisoraRejillaView,
@@ -55,7 +56,7 @@ export default function EmisoraOperacion() {
   const [confirmarRejilla, setConfirmarRejilla] = useState(false);
   const [anioConvocatoria, setAnioConvocatoria] = useState(String(ANIO));
   const [idActaBases, setIdActaBases] = useState('');
-  const [estadoGrabacion, setEstadoGrabacion] = useState('realizada');
+  const [estadoGrabacion, setEstadoGrabacion] = useState<EmisoraGrabacionEstado>('realizada');
 
   const anio = rejilla?.anio ?? convocatorias[0]?.anio ?? ANIO;
   const fecha = programacion?.fecha ?? grabaciones[0]?.fecha ?? FECHA;
@@ -145,7 +146,7 @@ export default function EmisoraOperacion() {
     } = await apiClient.POST('/emisora/grabaciones/{id}/transitions', {
       params: { path: { id: grabacion.id } },
       body: {
-        to: estadoGrabacion.trim() as 'programada' | 'realizada' | 'aprobada' | 'cancelada',
+        to: estadoGrabacion,
       },
       headers: { 'Idempotency-Key': crypto.randomUUID() },
     });
@@ -542,10 +543,18 @@ export default function EmisoraOperacion() {
               </Button>
               <TextField
                 label="Estado destino de grabación"
+                select
                 value={estadoGrabacion}
-                onChange={(event) => setEstadoGrabacion(event.target.value)}
+                onChange={(event) =>
+                  setEstadoGrabacion(event.target.value as EmisoraGrabacionEstado)
+                }
                 sx={{ flex: '1 1 180px' }}
-              />
+              >
+                <option value="programada">Programada</option>
+                <option value="realizada">Realizada</option>
+                <option value="aprobada">Aprobada</option>
+                <option value="cancelada">Cancelada</option>
+              </TextField>
               <Button
                 variant="outlined"
                 disabled={

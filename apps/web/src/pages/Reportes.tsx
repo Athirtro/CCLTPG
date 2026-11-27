@@ -19,7 +19,12 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth, apiClient } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type { ReportCatalogItemDto, ExportacionDto, ProblemDetailsDto } from '../api/client';
+import {
+  descargarArchivo,
+  type ReportCatalogItemDto,
+  type ExportacionDto,
+  type ProblemDetailsDto,
+} from '../api/client';
 import { postWithIdempotency } from '../api/idempotent-client';
 import PageHeader from '../components/common/PageHeader';
 import SectionCard from '../components/common/SectionCard';
@@ -53,6 +58,7 @@ export default function Reportes() {
   const [parametrosJson, setParametrosJson] = useState('{}');
   const [errorParametros, setErrorParametros] = useState<string | null>(null);
   const [generando, setGenerando] = useState(false);
+  const [descargando, setDescargando] = useState(false);
   const [resultado, setResultado] = useState<ExportacionDto | null>(null);
   const [generadoEn, setGeneradoEn] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -177,9 +183,25 @@ export default function Reportes() {
     }
   };
 
-  const descargarResultado = () => {
-    if (!resultado?.descargaUrl) return;
-    window.open(resultado.descargaUrl, '_blank', 'noopener,noreferrer');
+  const descargarResultado = async () => {
+    if (!resultado) return;
+    setDescargando(true);
+    setError(null);
+    try {
+      // `descargaUrl` apunta a GET /files/{id}/download, que exige Bearer. Abrirlo
+      // con window.open no envía la cabecera y el API responde 401; el cliente
+      // autenticado añade el token y reintenta tras refrescarlo si expiró.
+      const descarga = await descargarArchivo(resultado.archivoId, resultado.nombre);
+      if (descarga.ok) {
+        setExito(`Archivo "${descarga.nombre}" descargado correctamente.`);
+      } else {
+        setError(descarga.detail || 'No se pudo descargar el archivo.');
+      }
+    } catch (err) {
+      setError(getErrorMessage(err) || 'No se pudo descargar el archivo.');
+    } finally {
+      setDescargando(false);
+    }
   };
 
   const columnas: DataTableColumn<ReportCatalogItemDto>[] = [
@@ -447,8 +469,8 @@ export default function Reportes() {
             <Button
               startIcon={<FileDownloadIcon />}
               variant="contained"
-              onClick={descargarResultado}
-              disabled={!resultado.descargaUrl}
+              onClick={() => void descargarResultado()}
+              disabled={descargando || !resultado.archivoId}
               sx={{ mt: 2 }}
             >
               Descargar archivo

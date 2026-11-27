@@ -99,12 +99,18 @@ export default function Archivos() {
       const formData = new FormData();
       formData.append('file', archivoSeleccionado);
 
+      // `POST /files` exige Idempotency-Key. Si el usuario no escribió una,
+      // generamos una y la dejamos visible para que un reintento con el mismo
+      // archivo reutilice la clave en lugar de crear otra carga.
+      const clave = idempotencyKey.trim() || crypto.randomUUID();
+      setIdempotencyKey(clave);
+
       const result = await postWithIdempotency('/files', {
         body: formData,
-        idempotencyKey: idempotencyKey.trim() || undefined,
+        idempotencyKey: clave,
       });
 
-      if (result.error || result.response?.status !== 200) {
+      if (result.error || result.response?.status !== 201) {
         const problema = result.error as ProblemDetailsDto | null;
         setError(problema?.detail || 'No se pudo subir el archivo.');
         return;
@@ -134,7 +140,7 @@ export default function Archivos() {
   const cabecera = (
     <PageHeader
       title="Gestión de archivos"
-      description="Carga documentos con validación de tipo y tamaño, y con clave de idempotencia opcional."
+      description="Carga documentos con validación de tipo y tamaño; la clave de idempotencia se genera automáticamente si se deja vacía."
       icon={<CloudUploadIcon />}
       breadcrumbs={[{ label: 'Inicio', to: '/' }, { label: 'Operaciones' }, { label: 'Archivos' }]}
       actions={
@@ -222,11 +228,11 @@ export default function Archivos() {
               <TextField
                 fullWidth
                 id="archivo-idempotencia"
-                label="Idempotency-Key (opcional)"
-                placeholder="Clave para evitar duplicados"
+                label="Idempotency-Key (se genera sola)"
+                placeholder="Déjala vacía para generar una clave única"
                 value={idempotencyKey}
                 onChange={(event) => setIdempotencyKey(event.target.value)}
-                helperText="Si se repite la misma clave con el mismo cuerpo, se devuelve el resultado original."
+                helperText="Se envía siempre. Si repites la clave con el mismo archivo, se devuelve el resultado original."
                 sx={{ mb: 2 }}
               />
 
