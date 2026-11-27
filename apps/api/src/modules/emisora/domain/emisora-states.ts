@@ -3,7 +3,9 @@
  *
  * Se declaran como uniones cerradas para que el compilador impida estados
  * inexistentes. Las transiciones se validan en dominio, antes de escribir, y se
- * refuerzan con `SELECT ... FOR UPDATE` en el repositorio transaccional.
+ * refuerzan con `UPDATE ... WHERE estado = $from` en el repositorio
+ * transaccional: solo la escritura que encuentre el estado de origen gana; la
+ * otra devuelve 409 `INVALID_STATE_TRANSITION` (concurrencia optimista).
  */
 
 export const CONVOCATORIA_ESTADOS = ['borrador', 'abierta', 'cerrada'] as const;

@@ -590,6 +590,12 @@ resolución no añade un segundo evento `resolucion.generada` a la outbox; y (f)
 los eventos nuevos ya presentes en el catálogo (101) no se duplican al regenerar
 `events.json`.
 
+La comprobación de resolución previa se ejecuta dentro de
+`runIdempotentCreate`: un replay con la misma clave devuelve la respuesta 201
+cacheada sin regenerar el PDF, y la restricción única de
+`resolucion_incentivo` se traduce a `409 EMISORA_RESOLUCION_YA_EXISTENTE` si dos
+claves distintas compiten.
+
 Las acciones de auditoría de creación y rechazo (`patrocinio.propuesto`,
 `patrocinio.rechazado`, `orden.creada`, `orden.programada`, etc.) cumplen la
 gramática `recurso.accion`, pero no se publican en la outbox: el catálogo de

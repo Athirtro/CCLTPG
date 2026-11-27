@@ -648,17 +648,33 @@ export class KyselyEmisoraRepository implements EmisoraRepository {
   /* -------------------------------- E3 --------------------------------- */
 
   async createResolucion(input: NewResolucion): Promise<ResolucionRecord> {
-    const row = await this.db
-      .insertInto('emisora.resolucion_incentivo')
-      .values({
-        id: input.id,
-        incentivo_id: input.incentivoId,
-        pdf_archivo_id: input.pdfArchivoId,
-        referencia_cdp: input.referenciaCdp,
-      })
-      .returningAll()
-      .executeTakeFirstOrThrow();
-    return mapResolucion(row);
+    try {
+      const row = await this.db
+        .insertInto('emisora.resolucion_incentivo')
+        .values({
+          id: input.id,
+          incentivo_id: input.incentivoId,
+          pdf_archivo_id: input.pdfArchivoId,
+          referencia_cdp: input.referenciaCdp,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      return mapResolucion(row);
+    } catch (error) {
+      // Dos claves distintas pueden ganar la comprobación previa de duplicado;
+      // la restricción única decide y el perdedor debe recibir 409, no un 500.
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === '23505' &&
+        'constraint' in error &&
+        error.constraint === 'resolucion_incentivo_incentivo_key'
+      ) {
+        throw EmisoraError.resolucionYaExistente();
+      }
+      throw error;
+    }
   }
 
   async findResolucionById(id: string): Promise<ResolucionRecord | null> {

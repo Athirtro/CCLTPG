@@ -441,7 +441,7 @@ export class CreateResolucionDto {
   incentivoId!: string;
 
   @ApiProperty({ type: String, description: 'Periodo YYYY o YYYY-MM del oficio.', example: '2026' })
-  @Matches(/^\d{4}(-\d{2})?$/u)
+  @Matches(/^\d{4}(-(0[1-9]|1[0-2]))?$/u)
   periodo!: string;
 }
 

@@ -183,28 +183,9 @@ export class EmisoraOperacionService {
     actor: ActorContext,
     clave: string | null,
   ): Promise<ResolucionView> {
-    const incentivo = await this.repository.findIncentivoById(input.incentivoId);
-    if (!incentivo) {
-      throw EmisoraError.notFound('Incentivo');
-    }
-    if (incentivo.estado !== 'resuelto') {
-      throw EmisoraError.incentivoNoResuelto();
-    }
-    if (!incentivo.referenciaCdp?.trim()) {
-      throw EmisoraError.incentivoNoResuelto();
-    }
-    if (!/^\d{4}(-\d{2})?$/u.test(input.periodo)) {
-      throw EmisoraError.invalidInput('El periodo debe tener formato YYYY o YYYY-MM.');
-    }
-    const existente = await this.repository.findResolucionByIncentivoId(incentivo.id);
-    if (existente) {
-      throw EmisoraError.resolucionYaExistente();
-    }
-    const realizador = await this.repository.findRealizadorById(incentivo.realizadorId);
-    if (!realizador) {
-      throw EmisoraError.notFound('Realizador');
-    }
-
+    // Las comprobaciones viven dentro del callback: con la misma clave, un
+    // replay devuelve la respuesta cacheada antes de mirar el incentivo (que
+    // ya tiene resolución). Así se conserva el contrato idempotente de §6.5.
     return runIdempotentCreate(
       {
         store: this.idempotency,
@@ -214,6 +195,24 @@ export class EmisoraOperacionService {
         cuerpo: input,
       },
       async () => {
+        const incentivo = await this.repository.findIncentivoById(input.incentivoId);
+        if (!incentivo) {
+          throw EmisoraError.notFound('Incentivo');
+        }
+        if (incentivo.estado !== 'resuelto' || !incentivo.referenciaCdp?.trim()) {
+          throw EmisoraError.incentivoNoResuelto();
+        }
+        if (!/^\d{4}(-(0[1-9]|1[0-2]))?$/u.test(input.periodo)) {
+          throw EmisoraError.invalidInput('El periodo debe tener formato YYYY o YYYY-MM.');
+        }
+        if (await this.repository.findResolucionByIncentivoId(incentivo.id)) {
+          throw EmisoraError.resolucionYaExistente();
+        }
+        const realizador = await this.repository.findRealizadorById(incentivo.realizadorId);
+        if (!realizador) {
+          throw EmisoraError.notFound('Realizador');
+        }
+
         // Exportaciones registra `reporte.generado` con su propia auditoría y
         // outbox; la creación de la resolución solo audita `resolucion.generada`
         // (ya publicada en E2) sin duplicar el evento en la cola.

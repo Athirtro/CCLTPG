@@ -7,6 +7,22 @@ import { test } from './helpers/test.js';
 /** MP3 mínimo reconocido por `file-type` por sus bytes mágicos. */
 const AUDIO_MP3 = Buffer.concat([Buffer.from('fffb9064', 'hex'), Buffer.alloc(400)]);
 
+/** La regla RF-06.5 usa días calendario de Bogotá, no fechas UTC. */
+function fechaBogota(instante: Date): string {
+  const partes = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Bogota',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+      .formatToParts(instante)
+      .filter((parte) => parte.type !== 'literal')
+      .map((parte) => [parte.type, parte.value]),
+  );
+  return `${partes.year}-${partes.month}-${partes.day}`;
+}
+
 test('la operación E2 de la emisora recorre convocatoria, rejilla, programación y audio', async ({
   page,
 }) => {
@@ -62,10 +78,9 @@ test('la operación E3 de la emisora recorre soportes, transmisiones y resoluci�
 }) => {
   const jefe = E2E_USERS.find((usuario) => usuario.key === 'jefe_emisora');
   if (!jefe) throw new Error('Falta la fixture jefe_emisora para el recorrido E3.');
-  const fechaTransmision = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
-  const fechaCorta = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const fechaTransmision = fechaBogota(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000));
+  // Mañana en Bogotá: solo un día de antelación, siempre insuficiente.
+  const fechaCorta = fechaBogota(new Date(Date.now() + 24 * 60 * 60 * 1000));
 
   await loginAs(page, 'jefe_emisora');
   await page.goto('/emisora/operacion-e3');

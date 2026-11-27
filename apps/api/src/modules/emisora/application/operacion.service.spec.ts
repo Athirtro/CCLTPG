@@ -252,6 +252,68 @@ describe('RF-03.7: resolución PDF', () => {
       ctx.service.createResolucion({ incentivoId: 'incentivo-1', periodo: '2026' }, ACTOR, 'c2'),
     ).rejects.toMatchObject({ code: EMISORA_ERRORS.resolucionYaExistente });
   });
+
+  it('devuelve la respuesta cacheada cuando se repite la misma clave', async () => {
+    const respuesta = {
+      id: 'resolucion-1',
+      incentivoId: 'incentivo-1',
+      archivoId: 'archivo-pdf-1',
+      referenciaCdp: 'CDP-2026-001',
+      emitidaEn: '2026-01-19T12:00:00.000Z',
+      descargaUrl: '/api/v1/files/archivo-pdf-1/download',
+    };
+    const ctx = crearServicio({
+      idempotencia: {
+        reserve: vi.fn().mockResolvedValue({
+          status: 'repetir',
+          responseStatus: 201,
+          responseBody: respuesta,
+        }),
+        complete: vi.fn().mockResolvedValue(undefined),
+        abandon: vi.fn().mockResolvedValue(undefined),
+        purgeExpired: vi.fn().mockResolvedValue(0),
+      },
+    });
+    ctx.repo.findResolucionByIncentivoId.mockResolvedValue({
+      id: 'resolucion-1',
+      incentivoId: 'incentivo-1',
+      pdfArchivoId: 'archivo-pdf-1',
+      referenciaCdp: 'CDP-2026-001',
+      emitidaEn: new Date(),
+      creadoEn: new Date(),
+    });
+
+    await expect(
+      ctx.service.createResolucion({ incentivoId: 'incentivo-1', periodo: '2026' }, ACTOR, 'c1'),
+    ).resolves.toEqual(respuesta);
+    expect(ctx.repo.findIncentivoById).not.toHaveBeenCalled();
+    expect(ctx.exportador.generarResolucion).not.toHaveBeenCalled();
+  });
+
+  it('exige la clave antes de informar de una resolución duplicada', async () => {
+    const ctx = crearServicio();
+    ctx.repo.findResolucionByIncentivoId.mockResolvedValue({
+      id: 'resolucion-1',
+      incentivoId: 'incentivo-1',
+      pdfArchivoId: 'archivo-pdf-1',
+      referenciaCdp: 'CDP-2026-001',
+      emitidaEn: new Date(),
+      creadoEn: new Date(),
+    });
+    await expect(
+      ctx.service.createResolucion({ incentivoId: 'incentivo-1', periodo: '2026' }, ACTOR, null),
+    ).rejects.toMatchObject({ code: EMISORA_ERRORS.idempotencyKeyRequired });
+    expect(ctx.repo.findIncentivoById).not.toHaveBeenCalled();
+  });
+
+  it('rechaza un periodo con mes inexistente', async () => {
+    const ctx = crearServicio();
+    ctx.repo.findIncentivoById.mockResolvedValue(incentivo('resuelto'));
+    await expect(
+      ctx.service.createResolucion({ incentivoId: 'incentivo-1', periodo: '2026-99' }, ACTOR, 'c3'),
+    ).rejects.toMatchObject({ code: EMISORA_ERRORS.validationFailed });
+    expect(ctx.exportador.generarResolucion).not.toHaveBeenCalled();
+  });
 });
 
 describe('RF-04: aprobación de patrocinios', () => {
