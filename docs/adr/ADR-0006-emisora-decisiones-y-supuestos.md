@@ -94,22 +94,23 @@ La tabla siguiente reproduce la matriz del §14 del plan. Todo evento mencionado
 
 E5 cierra los diez supuestos con el valor por defecto ya ejecutado, sin cambiar
 ningún contrato congelado. La "deuda" de `Consecuencias` queda así saldada:
-EM-PA-07 se aplicó en E4 y EM-PA-10 se aplicó en E1 con el valor confirmado en
-`.env.example`; si el negocio o el proveedor cambian esos valores, el cambio se
-registra aquí **antes** de tocar código, contratos o pruebas.
+EM-PA-07 se modeló en E0 (`emisora.parametro_reporte`) y se usó en E4; EM-PA-10
+se fijó con el valor confirmado en `.env.example`. Si el negocio o el proveedor
+cambian esos valores, el cambio se registra aquí **antes** de tocar código,
+contratos o pruebas.
 
 | ID | Valor cerrado | Evidencia verificable | Estado |
 | --- | --- | --- | --- |
-| EM-PA-01 | Política opt-in `emisora-audio` en Archivos; sin bucket propio. `POST /api/v1/files` y `MAX_FILE_BYTES` intactos | `apps/api/src/modules/files/domain/file-policy-emisora.ts`; `shared/integration/file-uploader.port.ts`; `file-type-inspector.spec.ts` | Cerrado en E1, ratificado en E5 |
-| EM-PA-02 | Los perfiles emisora viven en `PROFILE_SEEDS` de identidad; la semilla de emisora solo carga datos de negocio | `apps/api/src/modules/identity/domain/perfiles.ts`; `apps/api/src/database/seeds/identity.seed.ts`; `apps/api/src/database/seeds/emisora.seed.ts` | Cerrado en E0, ratificado en E5 |
-| EM-PA-03 | 13 perfiles de emisora mapeados 1:1 (16 perfiles en total con los 3 generales); sin cambios a permisos preexistentes | `apps/api/src/modules/identity/domain/perfiles.ts`; `perfiles.spec.ts`; `apps/api/test/api/authorization-matrix.spec.ts` | Cerrado en E0, ratificado en E5 |
-| EM-PA-04 | Solo referencias y estados; sin importes calculados, asientos ni ejecución de pagos | DTOs y servicios de `apps/api/src/modules/emisora/` (sin campos de monto); `integration/emisora-report-exporter.ts` | Cerrado en E0/E4, ratificado en E5 |
-| EM-PA-05 | Rejilla no versionada; el año anterior no se consulta en UI y el histórico vive en auditoría | `domain/emisora-rules.ts` (`verificarContraRejilla`); `apps/web/src/extensions/emisora/pages/EmisoraHome.tsx`; `evento_auditoria` | Cerrado en E2, ratificado en E5 |
-| EM-PA-06 | Identidad temporal con `valid_until` y MFA según la política de temporales | `apps/api/src/database/seeds/identity.seed.ts` (identidad de 30 días); `apps/api/src/modules/identity/domain/login-state.ts` | Cerrado en E2, ratificado en E5 |
-| EM-PA-07 | `emisora.parametro_reporte` con `entidad = sayco` y periodicidad mensual por defecto | `apps/api/src/database/migrations/emisora/0003_create_emisora_reporting.ts:105-113` | Cerrado en E4, ratificado en E5 |
-| EM-PA-08 | Se conserva la ruta acordada: migración aditiva `public/0009_emisora_notification_templates.ts` con `down` por `codigo`. La alternativa local sigue registrada y requiere decisión explícita para cambiar | `apps/api/src/database/migrations/public/0009_emisora_notification_templates.ts`; `apps/api/test/integration/migrator.spec.ts` | Cerrado en E1, ratificado en E5 |
-| EM-PA-09 | `America/Bogota`, plazos en días calendario con ambos límites inclusivos, oct/nov sobre `date` | `apps/api/src/modules/emisora/domain/emisora-rules.ts`; `emisora-rules.spec.ts`; `apps/api/test/integration/emisora-transitions.spec.ts` | Cerrado en E0, ratificado en E5 |
-| EM-PA-10 | `EMISORA_MAX_AUDIO_BYTES=26214400` en `.env.example`; MIME `audio/mpeg`, `audio/wav`, `audio/ogg` | `.env.example:29`; `apps/api/src/shared/config/env.ts:78`; `modules/files/domain/file-policy-emisora.ts` | Cerrado en E1, ratificado en E5 |
+| EM-PA-01 | Política opt-in `emisora-audio` en Archivos; sin bucket propio. `POST /api/v1/files` y `MAX_FILE_BYTES` intactos | `apps/api/src/modules/files/domain/file-policy-emisora.ts`; `shared/integration/file-uploader.port.ts`; `file-type-inspector.spec.ts` | Ratificado en E5 |
+| EM-PA-02 | Los perfiles emisora viven en `PROFILE_SEEDS` de identidad; la semilla de emisora solo carga datos de negocio | `apps/api/src/modules/identity/domain/perfiles.ts`; `apps/api/src/database/seeds/identity.seed.ts`; `apps/api/src/database/seeds/emisora.seed.ts` | Ratificado en E5 |
+| EM-PA-03 | 13 perfiles de emisora mapeados 1:1 (16 perfiles en total con los 3 generales); sin cambios a permisos preexistentes | `apps/api/src/modules/identity/domain/perfiles.ts`; `perfiles.spec.ts`; `apps/api/test/api/authorization-matrix.spec.ts` | Ratificado en E5 |
+| EM-PA-04 | Solo referencias y estados; sin importes calculados, asientos ni ejecución de pagos | DTOs y servicios de `apps/api/src/modules/emisora/` (sin campos de monto); `integration/emisora-report-exporter.ts` | Ratificado en E5 |
+| EM-PA-05 | Rejilla no versionada; el año anterior no se consulta en UI y el histórico vive en auditoría | `domain/emisora-rules.ts` (`verificarContraRejilla`); `apps/web/src/extensions/emisora/pages/EmisoraHome.tsx`; `evento_auditoria` | Ratificado en E5 |
+| EM-PA-06 | Identidad temporal con `valid_until` y MFA según la política de temporales | `apps/api/src/database/seeds/identity.seed.ts` (identidad de 30 días); `apps/api/src/modules/identity/domain/login-state.ts` | Ratificado en E5 |
+| EM-PA-07 | Tabla `emisora.parametro_reporte` para reportes de obras; `entidad = sayco` y periodicidad mensual son valores de negocio acordados, enviados **explícitamente** en cada reporte. La base no define `DEFAULT` ni filas sembradas | `apps/api/src/database/migrations/emisora/0003_create_emisora_reporting.ts:105-113`; `CreateReporteObraDto.entidad` (obligatoria, `@IsIn`); `gestion.service.ts` usa `input.entidad` | Ratificado en E5 |
+| EM-PA-08 | Se conserva la ruta acordada: migración aditiva `public/0009_emisora_notification_templates.ts` con `down` por `codigo`. La alternativa local sigue registrada y requiere decisión explícita para cambiar | `apps/api/src/database/migrations/public/0009_emisora_notification_templates.ts`; `apps/api/test/integration/migrator.spec.ts` | Ratificado en E5 |
+| EM-PA-09 | `America/Bogota`, plazos en días calendario con ambos límites inclusivos, oct/nov sobre `date` | `apps/api/src/modules/emisora/domain/emisora-rules.ts`; `emisora-rules.spec.ts`; `apps/api/test/integration/emisora-transitions.spec.ts` | Ratificado en E5 |
+| EM-PA-10 | `EMISORA_MAX_AUDIO_BYTES=26214400` en `.env.example`; MIME `audio/mpeg`, `audio/wav`, `audio/ogg` | `.env.example:29`; `apps/api/src/shared/config/env.ts:78`; `modules/files/domain/file-policy-emisora.ts` | Ratificado en E5 |
 
 **Compuerta de cierre:** la regresión completa de E5 está en verde y la
 trazabilidad RF→código→prueba se publica en `docs/emisora-trazabilidad.md`.

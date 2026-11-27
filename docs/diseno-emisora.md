@@ -728,7 +728,7 @@ El registro normativo de los cierres está en `docs/adr/ADR-0006-emisora-decisio
 | EM-PA-04 | Sin importes ni asientos en viáticos, incentivos ni derechos |
 | EM-PA-05 | Rejilla no versionada; histórico por auditoría, sin consulta de año anterior en UI |
 | EM-PA-06 | Identidad temporal con `valid_until`, MFA según política de temporales |
-| EM-PA-07 | `emisora.parametro_reporte` con entidad por defecto `sayco` y periodicidad mensual |
+| EM-PA-07 | `emisora.parametro_reporte` para reportes de obras; entidad `sayco` y periodicidad mensual acordadas, explícitas en cada reporte (sin `DEFAULT`) |
 | EM-PA-08 | Migración aditiva `public/0009_emisora_notification_templates.ts`; se conserva la alternativa documentada |
 | EM-PA-09 | `America/Bogota`, días calendario inclusivos y ventana oct/nov sobre `date` |
 | EM-PA-10 | `EMISORA_MAX_AUDIO_BYTES=26214400` en `.env.example`; MIME `audio/mpeg`, `audio/wav`, `audio/ogg` |
