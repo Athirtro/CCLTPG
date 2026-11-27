@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 
 import type { FullConfig } from '@playwright/test';
 
-import { E2E_PASSWORD, E2E_TOTP_SECRET, E2E_USERS } from './fixtures.js';
+import { E2E_EMISORA, E2E_PASSWORD, E2E_TOTP_SECRET, E2E_USERS } from './fixtures.js';
 
 /**
  * Prepara un estado determinista para la suite E2E sin destruir los datos del
@@ -83,6 +83,7 @@ async function globalSetup(_config: FullConfig): Promise<void> {
     }
 
     await seedAcademicAndPreferences(client);
+    await seedEmisoraParaE2E(client);
 
     await client.query('COMMIT');
   } catch (error) {
@@ -112,6 +113,103 @@ async function globalSetup(_config: FullConfig): Promise<void> {
 type QueryableClient = {
   query: (sql: string, values?: readonly unknown[]) => Promise<unknown>;
 };
+
+/**
+ * Estado determinista del recorrido E2E de la emisora. La convocatoria y la
+ * rejilla sembradas se reutilizan; solo se limpian las filas que el recorrido
+ * crea y se repone el acta PDF limpia que valida la aprobación de la rejilla.
+ */
+async function seedEmisoraParaE2E(client: QueryableClient): Promise<void> {
+  const { anio, fechaProgramacion, fechaComite, actaArchivoId } = E2E_EMISORA;
+  const jefe = E2E_USERS.find((usuario) => usuario.key === 'jefe_emisora');
+  if (!jefe) throw new Error('Falta la fixture jefe_emisora para preparar la emisora.');
+
+  await client.query(
+    `INSERT INTO emisora.convocatoria
+       (id, anio, fecha_apertura, fecha_cierre, estado, bases_archivo_id)
+     VALUES ('cccccccc-0000-4000-8000-000000000001', $1,
+             DATE '2026-01-15', DATE '2026-02-05', 'abierta', NULL)
+     ON CONFLICT (anio) DO NOTHING`,
+    [anio],
+  );
+  await client.query(
+    `INSERT INTO emisora.rejilla_anual (id, anio, estado)
+     VALUES ('cccccccc-0000-4000-8000-000000000002', $1, 'borrador')
+     ON CONFLICT (anio) DO NOTHING`,
+    [anio],
+  );
+  await client.query(
+    `INSERT INTO emisora.rejilla_anual_item
+       (id, rejilla_anual_id, fecha, dia_semana, hora_inicio, hora_fin, tipo, nombre)
+     SELECT 'cccccccc-0000-4000-8000-00000000000a', r.id, NULL, 1,
+            TIME '06:00', TIME '07:00', 'programa', 'Franja E2E'
+       FROM emisora.rejilla_anual r
+       WHERE r.anio = $1
+         AND NOT EXISTS (
+           SELECT 1 FROM emisora.rejilla_anual_item i WHERE i.rejilla_anual_id = r.id
+         )
+     ON CONFLICT (id) DO NOTHING`,
+    [anio],
+  );
+
+  await client.query(
+    `DELETE FROM emisora.asistencia_cabina WHERE sesion_id IN (
+       SELECT g.id FROM emisora.sesion_grabacion g
+       JOIN emisora.programacion_item pi ON pi.id = g.programacion_item_id
+       JOIN emisora.programacion_diaria p ON p.id = pi.programacion_diaria_id
+       WHERE p.fecha = $1::date
+     )`,
+    [fechaProgramacion],
+  );
+  await client.query(
+    `DELETE FROM emisora.audio WHERE sesion_grabacion_id IN (
+       SELECT g.id FROM emisora.sesion_grabacion g
+       JOIN emisora.programacion_item pi ON pi.id = g.programacion_item_id
+       JOIN emisora.programacion_diaria p ON p.id = pi.programacion_diaria_id
+       WHERE p.fecha = $1::date
+     )`,
+    [fechaProgramacion],
+  );
+  await client.query(
+    `DELETE FROM emisora.sesion_grabacion WHERE programacion_item_id IN (
+       SELECT pi.id FROM emisora.programacion_item pi
+       JOIN emisora.programacion_diaria p ON p.id = pi.programacion_diaria_id
+       WHERE p.fecha = $1::date
+     )`,
+    [fechaProgramacion],
+  );
+  await client.query(
+    `DELETE FROM emisora.programacion_item WHERE programacion_diaria_id IN (
+       SELECT id FROM emisora.programacion_diaria WHERE fecha = $1::date
+     )`,
+    [fechaProgramacion],
+  );
+  await client.query('DELETE FROM emisora.programacion_diaria WHERE fecha = $1::date', [
+    fechaProgramacion,
+  ]);
+  // La rejilla referencia al comité: primero se desvincula y luego se borra.
+  await client.query(
+    `UPDATE emisora.rejilla_anual
+        SET estado = 'borrador', comite_id = NULL, aprobada_en = NULL
+      WHERE anio = $1`,
+    [anio],
+  );
+  await client.query(
+    `DELETE FROM emisora.comite
+      WHERE convocatoria_id = (SELECT id FROM emisora.convocatoria WHERE anio = $1)
+        AND fecha = $2::date`,
+    [anio, fechaComite],
+  );
+
+  await client.query(
+    `INSERT INTO public.archivo
+       (id, nombre_original, mime, tamano, hash_sha256, ruta_objeto, subido_por, estado_escaneo)
+     VALUES ($1, 'acta-comite-e2e.pdf', 'application/pdf', 1024,
+             repeat('b1', 32), 'e2e/acta-comite.pdf', $2, 'limpio')
+     ON CONFLICT (id) DO UPDATE SET estado_escaneo = 'limpio', mime = 'application/pdf'`,
+    [actaArchivoId, jefe.id],
+  );
+}
 
 async function seedAcademicAndPreferences(client: QueryableClient): Promise<void> {
   const estudianteId = 'aaaaaaaa-0000-4000-8000-000000000003';

@@ -458,6 +458,203 @@ export type ReportCatalogResponseDto = {
   items: ReportCatalogItemDto[];
 };
 
+// ===== Tipos emisora R.A.C. (E2) — DTOs reales del contrato =====
+
+export type EmisoraConvocatoriaEstado = 'borrador' | 'abierta' | 'cerrada';
+export type EmisoraRejillaEstado = 'borrador' | 'aprobada';
+export type EmisoraProgramacionEstado = 'borrador' | 'aprobada';
+export type EmisoraGrabacionEstado = 'programada' | 'realizada' | 'aprobada' | 'cancelada';
+export type EmisoraIncentivoEstado = 'calificado' | 'asignado' | 'resuelto' | 'solicitud_cdp';
+export type EmisoraFranjaTipo = 'programa' | 'promo' | 'mencion' | 'espacio';
+export type EmisoraAudioTipo = 'programa' | 'entrevista' | 'promo' | 'cotidiano';
+export type EmisoraAsistenciaEstado = 'presente' | 'ausente' | 'tarde' | 'excusa';
+
+export type CreateEmisoraConvocatoriaDto = {
+  anio: number;
+  fechaApertura: string;
+  basesArchivoId?: string;
+};
+
+export type EmisoraRealizadorDto = {
+  usuarioId?: string;
+  nombres: string;
+  apellidos: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  contacto?: string;
+  municipio?: string;
+  fechaNacimiento?: string;
+  consentimientoAceptado: boolean;
+};
+
+export type CreateEmisoraProyectoDto = {
+  convocatoriaId: string;
+  titulo: string;
+  archivoId: string;
+  fechaRecepcion: string;
+  observaciones?: string;
+  programaId?: string;
+  formadorId?: string;
+  realizador: EmisoraRealizadorDto;
+};
+
+export type NotifyEmisoraRealizadorDto = {
+  contacto?: string;
+  municipio?: string;
+};
+
+export type CreateEmisoraComiteDto = {
+  convocatoriaId: string;
+  fecha: string;
+  actaArchivoId: string;
+  integrantes: string[];
+  conclusiones?: string;
+};
+
+export type EmisoraRejillaTransitionDto = {
+  to: EmisoraRejillaEstado;
+};
+
+export type CreateEmisoraInformeDto = {
+  proyectoId: string;
+  fechaInforme: string;
+  archivoId: string;
+  observaciones?: string;
+};
+
+export type UpdateEmisoraIncentivoDto = {
+  to: EmisoraIncentivoEstado;
+  calificacion?: number;
+  referenciaCdp?: string;
+};
+
+export type EmisoraProgramacionItemDto = {
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  tipo: EmisoraFranjaTipo;
+  programaId?: string;
+  titulo: string;
+};
+
+export type CreateEmisoraProgramacionDto = {
+  rejillaAnualId: string;
+  fecha: string;
+  items: EmisoraProgramacionItemDto[];
+};
+
+export type EmisoraProgramacionTransitionDto = {
+  to: EmisoraProgramacionEstado;
+};
+
+export type CreateEmisoraGrabacionDto = {
+  programacionItemId?: string;
+  fecha: string;
+  responsableId?: string;
+};
+
+export type EmisoraGrabacionTransitionDto = {
+  to: EmisoraGrabacionEstado;
+};
+
+export type EmisoraAsistenciaEntryDto = {
+  usuarioId: string;
+  estado: EmisoraAsistenciaEstado;
+};
+
+export type RegistrarEmisoraAsistenciaDto = {
+  entries: EmisoraAsistenciaEntryDto[];
+};
+
+export type EmisoraConvocatoriaView = {
+  id: string;
+  anio: number;
+  fechaApertura: string;
+  fechaCierre: string;
+  estado: EmisoraConvocatoriaEstado;
+};
+
+export type EmisoraRejillaItemView = {
+  id: string;
+  rejillaAnualId: string;
+  fecha: string | null;
+  diaSemana: number | null;
+  horaInicio: string;
+  horaFin: string;
+  tipo: EmisoraFranjaTipo;
+  programaId: string | null;
+  nombre: string;
+};
+
+export type EmisoraRejillaView = {
+  id: string;
+  anio: number;
+  estado: EmisoraRejillaEstado;
+  aprobadaEn: string | null;
+  items: EmisoraRejillaItemView[];
+};
+
+export type EmisoraProgramacionItemView = {
+  id: string;
+  programacionDiariaId: string;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  tipo: EmisoraFranjaTipo;
+  programaId: string | null;
+  titulo: string;
+};
+
+export type EmisoraProgramacionView = {
+  id: string;
+  rejillaAnualId: string;
+  fecha: string;
+  estado: EmisoraProgramacionEstado;
+  concuerda: boolean | null;
+  desviaciones: string[];
+  items: EmisoraProgramacionItemView[];
+};
+
+export type EmisoraGrabacionView = {
+  id: string;
+  programacionItemId: string | null;
+  fecha: string;
+  estado: EmisoraGrabacionEstado;
+  responsableId: string | null;
+};
+
+export type EmisoraAsistenciaView = {
+  sesionId: string;
+  usuarioId: string;
+  estado: EmisoraAsistenciaEstado;
+  registradoEn: string;
+};
+
+export type EmisoraAudioView = {
+  id: string;
+  sesionGrabacionId: string;
+  tipo: EmisoraAudioTipo;
+  duracionSegundos: number;
+  fecha: string;
+  archivoId: string;
+  hashSha256: string | null;
+  archivo: {
+    nombreOriginal: string;
+    mime: string;
+    tamano: number;
+    estadoEscaneo: string;
+  };
+};
+
+export type EmisoraIncentivoView = {
+  id: string;
+  informeId: string;
+  realizadorId: string;
+  estado: EmisoraIncentivoEstado;
+  calificacion: number | null;
+  referenciaCdp: string | null;
+};
+
 // ===== Tipos health y error =====
 
 export type ReadinessReport = {
@@ -1615,6 +1812,465 @@ export type Paths = {
           };
         };
         404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  // --- Emisora R.A.C. (E2) ---
+  '/emisora/convocatorias': {
+    post: {
+      requestBody: {
+        content: {
+          'application/json': CreateEmisoraConvocatoriaDto;
+        };
+      };
+      responses: {
+        201: {
+          content: {
+            'application/json': EmisoraConvocatoriaView;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+    get: {
+      responses: {
+        200: {
+          content: {
+            'application/json': EmisoraConvocatoriaView[];
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/emisora/proyectos': {
+    post: {
+      requestBody: {
+        content: {
+          'application/json': CreateEmisoraProyectoDto;
+        };
+      };
+      responses: {
+        201: {
+          content: {
+            'application/json': { id: string; titulo: string; estado: string };
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/emisora/realizadores/{id}': {
+    patch: {
+      parameters: {
+        path: { id: string };
+      };
+      requestBody: {
+        content: {
+          'application/json': NotifyEmisoraRealizadorDto;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': { id: string; municipio: string | null };
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/emisora/comites': {
+    post: {
+      requestBody: {
+        content: {
+          'application/json': CreateEmisoraComiteDto;
+        };
+      };
+      responses: {
+        201: {
+          content: {
+            'application/json': { id: string; convocatoriaId: string };
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/emisora/rejilla-anual': {
+    get: {
+      parameters: {
+        query: { anio: number };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': EmisoraRejillaView | null;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/emisora/rejilla-anual/{id}/transitions': {
+    patch: {
+      parameters: {
+        path: { id: string };
+      };
+      requestBody: {
+        content: {
+          'application/json': EmisoraRejillaTransitionDto;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': EmisoraRejillaView;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/emisora/informes': {
+    post: {
+      requestBody: {
+        content: {
+          'application/json': CreateEmisoraInformeDto;
+        };
+      };
+      responses: {
+        201: {
+          content: {
+            'application/json': { id: string; proyectoId: string; estado: string };
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/emisora/incentivos': {
+    get: {
+      responses: {
+        200: {
+          content: {
+            'application/json': EmisoraIncentivoView[];
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/emisora/incentivos/{id}': {
+    patch: {
+      parameters: {
+        path: { id: string };
+      };
+      requestBody: {
+        content: {
+          'application/json': UpdateEmisoraIncentivoDto;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': EmisoraIncentivoView;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/emisora/programacion-diaria': {
+    post: {
+      requestBody: {
+        content: {
+          'application/json': CreateEmisoraProgramacionDto;
+        };
+      };
+      responses: {
+        201: {
+          content: {
+            'application/json': EmisoraProgramacionView;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+    get: {
+      parameters: {
+        query: { fecha: string };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': EmisoraProgramacionView | null;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/emisora/programacion-diaria/{id}/transitions': {
+    post: {
+      parameters: {
+        path: { id: string };
+      };
+      requestBody: {
+        content: {
+          'application/json': EmisoraProgramacionTransitionDto;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': EmisoraProgramacionView;
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/emisora/grabaciones': {
+    post: {
+      requestBody: {
+        content: {
+          'application/json': CreateEmisoraGrabacionDto;
+        };
+      };
+      responses: {
+        201: {
+          content: {
+            'application/json': EmisoraGrabacionView;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+    get: {
+      responses: {
+        200: {
+          content: {
+            'application/json': EmisoraGrabacionView[];
+          };
+        };
+        403: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/emisora/grabaciones/{id}/asistencia-cabina': {
+    put: {
+      parameters: {
+        path: { id: string };
+      };
+      requestBody: {
+        content: {
+          'application/json': RegistrarEmisoraAsistenciaDto;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': EmisoraAsistenciaView[];
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/emisora/grabaciones/{id}/transitions': {
+    post: {
+      parameters: {
+        path: { id: string };
+      };
+      requestBody: {
+        content: {
+          'application/json': EmisoraGrabacionTransitionDto;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': EmisoraGrabacionView;
+          };
+        };
+        404: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+  };
+  '/emisora/audios': {
+    post: {
+      requestBody: {
+        content: {
+          'multipart/form-data': FormData;
+        };
+      };
+      responses: {
+        201: {
+          content: {
+            'application/json': EmisoraAudioView;
+          };
+        };
+        400: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        413: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+        409: {
+          content: {
+            'application/json': ProblemDetailsDto;
+          };
+        };
+      };
+    };
+    get: {
+      parameters: {
+        query: { sesionId?: string };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': EmisoraAudioView[];
+          };
+        };
+        400: {
           content: {
             'application/json': ProblemDetailsDto;
           };

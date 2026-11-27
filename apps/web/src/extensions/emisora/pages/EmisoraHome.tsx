@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Alert, Avatar, Box, Typography } from '@mui/material';
+import { Alert, Avatar, Box, Button, Typography } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Campaign as CampaignIcon,
   Folder as FolderIcon,
@@ -115,7 +116,7 @@ export default function EmisoraHome() {
     <Box>
       <PageHeader
         title="Emisora R.A.C."
-        description="Espacio de la Emisora Cultural. Esta primera fase presenta las agrupaciones funcionales; las pantallas de gestión se incorporarán en fases posteriores."
+        description="Espacio de la Emisora Cultural. El recorrido de programación, grabación y rejilla ya está disponible; las demás agrupaciones se incorporarán en fases posteriores."
         icon={<RadioIcon />}
         breadcrumbs={[{ label: 'Inicio', to: '/' }, { label: 'Emisora R.A.C.' }]}
       />
@@ -184,14 +185,19 @@ export default function EmisoraHome() {
 
       <SectionCard
         title="Estado de la extensión"
-        subtitle="Fase E1 — esqueleto de la emisora R.A.C."
+        subtitle="Fase E2 — operación de la emisora R.A.C."
         sx={{ mt: 3 }}
       >
         {tienePermisoEmisora ? (
-          <Typography variant="body2" color="text.secondary">
-            Las operaciones de negocio se habilitarán en las siguientes fases. Cada acción seguirá
-            validando sus permisos en la API.
-          </Typography>
+          <Box>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              El recorrido E2 permite registrar el comité, aprobar la rejilla, crear la programación
+              diaria y archivar audios. Cada acción valida sus permisos en la API.
+            </Typography>
+            <Button component={RouterLink} to="/emisora/operacion" variant="contained">
+              Abrir operación E2
+            </Button>
+          </Box>
         ) : (
           <Alert severity="info">
             No tienes permisos de emisora ({PERMISO_EMISORA}). Esta página solo muestra información

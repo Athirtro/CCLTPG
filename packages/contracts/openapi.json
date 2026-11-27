@@ -2216,51 +2216,196 @@
         "x-scope": "own"
       }
     },
-    "/analytics/kpis": {
-      "get": {
-        "description": "Seis KPIs con fórmula documentada. El ámbito del educador se aplica en servidor; las respuestas contienen solo agregados y las celdas derivadas de PII con menos de 5 casos se suprimen.",
-        "operationId": "getKpis",
+    "/emisora/convocatorias": {
+      "post": {
+        "description": "RF-03.1: apertura en enero y cierre derivado 21 días después.",
+        "operationId": "createEmisoraConvocatoria",
         "parameters": [
           {
-            "name": "periodo",
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
             "required": true,
-            "in": "query",
-            "schema": { "example": "2026-1", "type": "string" }
-          },
-          {
-            "name": "programaId",
-            "required": false,
-            "in": "query",
-            "schema": { "format": "uuid", "nullable": true, "type": "string" }
-          },
-          {
-            "name": "grupoId",
-            "required": false,
-            "in": "query",
-            "schema": { "format": "uuid", "nullable": true, "type": "string" }
-          },
-          {
-            "name": "kpi",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "matricula_activa",
-                "asistencia",
-                "evaluacion",
-                "programas",
-                "desercion",
-                "distribucion_geografica"
-              ],
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateConvocatoriaDto" }
+            }
+          }
+        },
         "responses": {
-          "200": {
+          "201": { "description": "Convocatoria abierta." },
+          "400": {
             "description": "",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/KpisResponseDto" } }
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Abrir la convocatoria anual",
+        "tags": ["emisora — convocatorias"],
+        "x-access": "permission",
+        "x-audit-event": "convocatoria.abierta",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "CONVOCATORIA_DUPLICADA",
+          "CONVOCATORIA_CERRADA",
+          "REJILLA_SIN_ACTA",
+          "INFORME_FUERA_VENTANA"
+        ],
+        "x-permission": ["emisora:convocatoria:create"],
+        "x-scope": "global"
+      },
+      "get": {
+        "operationId": "listEmisoraConvocatorias",
+        "parameters": [],
+        "responses": {
+          "200": { "description": "Convocatorias ordenadas por año descendente." },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Listar convocatorias de la emisora",
+        "tags": ["emisora — convocatorias"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Listado de solo lectura sobre datos no sensibles.",
+        "x-error-codes": ["PERMISSION_DENIED"],
+        "x-permission": ["emisora:convocatoria:read"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/proyectos": {
+      "post": {
+        "description": "RF-03.2: PII del realizador cifrada y formato oficial adjunto.",
+        "operationId": "createEmisoraProyecto",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateProyectoDto" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Proyecto recibido." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Recibir un proyecto en convocatoria abierta",
+        "tags": ["emisora — proyectos"],
+        "x-access": "permission",
+        "x-audit-event": "proyecto.recibido",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "CONVOCATORIA_DUPLICADA",
+          "CONVOCATORIA_CERRADA",
+          "REJILLA_SIN_ACTA",
+          "INFORME_FUERA_VENTANA"
+        ],
+        "x-permission": ["emisora:proyecto:create"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/realizadores/{id}": {
+      "patch": {
+        "description": "RF-03.4: ámbito own; un realizador ajeno responde 404.",
+        "operationId": "notifyEmisoraRealizador",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/NotifyRealizadorDto" } }
+          }
+        },
+        "responses": {
+          "200": { "description": "Datos de contacto actualizados." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
             }
           },
           "401": {
@@ -2283,20 +2428,889 @@
           }
         },
         "security": [{ "bearerAuth": [] }],
-        "summary": "Consultar KPIs académicos",
-        "tags": ["analítica"],
+        "summary": "Notificar al realizador sobre el estado de su proyecto",
+        "tags": ["emisora — realizadores"],
         "x-access": "permission",
-        "x-audit-event": "-",
-        "x-audit-exempt": "Agregados de solo lectura; sin PII individual ni mutación de estado.",
+        "x-audit-event": "realizador.notificado",
+        "x-error-codes": ["PERMISSION_DENIED", "RESOURCE_NOT_FOUND", "VALIDATION_FAILED"],
+        "x-permission": ["emisora:realizador:update_own"],
+        "x-scope": "own"
+      }
+    },
+    "/emisora/comites": {
+      "post": {
+        "description": "RF-03.3: el acta es requisito para aprobar la rejilla.",
+        "operationId": "createEmisoraComite",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateComiteDto" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Comité registrado." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Registrar el acta del comité de programación",
+        "tags": ["emisora — comité"],
+        "x-access": "permission",
+        "x-audit-event": "comite.registrado",
         "x-error-codes": [
           "PERMISSION_DENIED",
           "RESOURCE_NOT_FOUND",
           "VALIDATION_FAILED",
-          "INVALID_PERIOD",
-          "KPI_NOT_FOUND"
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "CONVOCATORIA_DUPLICADA",
+          "CONVOCATORIA_CERRADA",
+          "REJILLA_SIN_ACTA",
+          "INFORME_FUERA_VENTANA"
         ],
-        "x-permission": ["analytics:kpi:read"],
-        "x-scope": "mixed"
+        "x-permission": ["emisora:comite:create"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/rejilla-anual": {
+      "get": {
+        "operationId": "getEmisoraRejillaAnual",
+        "parameters": [
+          {
+            "name": "anio",
+            "required": true,
+            "in": "query",
+            "description": "Año de la rejilla.",
+            "schema": { "example": 2026, "type": "number" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Rejilla y sus franjas." },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Consultar la rejilla anual",
+        "tags": ["emisora — rejilla anual"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Consulta de solo lectura sobre datos no sensibles.",
+        "x-error-codes": ["PERMISSION_DENIED", "VALIDATION_FAILED"],
+        "x-permission": ["emisora:rejilla:read"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/rejilla-anual/{id}/transitions": {
+      "patch": {
+        "description": "RF-03.3: exige acta de comité adjunta.",
+        "operationId": "transitionEmisoraRejilla",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RejillaTransitionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Rejilla aprobada." },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Aprobar la rejilla anual",
+        "tags": ["emisora — rejilla anual"],
+        "x-access": "permission",
+        "x-audit-event": "rejilla.aprobada",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "CONVOCATORIA_DUPLICADA",
+          "CONVOCATORIA_CERRADA",
+          "REJILLA_SIN_ACTA",
+          "INFORME_FUERA_VENTANA"
+        ],
+        "x-permission": ["emisora:rejilla:update"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/informes": {
+      "post": {
+        "description": "RF-03.5: solo en octubre o noviembre; crea el incentivo asociado.",
+        "operationId": "createEmisoraInforme",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateInformeDto" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Informe recibido." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Recibir el informe del realizador",
+        "tags": ["emisora — informes"],
+        "x-access": "permission",
+        "x-audit-event": "informe.recibido",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "CONVOCATORIA_DUPLICADA",
+          "CONVOCATORIA_CERRADA",
+          "REJILLA_SIN_ACTA",
+          "INFORME_FUERA_VENTANA"
+        ],
+        "x-permission": ["emisora:informe:create"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/incentivos": {
+      "get": {
+        "operationId": "listEmisoraIncentivos",
+        "parameters": [],
+        "responses": {
+          "200": { "description": "Incentivos con su estado y calificación." },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Listar incentivos",
+        "tags": ["emisora — incentivos"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Listado de solo lectura sobre datos no sensibles.",
+        "x-error-codes": ["PERMISSION_DENIED"],
+        "x-permission": ["emisora:incentivo:read"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/incentivos/{id}": {
+      "patch": {
+        "description": "RF-03.6: calificado → asignado → resuelto | solicitud_cdp.",
+        "operationId": "updateEmisoraIncentivo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateIncentivoDto" } }
+          }
+        },
+        "responses": {
+          "200": { "description": "Incentivo actualizado." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Calificar o resolver un incentivo",
+        "tags": ["emisora — incentivos"],
+        "x-access": "permission",
+        "x-audit-event": "incentivo.asignado",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "CONVOCATORIA_DUPLICADA",
+          "CONVOCATORIA_CERRADA",
+          "REJILLA_SIN_ACTA",
+          "INFORME_FUERA_VENTANA"
+        ],
+        "x-permission": ["emisora:incentivo:update"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/programacion-diaria": {
+      "post": {
+        "description": "RF-01.1…01.3: las desviaciones se registran sin alterar la rejilla.",
+        "operationId": "createEmisoraProgramacion",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateProgramacionDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Programación creada en borrador." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Crear la programación diaria y verificarla contra la rejilla",
+        "tags": ["emisora — programación diaria"],
+        "x-access": "permission",
+        "x-audit-event": "programacion.creada",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "SCHEDULE_OVERLAP"
+        ],
+        "x-permission": ["emisora:programacion:create"],
+        "x-scope": "global"
+      },
+      "get": {
+        "operationId": "getEmisoraProgramacion",
+        "parameters": [
+          {
+            "name": "fecha",
+            "required": true,
+            "in": "query",
+            "schema": { "example": "2026-01-19", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Programación con franjas y desviaciones." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Consultar la programación de una fecha",
+        "tags": ["emisora — programación diaria"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Consulta de solo lectura sobre datos no sensibles.",
+        "x-error-codes": ["PERMISSION_DENIED", "VALIDATION_FAILED"],
+        "x-permission": ["emisora:programacion:read"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/programacion-diaria/{id}/transitions": {
+      "post": {
+        "operationId": "transitionEmisoraProgramacion",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProgramacionTransitionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Programación aprobada." },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Aprobar la programación diaria",
+        "tags": ["emisora — programación diaria"],
+        "x-access": "permission",
+        "x-audit-event": "programacion.aprobada",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "SCHEDULE_OVERLAP"
+        ],
+        "x-permission": ["emisora:programacion:update"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/grabaciones": {
+      "post": {
+        "description": "RF-02.1: puede vincularse a una franja de programación.",
+        "operationId": "createEmisoraGrabacion",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateGrabacionDto" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Grabación programada." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Agendar una sesión de grabación",
+        "tags": ["emisora — grabaciones"],
+        "x-access": "permission",
+        "x-audit-event": "grabacion.programada",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "SCHEDULE_OVERLAP"
+        ],
+        "x-permission": ["emisora:grabacion:create"],
+        "x-scope": "global"
+      },
+      "get": {
+        "operationId": "listEmisoraGrabaciones",
+        "parameters": [],
+        "responses": {
+          "200": { "description": "Sesiones de grabación registradas." },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Listar grabaciones",
+        "tags": ["emisora — grabaciones"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Listado de solo lectura sobre datos no sensibles.",
+        "x-error-codes": ["PERMISSION_DENIED"],
+        "x-permission": ["emisora:grabacion:read"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/grabaciones/{id}/asistencia-cabina": {
+      "put": {
+        "description": "RF-02.2: reemplaza la lista anterior en la misma transacción.",
+        "operationId": "registrarEmisoraAsistencia",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegistrarAsistenciaDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Asistencia registrada." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Registrar la asistencia a cabina de una sesión",
+        "tags": ["emisora — grabaciones"],
+        "x-access": "permission",
+        "x-audit-event": "asistencia.registrada",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "SCHEDULE_OVERLAP"
+        ],
+        "x-permission": ["emisora:asistencia-cabina:create"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/grabaciones/{id}/transitions": {
+      "post": {
+        "operationId": "transitionEmisoraGrabacion",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GrabacionTransitionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Grabación actualizada." },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Transitionar el estado de la grabación",
+        "tags": ["emisora — grabaciones"],
+        "x-access": "permission",
+        "x-audit-event": "grabacion.aprobada",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "SCHEDULE_OVERLAP"
+        ],
+        "x-permission": ["emisora:grabacion:update"],
+        "x-scope": "global"
+      }
+    },
+    "/emisora/audios": {
+      "post": {
+        "description": "RF-02.4: usa la política opt-in `emisora-audio`; el límite histórico de `/files` no cambia.",
+        "operationId": "uploadEmisoraAudio",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única por usuario y operación; TTL 24 h.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["sesionGrabacionId", "tipo", "duracionSegundos", "fecha", "file"],
+                "properties": {
+                  "sesionGrabacionId": { "type": "string", "format": "uuid" },
+                  "tipo": {
+                    "type": "string",
+                    "enum": ["programa", "entrevista", "promo", "cotidiano"]
+                  },
+                  "duracionSegundos": { "type": "integer", "minimum": 1 },
+                  "fecha": { "type": "string", "format": "date" },
+                  "file": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Audio archivado con sus metadatos." },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "413": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "415": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Archivar un audio de grabación",
+        "tags": ["emisora — audios"],
+        "x-access": "permission",
+        "x-audit-event": "audio.archivado",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_STATE_TRANSITION",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "SCHEDULE_OVERLAP",
+          "FILE_EMPTY",
+          "FILE_TOO_LARGE",
+          "FILE_MIME_NOT_ALLOWED",
+          "FILE_MIME_MISMATCH",
+          "FILE_STORAGE_UNAVAILABLE"
+        ],
+        "x-permission": ["emisora:audio:create"],
+        "x-scope": "global"
+      },
+      "get": {
+        "operationId": "listEmisoraAudios",
+        "parameters": [
+          {
+            "name": "sesionId",
+            "required": false,
+            "in": "query",
+            "description": "Filtra por sesión de grabación.",
+            "schema": { "format": "uuid", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Audios con metadatos del archivo." },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Listar audios archivados",
+        "tags": ["emisora — audios"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Listado de solo lectura sobre metadatos no sensibles.",
+        "x-error-codes": ["PERMISSION_DENIED", "VALIDATION_FAILED"],
+        "x-permission": ["emisora:audio:read"],
+        "x-scope": "global"
       }
     },
     "/files": {
@@ -2417,6 +3431,89 @@
         "x-audit-event": "archivo.descargado",
         "x-error-codes": ["RESOURCE_NOT_FOUND", "PERMISSION_DENIED", "FILE_STORAGE_UNAVAILABLE"],
         "x-permission": ["files:document:read", "files:document:read_own"],
+        "x-scope": "mixed"
+      }
+    },
+    "/analytics/kpis": {
+      "get": {
+        "description": "Seis KPIs con fórmula documentada. El ámbito del educador se aplica en servidor; las respuestas contienen solo agregados y las celdas derivadas de PII con menos de 5 casos se suprimen.",
+        "operationId": "getKpis",
+        "parameters": [
+          {
+            "name": "periodo",
+            "required": true,
+            "in": "query",
+            "schema": { "example": "2026-1", "type": "string" }
+          },
+          {
+            "name": "programaId",
+            "required": false,
+            "in": "query",
+            "schema": { "format": "uuid", "nullable": true, "type": "string" }
+          },
+          {
+            "name": "grupoId",
+            "required": false,
+            "in": "query",
+            "schema": { "format": "uuid", "nullable": true, "type": "string" }
+          },
+          {
+            "name": "kpi",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "matricula_activa",
+                "asistencia",
+                "evaluacion",
+                "programas",
+                "desercion",
+                "distribucion_geografica"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/KpisResponseDto" } }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProblemDetailsDto" } }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Consultar KPIs académicos",
+        "tags": ["analítica"],
+        "x-access": "permission",
+        "x-audit-event": "-",
+        "x-audit-exempt": "Agregados de solo lectura; sin PII individual ni mutación de estado.",
+        "x-error-codes": [
+          "PERMISSION_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "INVALID_PERIOD",
+          "KPI_NOT_FOUND"
+        ],
+        "x-permission": ["analytics:kpi:read"],
         "x-scope": "mixed"
       }
     },
@@ -3655,6 +4752,251 @@
           "programaNombre"
         ]
       },
+      "CreateConvocatoriaDto": {
+        "type": "object",
+        "properties": {
+          "anio": {
+            "type": "number",
+            "description": "Año de la convocatoria (4 dígitos).",
+            "example": 2026
+          },
+          "fechaApertura": {
+            "type": "string",
+            "description": "Fecha de apertura en enero (YYYY-MM-DD).",
+            "example": "2026-01-15"
+          },
+          "basesArchivoId": {
+            "type": "string",
+            "description": "PDF de las bases, ya cargado en Archivos."
+          }
+        },
+        "required": ["anio", "fechaApertura"]
+      },
+      "RealizadorDto": {
+        "type": "object",
+        "properties": {
+          "usuarioId": {
+            "type": "string",
+            "description": "Usuario de identidad, si el realizador tiene cuenta."
+          },
+          "nombres": { "type": "string", "example": "Ana" },
+          "apellidos": { "type": "string", "example": "Pérez" },
+          "tipoDocumento": { "type": "string", "example": "CC" },
+          "numeroDocumento": { "type": "string", "example": "123456789" },
+          "contacto": {
+            "type": "string",
+            "description": "Dato sensible; se cifra antes de persistir."
+          },
+          "municipio": { "type": "string" },
+          "fechaNacimiento": { "type": "string", "example": "1990-05-20" },
+          "consentimientoAceptado": {
+            "type": "boolean",
+            "description": "Consentimiento expreso de tratamiento de datos."
+          }
+        },
+        "required": [
+          "nombres",
+          "apellidos",
+          "tipoDocumento",
+          "numeroDocumento",
+          "consentimientoAceptado"
+        ]
+      },
+      "CreateProyectoDto": {
+        "type": "object",
+        "properties": {
+          "convocatoriaId": { "type": "string", "format": "uuid" },
+          "titulo": { "type": "string", "example": "Radio comunitaria y memoria local" },
+          "archivoId": {
+            "type": "string",
+            "description": "PDF del formato oficial, ya cargado en Archivos.",
+            "format": "uuid"
+          },
+          "fechaRecepcion": { "type": "string", "example": "2026-01-20" },
+          "observaciones": { "type": "string" },
+          "programaId": {
+            "type": "string",
+            "description": "Programa formativo de la propuesta.",
+            "format": "uuid"
+          },
+          "formadorId": {
+            "type": "string",
+            "description": "Formador asociado al programa.",
+            "format": "uuid"
+          },
+          "realizador": { "$ref": "#/components/schemas/RealizadorDto" }
+        },
+        "required": ["convocatoriaId", "titulo", "archivoId", "fechaRecepcion", "realizador"]
+      },
+      "NotifyRealizadorDto": {
+        "type": "object",
+        "properties": {
+          "contacto": {
+            "type": "string",
+            "description": "Dato sensible; se cifra antes de persistir."
+          },
+          "municipio": { "type": "string" }
+        }
+      },
+      "CreateComiteDto": {
+        "type": "object",
+        "properties": {
+          "convocatoriaId": { "type": "string", "format": "uuid" },
+          "fecha": { "type": "string", "example": "2026-02-10" },
+          "actaArchivoId": {
+            "type": "string",
+            "description": "PDF del acta, ya cargado en Archivos.",
+            "format": "uuid"
+          },
+          "integrantes": {
+            "description": "Identificadores de los integrantes.",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "conclusiones": { "type": "string" }
+        },
+        "required": ["convocatoriaId", "fecha", "actaArchivoId", "integrantes"]
+      },
+      "RejillaTransitionDto": {
+        "type": "object",
+        "properties": { "to": { "type": "string", "enum": ["borrador", "aprobada"] } },
+        "required": ["to"]
+      },
+      "CreateInformeDto": {
+        "type": "object",
+        "properties": {
+          "proyectoId": { "type": "string", "format": "uuid" },
+          "fechaInforme": {
+            "type": "string",
+            "description": "Fecha en octubre o noviembre.",
+            "example": "2026-10-15"
+          },
+          "archivoId": {
+            "type": "string",
+            "description": "PDF del informe, ya cargado en Archivos.",
+            "format": "uuid"
+          },
+          "observaciones": { "type": "string" }
+        },
+        "required": ["proyectoId", "fechaInforme", "archivoId"]
+      },
+      "UpdateIncentivoDto": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string",
+            "enum": ["calificado", "asignado", "resuelto", "solicitud_cdp"]
+          },
+          "calificacion": {
+            "type": "number",
+            "description": "Calificación 0…100.",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "referenciaCdp": {
+            "type": "string",
+            "description": "Referencia de CDP exigida al resolver."
+          }
+        },
+        "required": ["to"]
+      },
+      "ProgramacionItemDto": {
+        "type": "object",
+        "properties": {
+          "fecha": { "type": "string", "example": "2026-01-19" },
+          "horaInicio": { "type": "string", "example": "06:00" },
+          "horaFin": { "type": "string", "example": "07:00" },
+          "tipo": { "type": "string", "enum": ["programa", "promo", "mencion", "espacio"] },
+          "programaId": {
+            "type": "string",
+            "description": "Programa de formación asociado.",
+            "format": "uuid"
+          },
+          "titulo": { "type": "string", "example": "Voces de la semana" }
+        },
+        "required": ["fecha", "horaInicio", "horaFin", "tipo", "titulo"]
+      },
+      "CreateProgramacionDto": {
+        "type": "object",
+        "properties": {
+          "rejillaAnualId": { "type": "string", "format": "uuid" },
+          "fecha": { "type": "string", "example": "2026-01-19" },
+          "items": {
+            "description": "Franjas del día.",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProgramacionItemDto" }
+          }
+        },
+        "required": ["rejillaAnualId", "fecha", "items"]
+      },
+      "ProgramacionTransitionDto": {
+        "type": "object",
+        "properties": { "to": { "type": "string", "enum": ["borrador", "aprobada"] } },
+        "required": ["to"]
+      },
+      "CreateGrabacionDto": {
+        "type": "object",
+        "properties": {
+          "programacionItemId": {
+            "type": "string",
+            "description": "Franja de programación asociada.",
+            "format": "uuid"
+          },
+          "fecha": { "type": "string", "example": "2026-01-19" },
+          "responsableId": {
+            "type": "string",
+            "description": "Responsable de la sesión.",
+            "format": "uuid"
+          }
+        },
+        "required": ["fecha"]
+      },
+      "AsistenciaEntryDto": {
+        "type": "object",
+        "properties": {
+          "usuarioId": { "type": "string", "format": "uuid" },
+          "estado": { "type": "string", "enum": ["presente", "ausente", "tarde", "excusa"] }
+        },
+        "required": ["usuarioId", "estado"]
+      },
+      "RegistrarAsistenciaDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AsistenciaEntryDto" }
+          }
+        },
+        "required": ["entries"]
+      },
+      "GrabacionTransitionDto": {
+        "type": "object",
+        "properties": {
+          "to": { "type": "string", "enum": ["programada", "realizada", "aprobada", "cancelada"] }
+        },
+        "required": ["to"]
+      },
+      "FileResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "nombreOriginal": { "type": "string" },
+          "mime": { "type": "string" },
+          "tamano": { "type": "number" },
+          "hashSha256": { "type": "string", "description": "SHA-256 del contenido." },
+          "estadoEscaneo": { "type": "string", "enum": ["pendiente", "limpio", "infectado"] },
+          "creadoEn": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "id",
+          "nombreOriginal",
+          "mime",
+          "tamano",
+          "hashSha256",
+          "estadoEscaneo",
+          "creadoEn"
+        ]
+      },
       "KpiBreakdownItemDto": {
         "type": "object",
         "properties": { "clave": { "type": "string" }, "total": { "type": "number" } },
@@ -3691,27 +5033,6 @@
           "kpis": { "type": "array", "items": { "$ref": "#/components/schemas/KpiResultDto" } }
         },
         "required": ["kpis"]
-      },
-      "FileResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "nombreOriginal": { "type": "string" },
-          "mime": { "type": "string" },
-          "tamano": { "type": "number" },
-          "hashSha256": { "type": "string", "description": "SHA-256 del contenido." },
-          "estadoEscaneo": { "type": "string", "enum": ["pendiente", "limpio", "infectado"] },
-          "creadoEn": { "type": "string", "format": "date-time" }
-        },
-        "required": [
-          "id",
-          "nombreOriginal",
-          "mime",
-          "tamano",
-          "hashSha256",
-          "estadoEscaneo",
-          "creadoEn"
-        ]
       },
       "NotificationResponseDto": {
         "type": "object",

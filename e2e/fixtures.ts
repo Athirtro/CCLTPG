@@ -108,6 +108,14 @@ export const E2E_USERS: readonly E2eUserFixture[] = [
   },
 ];
 
+/** Datos deterministas del recorrido E2E de la emisora (RF-01…RF-03). */
+export const E2E_EMISORA = {
+  anio: 2026,
+  fechaProgramacion: '2026-01-19',
+  fechaComite: '2026-02-10',
+  actaArchivoId: 'cccccccc-0000-4000-8000-000000000009',
+} as const;
+
 export const userByKey = (key: E2eUserKey): E2eUserFixture => {
   const found = E2E_USERS.find((user) => user.key === key);
   if (!found) throw new Error(`Fixture E2E desconocida: ${key}`);

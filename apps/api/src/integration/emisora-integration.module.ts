@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { AcademicModule } from '../modules/academic/academic.module.js';
+import { FilesModule } from '../modules/files/files.module.js';
 import { IdentityModule } from '../modules/identity/identity.module.js';
 /**
  * Puente de composición del contexto Emisora R.A.C. (ADR-0005, decisión 3).
@@ -14,7 +15,7 @@ import { IdentityModule } from '../modules/identity/identity.module.js';
  * No registra controladores ni casos de uso nuevos.
  */
 @Module({
-  imports: [IdentityModule, AcademicModule],
-  exports: [IdentityModule, AcademicModule],
+  imports: [IdentityModule, AcademicModule, FilesModule],
+  exports: [IdentityModule, AcademicModule, FilesModule],
 })
 export class EmisoraIntegrationModule {}

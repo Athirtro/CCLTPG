@@ -1,8 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import axe from 'axe-core';
+import { apiClient } from '../../api/client';
 import { theme } from '../../theme/theme';
 import { AuthProvider, type User } from '../../contexts/AuthContext';
 import EmisoraRoutes from './routes';
@@ -87,6 +88,23 @@ async function checkAccessibility(container: HTMLElement, etiqueta: string) {
   }
 }
 
+const usuarioOperador: User = {
+  ...usuarioConPermiso,
+  permissions: [
+    'emisora:programacion:read',
+    'emisora:programacion:create',
+    'emisora:programacion:update',
+    'emisora:rejilla:read',
+    'emisora:rejilla:update',
+    'emisora:comite:create',
+    'emisora:grabacion:read',
+    'emisora:grabacion:create',
+    'emisora:asistencia-cabina:create',
+    'emisora:audio:read',
+    'emisora:audio:create',
+  ],
+};
+
 describe('Extensión Emisora R.A.C.', () => {
   beforeEach(() => {
     cleanup();
@@ -94,6 +112,7 @@ describe('Extensión Emisora R.A.C.', () => {
 
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
   });
 
   it('la landing renderiza un único h1 y las agrupaciones funcionales', () => {
@@ -132,5 +151,44 @@ describe('Extensión Emisora R.A.C.', () => {
   it('la landing sin permisos no tiene violaciones de accesibilidad', async () => {
     const { container } = renderEmisora('/emisora', usuarioSinPermiso);
     await checkAccessibility(container, 'EmisoraHome sin permisos');
+  });
+
+  it('la ruta operativa muestra el recorrido E2 con los datos del contrato', async () => {
+    vi.spyOn(apiClient, 'GET').mockImplementation(((path: string) => {
+      const data =
+        path === '/emisora/convocatorias'
+          ? [
+              {
+                id: 'convocatoria-e2e',
+                anio: 2026,
+                fechaApertura: '2026-01-15',
+                fechaCierre: '2026-02-05',
+                estado: 'abierta',
+              },
+            ]
+          : path === '/emisora/rejilla-anual'
+            ? { id: 'rejilla-e2e', anio: 2026, estado: 'borrador', aprobadaEn: null, items: [] }
+            : path === '/emisora/programacion-diaria'
+              ? null
+              : [];
+      return Promise.resolve({ data, error: undefined, response: { status: 200 } });
+    }) as never);
+
+    const { container } = renderEmisora('/emisora/operacion', usuarioOperador);
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Operación E2 de la emisora' }),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('table', { name: 'Convocatorias de la emisora' })).toHaveTextContent(
+        '2026-01-15',
+      );
+    });
+    expect(screen.getByRole('table', { name: 'Rejilla anual' })).toHaveTextContent('Borrador');
+    expect(screen.getByRole('button', { name: 'Registrar comité' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Aprobar rejilla' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Crear programación' })).toBeEnabled();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    await checkAccessibility(container, 'EmisoraOperacion con permisos');
   });
 });
