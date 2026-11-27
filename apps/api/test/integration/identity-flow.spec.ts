@@ -207,8 +207,21 @@ describe.runIf(hasDatabase)('Flujos de identidad contra PostgreSQL (C2 — RB1-1
     }>`select codigo from public.perfil order by codigo`.execute(db);
     expect(perfiles.rows.map((row) => row.codigo)).toEqual([
       'administrador',
+      'auxiliar_administrativo',
+      'comite_programacion',
+      'contratista_prensa',
       'educador',
       'estudiante',
+      'ingeniero_mantenimiento',
+      'jefe_emisora',
+      'locutor',
+      'operador_transmisor',
+      'programador',
+      'realizador_externo',
+      'secretario_cultura',
+      'tecnico_contenidos',
+      'tecnico_emision',
+      'tecnico_grabacion',
     ]);
 
     const admin = await identity.findByEmail('admin@ccltpg.org');

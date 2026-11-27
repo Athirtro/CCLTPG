@@ -15,11 +15,8 @@ export function ApiQueryParams(dto: Type<unknown>): ReturnType<typeof applyDecor
   return applyDecorators(
     ...keys.map((key) => {
       const name = key.replace(/^:/, '');
-      const metadata = (Reflect.getMetadata(
-        DECORATORS.API_MODEL_PROPERTIES,
-        prototype,
-        name,
-      ) ?? {}) as ApiQueryOptions;
+      const metadata = (Reflect.getMetadata(DECORATORS.API_MODEL_PROPERTIES, prototype, name) ??
+        {}) as ApiQueryOptions;
       return ApiQuery({ ...metadata, name, required: metadata.required !== false });
     }),
   );

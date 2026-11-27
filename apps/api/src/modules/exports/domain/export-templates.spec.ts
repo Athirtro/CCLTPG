@@ -85,6 +85,26 @@ describe('registro de plantillas de exportación', () => {
     ).toContain('más activos que matriculados');
   });
 
+  it('registra las plantillas aditivas de emisora sin alterar la existente', () => {
+    for (const codigo of [
+      'emisora-oficio-salida',
+      'emisora-resolucion-incentivos',
+      'emisora-formato-programacion',
+      'emisora-rejilla-cuneros',
+      'emisora-reporte-obras',
+      'emisora-planilla-emision',
+    ]) {
+      expect(findExportTemplate(codigo), codigo).not.toBeNull();
+    }
+    expect(findExportTemplate('emisora-oficio-salida')!.version).toBe(1);
+    expect(
+      findExportTemplate('emisora-oficio-salida')!.build({
+        periodo: '2026-1',
+        filas: [{ destino: 'Secretaría', asunto: 'Convocatoria', referencia: 'RAD-1' }],
+      }),
+    ).toEqual([{ destino: 'Secretaría', asunto: 'Convocatoria', referencia: 'RAD-1' }]);
+  });
+
   it('acota la longitud del periodo y del nombre del programa', () => {
     expect(parameterErrorMessage({ periodo: 'x'.repeat(33), filas: [] })).toContain(
       'demasiado largo',

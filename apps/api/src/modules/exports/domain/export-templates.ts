@@ -53,7 +53,86 @@ export const EXPORT_TEMPLATES: readonly ExportTemplate[] = [
     ],
     build: buildEnrollmentSummary,
   },
+  // Emisora R.A.C. (plan §7): plantillas nuevas y aditivas; el servicio de
+  // exportaciones no se modifica y emite `reporte.generado` como siempre.
+  ...emisoraTemplates(),
 ];
+
+/**
+ * Plantillas de documentos de emisora. Todas validan un JSON saneado antes de
+ * producir filas; el PDF se genera en Exportaciones, nunca en un controlador
+ * de emisora.
+ */
+function emisoraTemplates(): readonly ExportTemplate[] {
+  return [
+    {
+      codigo: 'emisora-oficio-salida',
+      version: 1,
+      descripcion: 'Oficio de salida en PDF para radicación ante entidades externas.',
+      columns: [
+        { key: 'destino', label: 'Destino' },
+        { key: 'asunto', label: 'Asunto' },
+        { key: 'referencia', label: 'Referencia' },
+      ],
+      build: (parametros) => buildReportRows(parametros, ['destino', 'asunto', 'referencia']),
+    },
+    {
+      codigo: 'emisora-resolucion-incentivos',
+      version: 1,
+      descripcion: 'Resolución de incentivos de realizadores.',
+      columns: [
+        { key: 'realizador', label: 'Realizador' },
+        { key: 'concepto', label: 'Concepto' },
+        { key: 'estado', label: 'Estado' },
+      ],
+      build: (parametros) => buildReportRows(parametros, ['realizador', 'concepto', 'estado']),
+    },
+    {
+      codigo: 'emisora-formato-programacion',
+      version: 1,
+      descripcion: 'Formato oficial de programación diaria.',
+      columns: [
+        { key: 'fecha', label: 'Fecha' },
+        { key: 'franja', label: 'Franja' },
+        { key: 'programa', label: 'Programa' },
+      ],
+      build: (parametros) => buildReportRows(parametros, ['fecha', 'franja', 'programa']),
+    },
+    {
+      codigo: 'emisora-rejilla-cuneros',
+      version: 1,
+      descripcion: 'Rejilla anual Cuneros aprobada por el comité.',
+      columns: [
+        { key: 'anio', label: 'Año' },
+        { key: 'franja', label: 'Franja' },
+        { key: 'realizador', label: 'Realizador' },
+      ],
+      build: (parametros) => buildReportRows(parametros, ['anio', 'franja', 'realizador']),
+    },
+    {
+      codigo: 'emisora-reporte-obras',
+      version: 1,
+      descripcion: 'Reporte digital de obras para Sayco/Acinpro.',
+      columns: [
+        { key: 'titulo', label: 'Título' },
+        { key: 'compositor', label: 'Compositor o artista' },
+        { key: 'duracion', label: 'Duración' },
+      ],
+      build: (parametros) => buildReportRows(parametros, ['titulo', 'compositor', 'duracion']),
+    },
+    {
+      codigo: 'emisora-planilla-emision',
+      version: 1,
+      descripcion: 'Planilla de emisión y archivo sonoro.',
+      columns: [
+        { key: 'fecha', label: 'Fecha' },
+        { key: 'programa', label: 'Programa' },
+        { key: 'archivo_id', label: 'Archivo' },
+      ],
+      build: (parametros) => buildReportRows(parametros, ['fecha', 'programa', 'archivo_id']),
+    },
+  ];
+}
 
 export function findExportTemplate(codigo: string): ExportTemplate | null {
   return EXPORT_TEMPLATES.find((template) => template.codigo === codigo) ?? null;

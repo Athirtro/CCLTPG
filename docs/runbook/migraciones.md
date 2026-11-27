@@ -2,11 +2,11 @@
 
 - **Objetivo:** aplicar, inspeccionar y revertir migraciones sin romper el historial por esquema.
 - **Herramienta:** Kysely Migrator con `FileMigrationProvider` (decisión D30-A).
-- **Esquemas:** `public` y `academic`, cada uno con historial y candado propios.
+- **Esquemas:** `public`, `academic` y `emisora`, cada uno con historial y candado propios.
 
 ## 1. Reglas del mecanismo
 
-1. Una migración pertenece a **un solo** esquema. No se escribe SQL de `academic` desde `public` ni al revés.
+1. Una migración pertenece a **un solo** esquema. No se escribe SQL de `academic` desde `public` ni al revés; `emisora` tampoco escribe en `public` ni en `academic` (§2.2 del plan).
 2. Cada migración implementa `up` y `down`. Sin `down` no se acepta la migración.
 3. Los esquemas y roles los crea `infra/compose/postgres/init/00-roles.sql`, no una migración.
 4. Solo el rol `ccltpg_migrator` puede ejecutar DDL. La API usa `ccltpg_app`.
@@ -24,12 +24,14 @@ DATABASE_MIGRATOR_URL=postgresql://ccltpg_migrator:<password>@localhost:5432/ccl
 ## 3. Comandos
 
 ```bash
-pnpm migrate:status              # estado de public y academic
-pnpm migrate:up                  # aplica pendientes en ambos esquemas
+pnpm migrate:status              # estado de public, academic y emisora
+pnpm migrate:up                  # aplica pendientes en los tres esquemas
 pnpm migrate:up public           # solo public
 pnpm migrate:up academic         # solo academic
+pnpm migrate:up emisora          # solo emisora
 pnpm migrate:down public         # una migración atrás en public
 pnpm migrate:down academic       # una migración atrás en academic
+pnpm migrate:down emisora        # una migración atrás en emisora
 ```
 
 `down` exige un esquema explícito; no existe `down all`. Es deliberado: una reversión masiva no debe ser accidental.
@@ -39,6 +41,7 @@ Los comandos equivalentes dentro del paquete son:
 ```bash
 pnpm --filter @ccltpg/api migrate:status
 pnpm --filter @ccltpg/api migrate:up academic
+pnpm --filter @ccltpg/api migrate:up emisora
 pnpm --filter @ccltpg/api migrate:down public
 ```
 
@@ -49,6 +52,7 @@ pnpm --filter @ccltpg/api migrate:down public
    ```text
    apps/api/src/database/migrations/public/0002_crear_estudiante.ts
    apps/api/src/database/migrations/academic/0003_crear_grupo.ts
+   apps/api/src/database/migrations/emisora/0001_create_emisora_core.ts
    ```
 
 2. Exportar `up` y `down` con Kysely:
@@ -83,7 +87,8 @@ pnpm test:integration
 La suite `apps/api/test/integration/migrator.spec.ts` comprueba:
 
 - `up → down → up` en `public` con una migración fixture.
-- Historiales separados: `public.kysely_migration` y `academic.kysely_migration`.
+- Historiales separados: `public.kysely_migration`, `academic.kysely_migration` y `emisora.kysely_migration`.
+- `emisora-migrations.spec.ts` aplica las cuatro migraciones de emisora con `up → down → up`.
 - Que el candado por esquema no mezcle ejecuciones.
 
 La suite `db-roles.spec.ts` comprueba que `ccltpg_app` no puede hacer DDL y que `ccltpg_readonly` no puede escribir.

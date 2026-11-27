@@ -26,6 +26,7 @@ import Kpis from './pages/Kpis';
 import Reportes from './pages/Reportes';
 import Health from './pages/Health';
 import NotFound from './pages/NotFound';
+import EmisoraRoutes from './extensions/emisora/routes';
 import { theme } from './theme/theme';
 
 /** Evita que un deep-link privado se renderice sin sesión autenticada. */
@@ -40,7 +41,11 @@ function RequireAuth({ children }: { children: ReactNode }) {
   }, [isRestoring, user, navigate]);
 
   if (isRestoring) {
-    return <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>Restaurando sesión…</Box>;
+    return (
+      <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
+        Restaurando sesión…
+      </Box>
+    );
   }
   return user ? <>{children}</> : null;
 }
@@ -69,7 +74,13 @@ function AppRoutes() {
             <Route path="/auth-redirect" element={<AuthRedirect />} />
 
             {/* Rutas privadas (con layout de sidebar) */}
-            <Route element={<RequireAuth><MainLayout /></RequireAuth>}>
+            <Route
+              element={
+                <RequireAuth>
+                  <MainLayout />
+                </RequireAuth>
+              }
+            >
               <Route index element={<Home />} />
               <Route path="/estudiantes" element={<Estudiantes />} />
               <Route path="/programas" element={<Programas />} />
@@ -85,6 +96,7 @@ function AppRoutes() {
               <Route path="/vista-educador" element={<VistaEducador />} />
               <Route path="/kpis" element={<Kpis />} />
               <Route path="/reportes" element={<Reportes />} />
+              <Route path="/emisora/*" element={<EmisoraRoutes />} />
               <Route path="/estado" element={<Health />} />
             </Route>
 

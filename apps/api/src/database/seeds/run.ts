@@ -3,6 +3,7 @@ import pg from 'pg';
 
 import { env, requireMigratorDatabaseUrl } from '../../shared/config/env.js';
 import type { Database } from '../schema.js';
+import { seedEmisora } from './emisora.seed.js';
 import { seedIdentity } from './identity.seed.js';
 
 /**
@@ -28,9 +29,13 @@ async function main(): Promise<void> {
       adminEmail: process.env.SEED_ADMIN_EMAIL ?? 'admin@ccltpg.org',
       withTemporaryIdentity,
     });
+    // Solo datos de negocio: los perfiles/permisos emisora viven en identidad (I3).
+    const emisora = await seedEmisora(db);
 
     console.warn(
-      `Semilla aplicada: ${result.perfiles} perfiles, ${result.permisos} permisos, ${result.usuarios} usuarios.`,
+      `Semilla aplicada: ${result.perfiles} perfiles, ${result.permisos} permisos, ${result.usuarios} usuarios; ` +
+        `emisora: ${emisora.convocatorias} convocatoria, ${emisora.rejillas} rejilla, ` +
+        `${emisora.franjas} franja y ${emisora.transmisores} transmisor.`,
     );
     if (!process.env.SEED_PASSWORD) {
       console.warn(

@@ -56,9 +56,7 @@ export class S3ObjectStorage implements ObjectStorage {
           Key: key,
           Body: body,
           ContentType: contentType,
-          ...(this.serverSideEncryption
-            ? { ServerSideEncryption: this.serverSideEncryption }
-            : {}),
+          ...(this.serverSideEncryption ? { ServerSideEncryption: this.serverSideEncryption } : {}),
         }),
       );
     } catch (error) {

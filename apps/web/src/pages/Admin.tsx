@@ -167,13 +167,13 @@ export default function Admin() {
   const validar = (): boolean => {
     const nuevosErrores: Partial<Record<keyof Formulario, string>> = {};
     const longitud = [...formulario.password].length;
-    const passwordInvalida = longitud > 0 && (longitud < PASSWORD_MIN_LENGTH || longitud > PASSWORD_MAX_LENGTH);
+    const passwordInvalida =
+      longitud > 0 && (longitud < PASSWORD_MIN_LENGTH || longitud > PASSWORD_MAX_LENGTH);
 
     if (dialogo === 'crear') {
       if (!formulario.email.trim()) nuevosErrores.email = 'Ingresa el correo electrónico.';
       if (!formulario.nombre.trim()) nuevosErrores.nombre = 'Ingresa el nombre.';
-      if (!formulario.password)
-        nuevosErrores.password = 'Ingresa la contraseña inicial.';
+      if (!formulario.password) nuevosErrores.password = 'Ingresa la contraseña inicial.';
       else if (passwordInvalida)
         nuevosErrores.password = `Debe tener entre ${PASSWORD_MIN_LENGTH} y ${PASSWORD_MAX_LENGTH} caracteres.`;
       if (!formulario.perfil) nuevosErrores.perfil = 'Selecciona un perfil.';
@@ -208,7 +208,11 @@ export default function Admin() {
           estado: formulario.estado,
           profiles: [{ codigo: formulario.perfil, ...(validUntil ? { validUntil } : {}) }],
         };
-        const { data, error: apiError, response } = await apiClient.POST('/identity/users', { body });
+        const {
+          data,
+          error: apiError,
+          response,
+        } = await apiClient.POST('/identity/users', { body });
         if (apiError || !data || response?.status !== 201) {
           setError(getErrorMessage(apiError) || 'No se pudo crear el usuario.');
           return;
@@ -251,7 +255,11 @@ export default function Admin() {
           codigo: formulario.perfil,
           ...(validUntil ? { validUntil } : {}),
         };
-        const { data, error: apiError, response } = await apiClient.POST('/identity/users/{id}/profiles', {
+        const {
+          data,
+          error: apiError,
+          response,
+        } = await apiClient.POST('/identity/users/{id}/profiles', {
           params: { path: { id: seleccionado.id } },
           body,
         });
@@ -365,12 +373,7 @@ export default function Admin() {
         breadcrumbs={[{ label: 'Inicio', to: '/' }, { label: 'Administración' }]}
         actions={
           <>
-            <Button
-              component={RouterLink}
-              to="/"
-              startIcon={<HomeIcon />}
-              disabled={enviando}
-            >
+            <Button component={RouterLink} to="/" startIcon={<HomeIcon />} disabled={enviando}>
               Ir al inicio
             </Button>
             <Button

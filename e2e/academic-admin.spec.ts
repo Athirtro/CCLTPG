@@ -6,7 +6,9 @@ import { loginAs } from './helpers/auth.js';
 
 const suffix = () => Date.now().toString().slice(-8);
 
-test('la administración crea programa, grupo, estudiante y matrícula desde la UI', async ({ page }) => {
+test('la administración crea programa, grupo, estudiante y matrícula desde la UI', async ({
+  page,
+}) => {
   await loginAs(page, 'admin');
   const unique = suffix();
   const programName = `Programa E2E ${unique}`;
@@ -27,7 +29,10 @@ test('la administración crea programa, grupo, estudiante y matrícula desde la 
 
   // El listado está ordenado y paginado: filtramos para que la fila nueva sea inequívoca.
   await page.getByLabel('Buscar programa').fill(programName);
-  await page.getByRole('row', { name: new RegExp(programName) }).getByRole('button', { name: 'Publicar' }).click();
+  await page
+    .getByRole('row', { name: new RegExp(programName) })
+    .getByRole('button', { name: 'Publicar' })
+    .click();
   await page.getByRole('button', { name: 'Publicar', exact: true }).last().click();
   await expect(
     page.getByText(new RegExp(`Estado del programa "${programName}" cambiado a publicado`)),
@@ -56,7 +61,11 @@ test('la administración crea programa, grupo, estudiante y matrícula desde la 
   await page.getByLabel('Número de documento').fill(studentDoc);
   await page.getByLabel('Nombres').fill('E2E');
   await page.getByLabel('Apellidos').fill(`Prueba ${unique}`);
-  await page.getByRole('checkbox', { name: 'El estudiante autoriza el tratamiento de sus datos personales' }).check();
+  await page
+    .getByRole('checkbox', {
+      name: 'El estudiante autoriza el tratamiento de sus datos personales',
+    })
+    .check();
   await page.getByRole('button', { name: 'Crear estudiante' }).click();
   await expect(page.getByText(new RegExp('creado correctamente'))).toBeVisible();
 

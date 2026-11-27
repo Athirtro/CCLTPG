@@ -14,6 +14,11 @@ export const CRITICAL_EVENT_PREFIXES = [
   'evaluacion.',
   'seguridad.',
   'usuario.password_',
+  // Emisora R.A.C. (plan §7): no se pueden silenciar hitos de rejilla,
+  // incentivos ni autorizaciones de transmisión.
+  'rejilla.aprobada',
+  'incentivo.asignado',
+  'transmision.autorizada',
 ] as const;
 
 export function isCriticalEvent(evento: string): boolean {

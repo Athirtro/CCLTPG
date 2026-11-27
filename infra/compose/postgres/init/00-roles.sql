@@ -50,6 +50,10 @@ ALTER ROLE ccltpg_app SET idle_in_transaction_session_timeout = '30s';
 -- 2. Conexión y esquemas ---------------------------------------------------
 REVOKE ALL ON DATABASE :"db_name" FROM PUBLIC;
 GRANT CONNECT ON DATABASE :"db_name" TO ccltpg_migrator, ccltpg_app, ccltpg_readonly;
+-- Emisora R.A.C.: la migración 0001 instala `btree_gist` (extensión de confianza
+-- en PG 13+) para la restricción de exclusión de franjas. Requiere CREATE en la
+-- base de datos; se concede solo al rol migrador, nunca a app ni readonly.
+GRANT CREATE ON DATABASE :"db_name" TO ccltpg_migrator;
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 GRANT USAGE ON SCHEMA public TO ccltpg_app, ccltpg_readonly;
@@ -58,6 +62,10 @@ GRANT USAGE, CREATE ON SCHEMA public TO ccltpg_migrator;
 CREATE SCHEMA IF NOT EXISTS academic AUTHORIZATION ccltpg_migrator;
 GRANT USAGE ON SCHEMA academic TO ccltpg_app, ccltpg_readonly;
 GRANT USAGE, CREATE ON SCHEMA academic TO ccltpg_migrator;
+
+CREATE SCHEMA IF NOT EXISTS emisora AUTHORIZATION ccltpg_migrator;
+GRANT USAGE ON SCHEMA emisora TO ccltpg_app, ccltpg_readonly;
+GRANT USAGE, CREATE ON SCHEMA emisora TO ccltpg_migrator;
 
 -- 3. Privilegios por defecto para objetos creados por el migrador -----------
 ALTER DEFAULT PRIVILEGES FOR ROLE ccltpg_migrator IN SCHEMA public
@@ -76,6 +84,15 @@ ALTER DEFAULT PRIVILEGES FOR ROLE ccltpg_migrator IN SCHEMA academic
 ALTER DEFAULT PRIVILEGES FOR ROLE ccltpg_migrator IN SCHEMA academic
   GRANT USAGE, SELECT ON SEQUENCES TO ccltpg_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE ccltpg_migrator IN SCHEMA academic
+  GRANT SELECT ON SEQUENCES TO ccltpg_readonly;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE ccltpg_migrator IN SCHEMA emisora
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ccltpg_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE ccltpg_migrator IN SCHEMA emisora
+  GRANT SELECT ON TABLES TO ccltpg_readonly;
+ALTER DEFAULT PRIVILEGES FOR ROLE ccltpg_migrator IN SCHEMA emisora
+  GRANT USAGE, SELECT ON SEQUENCES TO ccltpg_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE ccltpg_migrator IN SCHEMA emisora
   GRANT SELECT ON SEQUENCES TO ccltpg_readonly;
 
 -- Nota C2: sobre public.evento_auditoria se revocará UPDATE/DELETE/TRUNCATE

@@ -52,7 +52,9 @@ test('la UI crea, asigna perfil, cambia estado y edita un usuario real', async (
   await dialogoEstado.getByRole('combobox', { name: 'Estado destino' }).click();
   await page.getByRole('option', { name: 'inactivo' }).click();
   await dialogoEstado.getByRole('button', { name: 'Aplicar estado' }).click();
-  await expect(page.getByText(new RegExp(`Estado de "${email}" cambiado a inactivo`))).toBeVisible();
+  await expect(
+    page.getByText(new RegExp(`Estado de "${email}" cambiado a inactivo`)),
+  ).toBeVisible();
   await expect(fila).toContainText('Inactivo');
 
   // Edición y reset de contraseña administrativo
@@ -61,7 +63,9 @@ test('la UI crea, asigna perfil, cambia estado y edita un usuario real', async (
   await dialogoEditar.getByLabel('Nombre').fill(nombreEditado);
   await dialogoEditar.getByLabel('Nueva contraseña (opcional)').fill(passwordReseteada);
   await dialogoEditar.getByRole('button', { name: 'Guardar cambios' }).click();
-  await expect(page.getByText(new RegExp(`Usuario "${email}" actualizado correctamente`))).toBeVisible();
+  await expect(
+    page.getByText(new RegExp(`Usuario "${email}" actualizado correctamente`)),
+  ).toBeVisible();
 
   // Persistencia comprobada tras recargar la página.
   await page.reload();

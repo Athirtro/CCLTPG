@@ -74,6 +74,13 @@ const envSchema = z.object({
     .min(1)
     .max(50 * 1024 * 1024)
     .default(10 * 1024 * 1024),
+  /** Política opt-in `emisora-audio`: no altera MAX_FILE_BYTES ni la política default. */
+  EMISORA_MAX_AUDIO_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(50 * 1024 * 1024)
+    .default(25 * 1024 * 1024),
 
   // Idempotencia, outbox y exportaciones (C3).
   IDEMPOTENCY_TTL_SECONDS: z.coerce.number().int().min(60).max(604_800).default(86_400),

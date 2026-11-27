@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import {
   Home as HomeIcon,
+  Radio as RadioIcon,
   People as PeopleIcon,
   School as SchoolIcon,
   Group as GroupIcon,
@@ -110,6 +111,17 @@ const SECCIONES: NavSection[] = [
         label: 'Exportaciones',
         icon: <FileCopyIcon />,
         requires: 'exports:report:export',
+      },
+    ],
+  },
+  {
+    title: 'Emisora R.A.C.',
+    items: [
+      {
+        path: '/emisora',
+        label: 'Inicio emisora',
+        icon: <RadioIcon />,
+        requires: 'emisora:programacion:read',
       },
     ],
   },

@@ -163,6 +163,97 @@ jobs:
       - name: Pruebas de integraciÃ³n contra PostgreSQL real
         run: pnpm test:integration
 
+  e2e:
+    name: Recorridos E2E y accesibilidad (Emisora R.A.C.)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: ccltpg
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ccltpg_test_postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ccltpg"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: ccltpg
+      PGUSER: postgres
+      PGPASSWORD: ccltpg_test_postgres
+      POSTGRES_DB: ccltpg
+      CCLTPG_MIGRATOR_PASSWORD: ccltpg_test_migrator
+      CCLTPG_APP_PASSWORD: ccltpg_test_app
+      CCLTPG_READONLY_PASSWORD: ccltpg_test_readonly
+      DATABASE_MIGRATOR_URL: postgresql://ccltpg_migrator:ccltpg_test_migrator@localhost:5432/ccltpg
+      DATABASE_URL: postgresql://ccltpg_app:ccltpg_test_app@localhost:5432/ccltpg
+      DATABASE_READONLY_URL: postgresql://ccltpg_readonly:ccltpg_test_readonly@localhost:5432/ccltpg
+      REDIS_URL: redis://localhost:6379
+      MFA_ENCRYPTION_KEY: ccltpg_e2e_only_encryption_key_0123456789
+      OBJECT_STORAGE_DRIVER: local
+      VITE_API_BASE_URL: /api/v1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Instalar cliente PostgreSQL
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client curl
+
+      - name: Instalar dependencias (lockfile congelado)
+        run: pnpm install --frozen-lockfile
+
+      - name: Crear roles y esquemas (C-41)
+        run: psql -v ON_ERROR_STOP=1 -f infra/compose/postgres/init/00-roles.sql
+
+      - name: Aplicar migraciones (incluido el esquema emisora)
+        run: pnpm migrate:up
+
+      - name: Sembrar perfiles (incluidos los 13 de emisora)
+        run: pnpm --filter @ccltpg/api db:seed
+
+      - name: Instalar Chromium para Playwright
+        run: pnpm exec playwright install chromium
+
+      - name: Iniciar API y SPA
+        run: |
+          pnpm --filter @ccltpg/api dev > /tmp/ccltpg-api-e2e.log 2>&1 &
+          pnpm --filter @ccltpg/web dev -- --host 127.0.0.1 > /tmp/ccltpg-web-e2e.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/api/v1/health/live >/dev/null 2>&1 &&
+               curl -fsS http://localhost:5173 >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/ccltpg-api-e2e.log /tmp/ccltpg-web-e2e.log
+          exit 1
+
+      - name: Recorridos E2E (Playwright + axe)
+        run: pnpm test:e2e
+
   security:
     name: Secretos y anÃ¡lisis de dependencias
     runs-on: ubuntu-latest

@@ -44,7 +44,18 @@ describe('política de notificaciones', () => {
       'evaluacion.',
       'seguridad.',
       'usuario.password_',
+      'rejilla.aprobada',
+      'incentivo.asignado',
+      'transmision.autorizada',
     ]);
+  });
+
+  it('marca como críticos los hitos de la emisora R.A.C.', () => {
+    for (const evento of ['rejilla.aprobada', 'incentivo.asignado', 'transmision.autorizada']) {
+      expect(isCriticalEvent(evento), evento).toBe(true);
+      expect(isEventName(evento), evento).toBe(true);
+    }
+    expect(isCriticalEvent('convocatoria.abierta')).toBe(false);
   });
 
   it('D85: evaluacion.publicada es crítica y recordatorio.fechas respeta preferencias', () => {

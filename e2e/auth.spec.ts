@@ -57,7 +57,9 @@ test('rechaza un código TOTP incorrecto', async ({ page }) => {
   await page.getByRole('button', { name: 'Iniciar sesión' }).click();
   await expect(page).toHaveURL(/\/mfa-verify/);
 
-  await page.getByLabel('Código MFA').fill('000000' === totpCode(E2E_TOTP_SECRET) ? '111111' : '000000');
+  await page
+    .getByLabel('Código MFA')
+    .fill('000000' === totpCode(E2E_TOTP_SECRET) ? '111111' : '000000');
   await page.getByRole('button', { name: 'Verificar' }).click();
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page).toHaveURL(/\/mfa-verify/);

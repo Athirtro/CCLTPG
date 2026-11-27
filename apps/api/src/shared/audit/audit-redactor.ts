@@ -39,6 +39,15 @@ const SECRET_KEYS = new Set([
   'documento',
   'telefono',
   'direccion',
+  // Emisora R.A.C. (plan §4.3): PII cifrada de realizadores e índice ciego.
+  'numerodocumentocifrado',
+  'numero_documento_cifrado',
+  'numerodocumentohash',
+  'numero_documento_hash',
+  'contactocifrado',
+  'contacto_cifrado',
+  'consentimientodatos',
+  'consentimiento_datos',
 ]);
 
 const FREE_TEXT_KEYS = new Set(['observacion', 'observaciones', 'justificacion_texto']);

@@ -686,10 +686,11 @@ export type Paths = {
     };
   };
   '/me/enrollments': {
-    get: {      parameters?: {
+    get: {
+      parameters?: {
         query?: {
-        page?: number;
-        pageSize?: number;
+          page?: number;
+          pageSize?: number;
         };
       };
 
@@ -935,11 +936,12 @@ export type Paths = {
 
   // --- Notificaciones ---
   '/notifications': {
-    get: {      parameters?: {
+    get: {
+      parameters?: {
         query?: {
-        soloNoLeidas?: boolean;
-        limit?: number;
-        offset?: number;
+          soloNoLeidas?: boolean;
+          limit?: number;
+          offset?: number;
         };
       };
 
@@ -1062,10 +1064,11 @@ export type Paths = {
 
   // --- Académico: Programas ---
   '/academic/programs': {
-    get: {      parameters?: {
+    get: {
+      parameters?: {
         query?: {
-        page?: number;
-        pageSize?: number;
+          page?: number;
+          pageSize?: number;
         };
       };
 
@@ -1136,10 +1139,11 @@ export type Paths = {
 
   // --- Académico: Grupos ---
   '/academic/groups': {
-    get: {      parameters?: {
+    get: {
+      parameters?: {
         query?: {
-        page?: number;
-        pageSize?: number;
+          page?: number;
+          pageSize?: number;
         };
       };
 
@@ -1274,10 +1278,11 @@ export type Paths = {
 
   // --- Académico: Estudiantes ---
   '/academic/students': {
-    get: {      parameters?: {
+    get: {
+      parameters?: {
         query?: {
-        page?: number;
-        pageSize?: number;
+          page?: number;
+          pageSize?: number;
         };
       };
 
@@ -1317,10 +1322,11 @@ export type Paths = {
 
   // --- Académico: Matrículas ---
   '/academic/enrollments': {
-    get: {      parameters?: {
+    get: {
+      parameters?: {
         query?: {
-        page?: number;
-        pageSize?: number;
+          page?: number;
+          pageSize?: number;
         };
       };
 
@@ -1536,10 +1542,11 @@ export type Paths = {
         };
       };
     };
-    get: {      parameters?: {
+    get: {
+      parameters?: {
         query?: {
-        page?: number;
-        pageSize?: number;
+          page?: number;
+          pageSize?: number;
         };
       };
 

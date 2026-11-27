@@ -31,7 +31,7 @@ function parseTarget(value: string | undefined): MigrationSchema[] {
   if (isMigrationSchema(value)) {
     return [value];
   }
-  throw new Error(`Esquema inválido: "${value}". Use public, academic o all.`);
+  throw new Error(`Esquema inválido: "${value}". Use public, academic, emisora o all.`);
 }
 
 async function run(): Promise<void> {
@@ -39,7 +39,9 @@ async function run(): Promise<void> {
   const schemas = parseTarget(process.argv[3]);
 
   if (command === 'down' && schemas.length > 1) {
-    throw new Error('La reversión exige un esquema explícito: down public | down academic.');
+    throw new Error(
+      'La reversión exige un esquema explícito: down public | down academic | down emisora.',
+    );
   }
 
   const db = new Kysely<unknown>({

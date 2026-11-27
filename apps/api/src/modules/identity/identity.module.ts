@@ -26,6 +26,7 @@ import { TokenService } from './application/ports/token.service.js';
 import { TotpService } from './application/ports/totp.service.js';
 import { UnitOfWork } from './application/ports/unit-of-work.js';
 import { SessionService } from './application/session.service.js';
+import { IDENTITY_DIRECTORY_PROVIDER } from './infrastructure/kysely-identity-directory.js';
 import { KyselyIdentityRepository } from './infrastructure/persistence/kysely-identity.repository.js';
 import { KyselySessionRepository } from './infrastructure/persistence/kysely-session.repository.js';
 import { KyselyUnitOfWork } from './infrastructure/persistence/kysely-unit-of-work.js';
@@ -67,7 +68,8 @@ import { SystemClock } from './infrastructure/system-clock.js';
     MeService,
     IdentityAdminService,
     { provide: APP_GUARD, useClass: AuthorizationGuard },
+    IDENTITY_DIRECTORY_PROVIDER,
   ],
-  exports: [SessionService],
+  exports: [SessionService, IDENTITY_DIRECTORY_PROVIDER.provide],
 })
 export class IdentityModule {}

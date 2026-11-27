@@ -58,13 +58,17 @@ async function globalSetup(_config: FullConfig): Promise<void> {
           passwordHash,
           user.nombre,
           user.mfaHabilitado,
-          user.mfaHabilitado ? encrypt(E2E_TOTP_SECRET, `mfa:usuario:${user.id}`, encryptionKey) : null,
+          user.mfaHabilitado
+            ? encrypt(E2E_TOTP_SECRET, `mfa:usuario:${user.id}`, encryptionKey)
+            : null,
           user.debeCambiarPassword,
         ],
       );
 
       await client.query('DELETE FROM public.refresh_token WHERE usuario_id = $1', [user.id]);
-      await client.query('DELETE FROM public.codigo_recuperacion_mfa WHERE usuario_id = $1', [user.id]);
+      await client.query('DELETE FROM public.codigo_recuperacion_mfa WHERE usuario_id = $1', [
+        user.id,
+      ]);
       await client.query('DELETE FROM public.usuario_perfil WHERE usuario_id = $1', [user.id]);
       await client.query(
         `INSERT INTO public.usuario_perfil
@@ -118,10 +122,9 @@ async function seedAcademicAndPreferences(client: QueryableClient): Promise<void
   const estudianteUsuarioId = '33333333-3333-4333-8333-333333333333';
 
   // Limpieza de nuestros propios registros para que el setup sea idempotente.
-  await client.query(
-    `DELETE FROM academic.evaluacion_cualitativa WHERE matricula_id = $1`,
-    [matriculaId],
-  );
+  await client.query(`DELETE FROM academic.evaluacion_cualitativa WHERE matricula_id = $1`, [
+    matriculaId,
+  ]);
   await client.query(`DELETE FROM academic.asistencia WHERE matricula_id = $1`, [matriculaId]);
   await client.query(`DELETE FROM academic.matricula WHERE id = $1`, [matriculaId]);
   await client.query(`DELETE FROM academic.horario_grupo WHERE grupo_id = $1`, [grupoId]);
@@ -194,7 +197,13 @@ async function seedAcademicAndPreferences(client: QueryableClient): Promise<void
     await client.query(
       `INSERT INTO public.preferencia_notificacion (id, usuario_id, evento, canal, habilitado)
        VALUES ($1, $2, $3, $4, $5)`,
-      [`bbbbbbbb-0000-4000-8000-00000000000${index}`, estudianteUsuarioId, evento, canal, habilitado],
+      [
+        `bbbbbbbb-0000-4000-8000-00000000000${index}`,
+        estudianteUsuarioId,
+        evento,
+        canal,
+        habilitado,
+      ],
     );
   }
 }

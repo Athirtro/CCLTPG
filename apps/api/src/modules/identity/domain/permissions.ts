@@ -8,7 +8,65 @@
  * - La expansión se limita al catálogo cerrado: no inventa acciones.
  */
 
-export const PERMISSION_CATALOG = [
+/**
+ * Catálogo cerrado del contexto Emisora R.A.C. (plan §5.1).
+ *
+ * Se declaran las ocho acciones de la gramática para cada recurso para que
+ * `expandPermissions`/`permissionsFor` puedan materializar cualquier acción
+ * usada por los controladores: `manage` solo implica acciones presentes en
+ * este catálogo. Los 31 recursos son aditivos; no se altera ninguna entrada
+ * anterior.
+ */
+const EMISORA_RESOURCES = [
+  'programacion',
+  'rejilla',
+  'convocatoria',
+  'realizador',
+  'proyecto',
+  'comite',
+  'grabacion',
+  'asistencia-cabina',
+  'audio',
+  'informe',
+  'incentivo',
+  'resolucion',
+  'patrocinio',
+  'promo',
+  'publicacion',
+  'transmision',
+  'viatico',
+  'prestamo',
+  'turno',
+  'lectura',
+  'bitacora',
+  'obra',
+  'derecho',
+  'equipo',
+  'inversion',
+  'proyeccion',
+  'actividad',
+  'permiso-salida',
+  'tramite',
+  'planilla',
+  'archivo-emisora',
+] as const;
+
+const EMISORA_ACTIONS = [
+  'read',
+  'create',
+  'update',
+  'delete',
+  'export',
+  'read_own',
+  'update_own',
+  'manage',
+] as const;
+
+const EMISORA_PERMISSION_CATALOG: readonly string[] = EMISORA_RESOURCES.flatMap((recurso) =>
+  EMISORA_ACTIONS.map((accion) => `emisora:${recurso}:${accion}`),
+);
+
+export const PERMISSION_CATALOG: readonly string[] = [
   'identity:user:manage',
   'identity:profile:read',
   'identity:profile:update',
@@ -46,7 +104,8 @@ export const PERMISSION_CATALOG = [
   'exports:report:create',
   'exports:report:export',
   'analytics:kpi:read',
-] as const;
+  ...EMISORA_PERMISSION_CATALOG,
+];
 
 export type CatalogPermission = (typeof PERMISSION_CATALOG)[number];
 

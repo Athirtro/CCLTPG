@@ -20,7 +20,11 @@ export default function MfaEnroll() {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error: apiError, response } = await apiClient.POST('/auth/mfa/enroll', {
+      const {
+        data,
+        error: apiError,
+        response,
+      } = await apiClient.POST('/auth/mfa/enroll', {
         body: { sessionToken: sessionToken ?? undefined },
       });
 

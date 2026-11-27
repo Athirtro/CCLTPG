@@ -20,6 +20,23 @@ describe('redacción de auditoría', () => {
     expect(result.nombre).toBe('Ana');
   });
 
+  it('redacta la PII cifrada de realizadores de emisora por nombre de clave', () => {
+    const result = redactor.redact({
+      numero_documento_cifrado: 'v1.cifrado.secreto',
+      numero_documento_hash: 'abc123',
+      contacto_cifrado: 'v1.contacto.secreto',
+      consentimiento_datos: { version: 1, fecha: '2026-01-01' },
+      recurso_id: '11111111-1111-4111-8111-111111111111',
+    }) as Record<string, unknown>;
+
+    expect(result.numero_documento_cifrado).toEqual({ cambiado: true });
+    expect(result.numero_documento_hash).toEqual({ cambiado: true });
+    expect(result.contacto_cifrado).toEqual({ cambiado: true });
+    expect(result.consentimiento_datos).toEqual({ cambiado: true });
+    expect(result.recurso_id).toBe('11111111-1111-4111-8111-111111111111');
+    expect(JSON.stringify(result)).not.toContain('secreto');
+  });
+
   it('reemplaza el email por su HMAC determinista', () => {
     const first = redactor.redact({ email: 'Persona@CCLTPG.org' }) as {
       email: { email_hmac: string };

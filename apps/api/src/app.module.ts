@@ -11,6 +11,7 @@ import { ExportsModule } from './modules/exports/exports.module.js';
 import { FilesModule } from './modules/files/files.module.js';
 import { IdentityModule } from './modules/identity/identity.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { EmisoraModule } from './modules/emisora/emisora.module.js';
 import { EmailModule } from './shared/email/email.module.js';
 import { MalwareModule } from './shared/malware/malware.module.js';
 import { StorageModule } from './shared/storage/storage.module.js';
@@ -26,6 +27,7 @@ import { loggerModuleOptions } from './shared/observability/logger.config.js';
     AuditModule,
     IdentityModule,
     AcademicModule,
+    EmisoraModule,
     AnalyticsModule,
     FilesModule,
     NotificationsModule,

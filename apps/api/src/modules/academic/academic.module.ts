@@ -30,6 +30,7 @@ import { SessionRepository } from './application/ports/session.repository.js';
 import { StudentRepository } from './application/ports/student.repository.js';
 import { AcademicUnitOfWork } from './application/ports/unit-of-work.js';
 import { UserDirectory } from './application/ports/user-directory.js';
+import { FORMATION_DIRECTORY_PROVIDER } from './infrastructure/kysely-formacion-directory.js';
 import { KyselyUserDirectory } from './infrastructure/kysely-user-directory.js';
 import { SharedPiiCipher } from './infrastructure/shared-pii-cipher.js';
 import { KyselyAttendanceRepository } from './infrastructure/persistence/kysely-attendance.repository.js';
@@ -111,6 +112,8 @@ import { KyselyAcademicUnitOfWork } from './infrastructure/persistence/kysely-un
     EvaluationService,
     StudentService,
     EnrollmentService,
+    FORMATION_DIRECTORY_PROVIDER,
   ],
+  exports: [FORMATION_DIRECTORY_PROVIDER.provide],
 })
 export class AcademicModule {}

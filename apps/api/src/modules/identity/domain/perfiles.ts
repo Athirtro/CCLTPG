@@ -8,7 +8,23 @@ import { PERMISSION_CATALOG } from './permissions.js';
  * Los permisos con `*` se materializan expandidos antes de guardarlos.
  */
 
-export type PerfilCodigo = 'administrador' | 'educador' | 'estudiante';
+export type PerfilCodigo =
+  | 'administrador'
+  | 'educador'
+  | 'estudiante'
+  | 'jefe_emisora'
+  | 'programador'
+  | 'tecnico_grabacion'
+  | 'tecnico_emision'
+  | 'locutor'
+  | 'tecnico_contenidos'
+  | 'realizador_externo'
+  | 'comite_programacion'
+  | 'secretario_cultura'
+  | 'auxiliar_administrativo'
+  | 'contratista_prensa'
+  | 'ingeniero_mantenimiento'
+  | 'operador_transmisor';
 
 export interface PerfilSeed {
   codigo: PerfilCodigo;
@@ -36,6 +52,7 @@ export const PROFILE_SEEDS: readonly PerfilSeed[] = [
       'exports:report:create',
       'exports:report:export',
       'analytics:kpi:read',
+      'emisora:*:manage',
     ],
   },
   {
@@ -79,6 +96,121 @@ export const PROFILE_SEEDS: readonly PerfilSeed[] = [
       'notifications:preference:update_own',
       'files:document:read_own',
     ],
+  },
+  // Perfiles de Emisora R.A.C. (plan §5.2). Viven aquí, y no en una semilla
+  // propia, para que semilla, guard y matriz de autorización compartan la
+  // misma concesión (decisión I3).
+  {
+    codigo: 'jefe_emisora',
+    nombre: 'Jefe de emisora',
+    descripcion: 'Gestión global de la emisora cultural.',
+    permisos: ['emisora:*:manage', 'exports:report:export', 'files:*:create', 'files:*:read'],
+  },
+  {
+    codigo: 'programador',
+    nombre: 'Programador',
+    descripcion: 'Programación diaria y revisión de la rejilla anual.',
+    permisos: [
+      'emisora:programacion:manage',
+      'emisora:rejilla:read',
+      'emisora:patrocinio:read',
+      'emisora:promo:read',
+    ],
+  },
+  {
+    codigo: 'tecnico_grabacion',
+    nombre: 'Técnico de grabación',
+    descripcion: 'Sesiones de grabación, archivo sonoro y asistencia en cabina.',
+    permisos: [
+      'emisora:grabacion:manage',
+      'emisora:audio:manage',
+      'emisora:proyecto:read',
+      'emisora:asistencia-cabina:create',
+    ],
+  },
+  {
+    codigo: 'tecnico_emision',
+    nombre: 'Técnico de emisión',
+    descripcion: 'Promos, patrocinios, planillas y transmisiones.',
+    permisos: [
+      'emisora:programacion:read',
+      'emisora:promo:manage',
+      'emisora:patrocinio:manage',
+      'emisora:planilla:create',
+      'emisora:transmision:read',
+    ],
+  },
+  {
+    codigo: 'locutor',
+    nombre: 'Locutor',
+    descripcion: 'Grabaciones propias y carga de audio.',
+    permisos: ['emisora:grabacion:read_own', 'emisora:audio:create', 'files:document:create'],
+  },
+  {
+    codigo: 'tecnico_contenidos',
+    nombre: 'Técnico de contenidos digitales',
+    descripcion: 'Publicaciones y contenido sonoro.',
+    permisos: ['emisora:publicacion:manage', 'emisora:promo:read', 'emisora:audio:read'],
+  },
+  {
+    codigo: 'realizador_externo',
+    nombre: 'Realizador externo',
+    descripcion: 'Convocatoria, proyecto e informe propios (identidad temporal).',
+    permisos: [
+      'emisora:convocatoria:read',
+      'emisora:proyecto:create',
+      'emisora:proyecto:read_own',
+      'emisora:proyecto:update_own',
+      'emisora:informe:create',
+      'emisora:informe:read_own',
+      'emisora:rejilla:read',
+    ],
+  },
+  {
+    codigo: 'comite_programacion',
+    nombre: 'Comité de programación',
+    descripcion: 'Evaluación de proyectos e informes y aprobación de rejilla.',
+    permisos: [
+      'emisora:proyecto:read',
+      'emisora:informe:read',
+      'emisora:rejilla:update',
+      'emisora:incentivo:update',
+    ],
+  },
+  {
+    codigo: 'secretario_cultura',
+    nombre: 'Secretario de Cultura',
+    descripcion: 'Incentivos, resoluciones e inversión (solo trazabilidad).',
+    permisos: [
+      'emisora:incentivo:update',
+      'emisora:incentivo:export',
+      'emisora:resolucion:read',
+      'emisora:inversion:read',
+    ],
+  },
+  {
+    codigo: 'auxiliar_administrativo',
+    nombre: 'Auxiliar administrativo',
+    descripcion: 'Trámites, permisos de salida y actividades culturales.',
+    permisos: ['emisora:tramite:manage', 'emisora:permiso-salida:create', 'emisora:actividad:read'],
+  },
+  {
+    codigo: 'contratista_prensa',
+    nombre: 'Contratista de prensa',
+    descripcion: 'Registro de actividades y publicaciones.',
+    permisos: ['emisora:actividad:read', 'emisora:publicacion:create', 'files:document:create'],
+  },
+  {
+    codigo: 'ingeniero_mantenimiento',
+    nombre: 'Ingeniero de mantenimiento',
+    descripcion: 'Equipos, proyecciones e inversión tecnológica.',
+    permisos: ['emisora:equipo:manage', 'emisora:inversion:read', 'emisora:proyeccion:manage'],
+  },
+  {
+    codigo: 'operador_transmisor',
+    nombre: 'Operador de sede de transmisores',
+    descripcion: 'Turno propio, lecturas técnicas y bitácora de sede.',
+    permisos: ['emisora:turno:read_own', 'emisora:lectura:create', 'emisora:bitacora:create'],
   },
 ];
 

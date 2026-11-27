@@ -160,7 +160,9 @@ describe('administración de identidad (OP-06…OP-10)', () => {
       validUntil: '2027-06-01T00:00:00.000Z',
     };
 
-    await expect(controller.assignProfile(usuario.id, dto, request())).resolves.toEqual({ ok: true });
+    await expect(controller.assignProfile(usuario.id, dto, request())).resolves.toEqual({
+      ok: true,
+    });
 
     expect(assignProfile).toHaveBeenCalledWith(
       usuario.id,

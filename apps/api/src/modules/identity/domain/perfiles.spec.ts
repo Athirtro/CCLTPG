@@ -28,9 +28,9 @@ describe('asignación de permisos de analítica (C6 — RB1-51)', () => {
     expect(permisos).not.toContain('analytics:kpi:read');
   });
 
-  it('no inventa permisos fuera del catálogo cerrado de 37', () => {
+  it('no inventa permisos fuera del catálogo cerrado de 285 (37 base + 248 emisora)', () => {
     const catalogo = new Set<string>(PERMISSION_CATALOG);
-    expect(catalogo.size).toBe(37);
+    expect(catalogo.size).toBe(285);
     for (const seed of PROFILE_SEEDS) {
       for (const permiso of permissionsFor(seed)) {
         expect(catalogo.has(permiso), `${seed.codigo}: ${permiso}`).toBe(true);

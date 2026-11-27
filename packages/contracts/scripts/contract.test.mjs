@@ -176,7 +176,9 @@ test('la enmienda C6 amplía el catálogo sin editar el documento congelado', ()
   const merged = readCatalogWithAmendments(root);
 
   assert.equal(base.length, 62);
-  assert.equal(merged.events.length, 64);
+  // La enmienda emisora aporta 37 nombres nuevos: `asistencia.registrada` ya
+  // existía en el catálogo base y la fusión es por conjunto (EL-3).
+  assert.equal(merged.events.length, 101);
   assert.ok(merged.events.includes('evaluacion.publicada'));
   assert.ok(merged.events.includes('recordatorio.fechas'));
   assert.ok(merged.amendments.some((entry) => entry.file.endsWith('cambio-eventos-c6.md')));
@@ -191,9 +193,12 @@ test('una enmienda sin eventos nuevos no altera el catálogo (C7/CSP)', () => {
   const root = resolve(import.meta.dirname, '..', '..', '..');
   const merged = readCatalogWithAmendments(root);
 
-  assert.equal(merged.events.length, 64);
+  assert.equal(merged.events.length, 101);
   assert.deepEqual(
     merged.amendments.map((entry) => entry.file),
-    ['docs/contratos/cambios/cambio-eventos-c6.md'],
+    [
+      'docs/contratos/cambios/cambio-emisora-eventos.md',
+      'docs/contratos/cambios/cambio-eventos-c6.md',
+    ],
   );
 });

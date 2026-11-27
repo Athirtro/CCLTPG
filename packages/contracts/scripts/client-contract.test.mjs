@@ -31,7 +31,9 @@ for (const statement of source.statements) {
 function propertyOf(type, name) {
   if (!type || !ts.isTypeLiteralNode(type)) return undefined;
   return type.members.find(
-    (member) => ts.isPropertySignature(member) && member.name.getText(source).replace(/^['"]|['"]$/g, '') === name,
+    (member) =>
+      ts.isPropertySignature(member) &&
+      member.name.getText(source).replace(/^['"]|['"]$/g, '') === name,
   );
 }
 
@@ -61,7 +63,10 @@ function clientOperations() {
   const pathsType = source.statements.find(
     (statement) => ts.isTypeAliasDeclaration(statement) && statement.name.text === 'Paths',
   )?.type;
-  assert.ok(pathsType && ts.isTypeLiteralNode(pathsType), 'No se encontró el tipo Paths del cliente');
+  assert.ok(
+    pathsType && ts.isTypeLiteralNode(pathsType),
+    'No se encontró el tipo Paths del cliente',
+  );
 
   const operations = [];
   for (const pathMember of pathsType.members) {
@@ -71,7 +76,10 @@ function clientOperations() {
     for (const methodMember of pathMember.type.members) {
       if (!ts.isPropertySignature(methodMember) || !methodMember.type) continue;
       const method = methodMember.name.getText(source).toLowerCase();
-      const content = propertyOf(propertyOf(methodMember.type, 'requestBody')?.type, 'content')?.type;
+      const content = propertyOf(
+        propertyOf(methodMember.type, 'requestBody')?.type,
+        'content',
+      )?.type;
       operations.push({
         path,
         method,
@@ -152,7 +160,9 @@ const OPERACIONES_NO_CONSUMIDAS = new Set([
 ]);
 
 test('el cliente declara todas las operaciones del contrato salvo las no consumidas', () => {
-  const clientPaths = new Set(operations.map((operation) => `${operation.method} ${operation.path}`));
+  const clientPaths = new Set(
+    operations.map((operation) => `${operation.method} ${operation.path}`),
+  );
   const contractPaths = new Set();
   for (const [path, item] of Object.entries(document.paths ?? {})) {
     for (const method of Object.keys(item)) {
@@ -180,10 +190,14 @@ test('los parámetros query y cuerpos JSON coinciden con openapi.json', () => {
     compareShapes(`${label} query`, operation.query, contract.query, errors);
     compareShapes(`${label} body`, operation.body, contract.body, errors);
     if (operation.hasJsonBody !== contract.hasJsonBody) {
-      errors.push(`${label}: el cliente ${operation.hasJsonBody ? 'envía' : 'no envía'} cuerpo JSON y el contrato ${contract.hasJsonBody ? 'lo documenta' : 'no lo documenta'}`);
+      errors.push(
+        `${label}: el cliente ${operation.hasJsonBody ? 'envía' : 'no envía'} cuerpo JSON y el contrato ${contract.hasJsonBody ? 'lo documenta' : 'no lo documenta'}`,
+      );
     }
     if (operation.hasMultipart !== contract.hasMultipart) {
-      errors.push(`${label}: el cliente ${operation.hasMultipart ? 'envía' : 'no envía'} multipart y el contrato ${contract.hasMultipart ? 'lo documenta' : 'no lo documenta'}`);
+      errors.push(
+        `${label}: el cliente ${operation.hasMultipart ? 'envía' : 'no envía'} multipart y el contrato ${contract.hasMultipart ? 'lo documenta' : 'no lo documenta'}`,
+      );
     }
   }
   assert.deepEqual(errors, [], errors.join('\n'));

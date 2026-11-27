@@ -6,7 +6,7 @@ import type { Kysely } from 'kysely';
 import type { Migration, MigrationProvider } from 'kysely/migration';
 import { Migrator } from 'kysely/migration';
 
-export const MIGRATION_SCHEMAS = ['public', 'academic'] as const;
+export const MIGRATION_SCHEMAS = ['public', 'academic', 'emisora'] as const;
 
 export type MigrationSchema = (typeof MIGRATION_SCHEMAS)[number];
 
@@ -55,8 +55,8 @@ class FileUrlMigrationProvider implements MigrationProvider {
 
 /**
  * Cada esquema tiene su propio historial y su propio candado
- * (`<schema>.kysely_migration`), de modo que una migración de `academic`
- * nunca toca el historial de `public`.
+ * (`<schema>.kysely_migration`), de modo que una migración de `academic` nunca
+ * toca el historial de `public` ni la de `emisora` el de los otros dos.
  */
 export function createMigrator(
   db: Kysely<unknown>,
