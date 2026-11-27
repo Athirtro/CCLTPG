@@ -5,9 +5,19 @@ import {
   expandPermissions,
   isKnownPermission,
   satisfiesAny,
+  type CatalogPermission,
 } from './permissions.js';
 
 describe('motor de permisos', () => {
+  it('mantiene CatalogPermission como unión cerrada', () => {
+    const valido: CatalogPermission = 'emisora:programacion:read';
+    // @ts-expect-error -- una acción fuera del catálogo no es asignable.
+    const invalido: CatalogPermission = 'emisora:programacion:audit';
+
+    expect(isKnownPermission(valido)).toBe(true);
+    expect(invalido).toBe('emisora:programacion:audit');
+  });
+
   it('expande identity:*:manage a todos los permisos de identidad del catálogo', () => {
     const expanded = expandPermissions(['identity:*:manage']);
 

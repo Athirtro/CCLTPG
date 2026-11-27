@@ -116,7 +116,7 @@ export const PERMISSION_CATALOG = [
   'exports:report:export',
   'analytics:kpi:read',
   ...EMISORA_PERMISSION_CATALOG,
-];
+] as const;
 
 export type CatalogPermission = (typeof PERMISSION_CATALOG)[number];
 

@@ -4,6 +4,10 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { AppModule } from '../../src/app.module.js';
 import { DATABASE, REDIS } from '../../src/database/database.module.js';
+import {
+  FORMACION_DIRECTORY,
+  type FormacionDirectory,
+} from '../../src/shared/integration/formacion-directory.port.js';
 import { IDENTITY_DIRECTORY } from '../../src/shared/integration/identity-directory.port.js';
 import {
   EMISORA_OWNERSHIP_POLICY,
@@ -60,6 +64,12 @@ describe('cableado del contexto emisora', () => {
 
   afterAll(async () => {
     await moduleRef?.close();
+  });
+
+  it('resuelve también el directorio de formación desde el contexto dueño', () => {
+    const formacion = moduleRef.get<FormacionDirectory>(FORMACION_DIRECTORY, { strict: false });
+    expect(formacion).toBeDefined();
+    expect(typeof formacion.listProgramas).toBe('function');
   });
 
   it('registra la política de propiedad inyectada desde el directorio de identidad', async () => {
