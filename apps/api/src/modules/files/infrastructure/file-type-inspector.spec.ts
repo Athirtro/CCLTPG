@@ -19,6 +19,9 @@ const PNG = Buffer.concat([
 ]);
 const ZIP = Buffer.concat([Buffer.from([0x50, 0x4b, 0x03, 0x04]), Buffer.alloc(16)]);
 
+/** Cabecera de fotograma MPEG-1 Layer III (detectado como `audio/mpeg`). */
+const MP3 = Buffer.from([0xff, 0xfb, 0x90, 0x64, 0x00, 0x00, 0x00, 0x00]);
+
 const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -77,5 +80,32 @@ describe('inspección por bytes mágicos de archivos', () => {
     await expect(codeOf(inspector.inspect(PDF, DOCX, 'acta.docx'))).resolves.toBe(
       'FILE_MIME_MISMATCH',
     );
+  });
+});
+
+describe('inspección con la política opt-in emisora-audio', () => {
+  it('acepta audio declarado con la política opt-in', async () => {
+    await expect(
+      inspector.inspect(MP3, 'audio/mpeg', 'programa.mp3', 'emisora-audio'),
+    ).resolves.toEqual({ detectedMime: 'audio/mpeg', mime: 'audio/mpeg' });
+  });
+
+  it('rechaza un MIME que no es audio con la política opt-in', async () => {
+    await expect(
+      codeOf(inspector.inspect(PDF, 'application/pdf', 'acta.pdf', 'emisora-audio')),
+    ).resolves.toBe('FILE_MIME_NOT_ALLOWED');
+  });
+
+  it('rechaza extensión incoherente con la política opt-in', async () => {
+    await expect(
+      codeOf(inspector.inspect(MP3, 'audio/mpeg', 'programa.wav', 'emisora-audio')),
+    ).resolves.toBe('FILE_MIME_MISMATCH');
+  });
+
+  it('no altera la política por defecto', async () => {
+    await expect(inspector.inspect(PDF, 'application/pdf', 'acta.pdf')).resolves.toEqual({
+      detectedMime: 'application/pdf',
+      mime: 'application/pdf',
+    });
   });
 });

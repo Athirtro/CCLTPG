@@ -1,4 +1,4 @@
-import type { Kysely } from 'kysely';
+import { sql, type Kysely } from 'kysely';
 import { v5 as uuidv5 } from 'uuid';
 
 import type { Database } from '../schema.js';
@@ -29,8 +29,10 @@ export async function seedEmisora(db: Kysely<Database>): Promise<EmisoraSeedResu
   const transmisorId = idFor('transmisor:RAC-001');
 
   // 15 enero + 21 días = 5 febrero: plazo de tres semanas (§4.2/§4.4).
-  const fechaApertura = new Date(Date.UTC(2026, 0, 15));
-  const fechaCierre = new Date(Date.UTC(2026, 1, 5));
+  // Literales `date` en SQL: un `Date` de JS se envía con la zona horaria del
+  // proceso y puede desplazarse un día al enlazarlo a una columna `date`.
+  const fechaApertura = sql<Date>`date '2026-01-15'`;
+  const fechaCierre = sql<Date>`date '2026-02-05'`;
 
   await db.transaction().execute(async (trx) => {
     await trx

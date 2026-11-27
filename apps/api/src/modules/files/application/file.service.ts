@@ -31,7 +31,11 @@ import { toFileView } from './file.types.js';
 import { FileInspector } from './ports/file-inspector.js';
 import { FileRepository } from './ports/file.repository.js';
 import { FilesUnitOfWork } from './ports/unit-of-work.js';
-import { objectKeyFor, sanitizeOriginalName } from '../domain/file-policy.js';
+import {
+  objectKeyFor,
+  sanitizeOriginalName,
+  type FileUploadPolicy,
+} from '../domain/file-policy.js';
 
 /**
  * Servicio de archivos (C3 — RB1-21/RB1-22).
@@ -62,7 +66,12 @@ export class FileService {
       throw FileError.empty();
     }
 
-    if (input.buffer.length > env.MAX_FILE_BYTES) {
+    // EM-PA-10: la política es opt-in. Sin `politica`, el límite y la lista
+    // blanca son exactamente los históricos de `POST /api/v1/files`.
+    const politica: FileUploadPolicy = input.politica ?? 'default';
+    const limiteBytes =
+      politica === 'emisora-audio' ? env.EMISORA_MAX_AUDIO_BYTES : env.MAX_FILE_BYTES;
+    if (input.buffer.length > limiteBytes) {
       throw FileError.tooLarge();
     }
 
@@ -74,6 +83,9 @@ export class FileService {
         hashSha256,
         nombreOriginal,
         mime: input.mime,
+        // `default` no añade claves: conserva byte a byte el hash previo al
+        // cambio, para que las idempotencias ya emitidas sigan repitiéndose.
+        ...(politica === 'default' ? {} : { politica }),
       }),
     );
 
@@ -98,7 +110,12 @@ export class FileService {
     let storedNewObject = false;
 
     try {
-      const inspected = await this.inspector.inspect(input.buffer, input.mime, nombreOriginal);
+      const inspected = await this.inspector.inspect(
+        input.buffer,
+        input.mime,
+        nombreOriginal,
+        politica,
+      );
       const scan = await this.scanner.scan({
         buffer: input.buffer,
         nombreOriginal,

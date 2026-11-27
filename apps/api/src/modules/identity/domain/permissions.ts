@@ -62,11 +62,22 @@ const EMISORA_ACTIONS = [
   'manage',
 ] as const;
 
-const EMISORA_PERMISSION_CATALOG: readonly string[] = EMISORA_RESOURCES.flatMap((recurso) =>
-  EMISORA_ACTIONS.map((accion) => `emisora:${recurso}:${accion}`),
+type EmisoraPermission =
+  `emisora:${(typeof EMISORA_RESOURCES)[number]}:${(typeof EMISORA_ACTIONS)[number]}`;
+
+/** El tipado de retorno conserva la unión cerrada sin aserciones redundantes. */
+function emisoraPermission(
+  recurso: (typeof EMISORA_RESOURCES)[number],
+  accion: (typeof EMISORA_ACTIONS)[number],
+): EmisoraPermission {
+  return `emisora:${recurso}:${accion}`;
+}
+
+const EMISORA_PERMISSION_CATALOG = EMISORA_RESOURCES.flatMap((recurso) =>
+  EMISORA_ACTIONS.map((accion) => emisoraPermission(recurso, accion)),
 );
 
-export const PERMISSION_CATALOG: readonly string[] = [
+export const PERMISSION_CATALOG = [
   'identity:user:manage',
   'identity:profile:read',
   'identity:profile:update',

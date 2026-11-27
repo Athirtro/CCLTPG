@@ -11,7 +11,7 @@
 
 | Columna | Significado |
 | --- | --- |
-| **ID** | Identificador estable del caso emisora (EM-01…EM-36). El `operationId` real se fija en E1 y se añade a `EXPECTED_OPERATIONS` (EL-5). |
+| **ID** | Identificador estable del caso emisora (EM-01…EM-36). El `operationId` real se fija en E2–E4, cuando cada ruta se genera, y se añade a `EXPECTED_OPERATIONS` (EL-5). |
 | **Operación representativa** | Ruta propuesta bajo `/api/v1/emisora/...` y RF asociado. Ninguna es pública. |
 | **Permiso (OR)** | Permiso declarado en `x-permission`; el administrador lo satisface por `emisora:*:manage`. |
 | **Ámbito** | `global` u `own`. No se introduce un ámbito `group` nuevo para emisora. |
@@ -138,10 +138,10 @@ EL-5 (`authorization-matrix.spec.ts`) verifica, para cada `operationId` emisora 
 | Permisos nuevos sin perfil que los conceda | **0** (el administrador cubre `emisora:*:manage`) |
 | Rutas públicas emisora | **0**; `public-routes.json` intacto |
 
-Criterios de aceptación antes de E1:
+Criterios de aceptación de la matriz (se verifican en cada fase, E2–E4):
 
 1. Toda fila tiene caso permitido y caso denegado con código esperado.
 2. Todo permiso `*_own` lleva verificación de `EmisoraOwnershipPolicy` y un caso ajeno con 404.
 3. Todo `scope: global` lleva los casos EM-GLB-01…EM-GLB-03.
-4. Los `operationId` reales se añaden a `EXPECTED_OPERATIONS` cuando las rutas se generen en E1, sin relajar ninguna prueba existente.
+4. Los `operationId` reales se añaden a `EXPECTED_OPERATIONS`, al tipo `Paths` del cliente y a `OPERACIONES_NO_CONSUMIDAS` cuando las rutas se generen en E2–E4, sin relajar ninguna prueba existente. E1 no registra aún rutas emisora: `openapi.json` sigue con 54 operaciones.
 5. Esta matriz documental y el fixture ejecutable se revisan juntos en cada fase; una divergencia rompe la compuerta.

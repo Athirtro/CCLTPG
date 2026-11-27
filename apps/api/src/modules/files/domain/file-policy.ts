@@ -21,6 +21,13 @@ export const ALLOWED_MIME_LIST = Object.keys(ALLOWED_MIME_TYPES) as AllowedMime[
 
 export const ZIP_MIME = 'application/zip';
 
+/**
+ * Política de carga. `default` es la única que usa la ruta `POST /files` y la
+ * lista blanca histórica; `emisora-audio` es opt-in y solo la invocarán casos
+ * de uso nuevos del contexto Emisora (ADR-0005, EM-PA-10).
+ */
+export type FileUploadPolicy = 'default' | 'emisora-audio';
+
 export function isAllowedMime(mime: string): mime is AllowedMime {
   return Object.hasOwn(ALLOWED_MIME_TYPES, mime);
 }

@@ -1,3 +1,5 @@
+import type { FileUploadPolicy } from '../../domain/file-policy.js';
+
 export interface InspectedFile {
   /** MIME real detectado por bytes mágicos, o `null` si no se pudo detectar. */
   detectedMime: string | null;
@@ -10,5 +12,6 @@ export abstract class FileInspector {
     buffer: Buffer,
     declaredMime: string,
     nombreOriginal: string,
+    politica?: FileUploadPolicy,
   ): Promise<InspectedFile>;
 }

@@ -5,6 +5,8 @@ import { NO_MIGRATIONS } from 'kysely/migration';
 
 import { requireMigratorDatabaseUrl } from '../../src/shared/config/env.js';
 import { createMigrator } from '../../src/database/migrator/migrator-setup.js';
+import type { Database } from '../../src/database/schema.js';
+import { seedEmisora } from '../../src/database/seeds/emisora.seed.js';
 
 const migratorUrl = process.env.DATABASE_MIGRATOR_URL;
 const hasDatabase = Boolean(migratorUrl);
@@ -247,6 +249,26 @@ describe.runIf(hasDatabase)('Migraciones de la emisora (E1)', () => {
       select count(*)::int as total from emisora.convocatoria
     `.execute(db);
     expect(rows.rows[0]?.total).toBe(1);
+
+    await migrator.migrateTo(NO_MIGRATIONS);
+  });
+
+  it('siembra fechas de calendario exactas y es idempotente', async () => {
+    const migrator = createMigrator(db, 'emisora');
+    await migrator.migrateToLatest();
+
+    await seedEmisora(db as Kysely<Database>);
+    await seedEmisora(db as Kysely<Database>);
+
+    const rows = await sql<{ apertura: string; cierre: string; total: number }>`
+      select
+        fecha_apertura::text as apertura,
+        fecha_cierre::text as cierre,
+        count(*) over ()::int as total
+      from emisora.convocatoria
+      where anio = 2026
+    `.execute(db);
+    expect(rows.rows).toEqual([{ apertura: '2026-01-15', cierre: '2026-02-05', total: 1 }]);
 
     await migrator.migrateTo(NO_MIGRATIONS);
   });

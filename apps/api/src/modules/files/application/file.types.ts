@@ -1,3 +1,4 @@
+import type { FileUploadPolicy } from '../domain/file-policy.js';
 import type { FileRecord } from './ports/file.repository.js';
 
 export interface FileView {
@@ -14,6 +15,8 @@ export interface UploadFileInput {
   buffer: Buffer;
   nombreOriginal: string;
   mime: string;
+  /** Opt-in; ausente equivale a `default` y ejecuta la política histórica. */
+  politica?: FileUploadPolicy;
   idempotencyKey: string | null;
   actor: {
     userId: string;

@@ -196,6 +196,56 @@ describe('carga segura de archivos (RB1-21)', () => {
     expect(h.reserve).not.toHaveBeenCalled();
   });
 
+  it('aplica la política por defecto cuando no se indica `politica`', async () => {
+    const h = harness();
+    await h.service.upload(uploadInput());
+
+    expect(h.inspect).toHaveBeenCalledWith(
+      expect.any(Buffer),
+      'application/pdf',
+      'reporte.pdf',
+      'default',
+    );
+  });
+
+  it('acepta audio por encima del límite estándar con la política emisora-audio', async () => {
+    const h = harness();
+    const view = await h.service.upload(
+      uploadInput({
+        buffer: Buffer.alloc(env.MAX_FILE_BYTES + 1, 0xff),
+        nombreOriginal: 'programa.mp3',
+        mime: 'audio/mpeg',
+        politica: 'emisora-audio',
+      }),
+    );
+
+    expect(view).toMatchObject({ mime: 'audio/mpeg', estadoEscaneo: 'limpio' });
+    expect(h.inspect).toHaveBeenCalledWith(
+      expect.any(Buffer),
+      'audio/mpeg',
+      'programa.mp3',
+      'emisora-audio',
+    );
+    expect(h.put).toHaveBeenCalled();
+  });
+
+  it('rechaza audio por encima de EMISORA_MAX_AUDIO_BYTES', async () => {
+    const h = harness();
+    await expect(
+      codeOf(
+        h.service.upload(
+          uploadInput({
+            buffer: Buffer.alloc(env.EMISORA_MAX_AUDIO_BYTES + 1, 0xff),
+            nombreOriginal: 'programa.mp3',
+            mime: 'audio/mpeg',
+            politica: 'emisora-audio',
+          }),
+        ),
+      ),
+    ).resolves.toBe('FILE_TOO_LARGE');
+    expect(h.reserve).not.toHaveBeenCalled();
+  });
+
   it('persiste objeto y metadatos, audita y completa la idempotencia', async () => {
     const h = harness();
     const view = await h.service.upload(uploadInput({ nombreOriginal: '../../reporte final.pdf' }));

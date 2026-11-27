@@ -2,6 +2,12 @@ import { fileTypeFromBuffer } from 'file-type';
 
 import { FileError } from '../application/file-error.js';
 import type { FileInspector, InspectedFile } from '../application/ports/file-inspector.js';
+import type { FileUploadPolicy } from '../domain/file-policy.js';
+import {
+  EMISORA_AUDIO_DETECTED_ALIASES,
+  emisoraAudioExtensionMatches,
+  isEmisoraAudioMime,
+} from '../domain/file-policy-emisora.js';
 import { extensionMatches, isAllowedMime, isOfficeMime, ZIP_MIME } from '../domain/file-policy.js';
 
 /**
@@ -11,16 +17,21 @@ import { extensionMatches, isAllowedMime, isOfficeMime, ZIP_MIME } from '../doma
  * `file-type` puede devolver `application/zip`; en ese caso se exige la firma
  * ZIP y la extensión declarada. La inspección profunda del ZIP queda para el
  * proveedor antimalware de C5/C8 (riesgo de zip bomb acotado por el límite de
- * tamaño).
+ * tamaño). La política `emisora-audio` es opt-in y usa su propia lista blanca.
  */
 export class FileTypeInspector implements FileInspector {
   async inspect(
     buffer: Buffer,
     declaredMime: string,
     nombreOriginal: string,
+    politica: FileUploadPolicy = 'default',
   ): Promise<InspectedFile> {
     if (buffer.length === 0) {
       throw FileError.empty();
+    }
+
+    if (politica === 'emisora-audio') {
+      return this.inspectAudio(buffer, declaredMime, nombreOriginal);
     }
 
     if (!isAllowedMime(declaredMime)) {
@@ -44,6 +55,29 @@ export class FileTypeInspector implements FileInspector {
     }
 
     if (detectedMime !== declaredMime) {
+      throw FileError.mimeMismatch();
+    }
+
+    return { detectedMime, mime: declaredMime };
+  }
+
+  private async inspectAudio(
+    buffer: Buffer,
+    declaredMime: string,
+    nombreOriginal: string,
+  ): Promise<InspectedFile> {
+    if (!isEmisoraAudioMime(declaredMime)) {
+      throw FileError.mimeNotAllowed();
+    }
+
+    if (!emisoraAudioExtensionMatches(declaredMime, nombreOriginal)) {
+      throw FileError.mimeMismatch();
+    }
+
+    const detected = await fileTypeFromBuffer(buffer);
+    const detectedMime = detected?.mime ?? null;
+    const aliases = EMISORA_AUDIO_DETECTED_ALIASES[declaredMime];
+    if (detectedMime === null || !aliases.includes(detectedMime)) {
       throw FileError.mimeMismatch();
     }
 
