@@ -117,11 +117,6 @@ export type FileResponseDto = {
   creadoEn: string;
 };
 
-export type SubirArchivoResponseDto = {
-  archivo: FileResponseDto;
-  advertencia?: string;
-};
-
 // ===== Tipos notificaciones (Iteración 3) — DTOs reales del contrato =====
 
 export type NotificacionDto = {
@@ -1578,9 +1573,9 @@ export type Paths = {
         };
       };
       responses: {
-        200: {
+        201: {
           content: {
-            'application/json': SubirArchivoResponseDto;
+            'application/json': FileResponseDto;
           };
         };
         400: {

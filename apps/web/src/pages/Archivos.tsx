@@ -4,7 +4,7 @@ import { CloudUpload as CloudUploadIcon, Home as HomeIcon } from '@mui/icons-mat
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
-import type { FileResponseDto, SubirArchivoResponseDto, ProblemDetailsDto } from '../api/client';
+import type { FileResponseDto, ProblemDetailsDto } from '../api/client';
 import { postWithIdempotency } from '../api/idempotent-client';
 import PageHeader from '../components/common/PageHeader';
 import SectionCard from '../components/common/SectionCard';
@@ -50,7 +50,6 @@ export default function Archivos() {
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
-  const [advertencia, setAdvertencia] = useState<string | null>(null);
   const [resultado, setResultado] = useState<FileResponseDto | null>(null);
 
   const puedeSubir = hasPermission('files:document:create');
@@ -69,7 +68,6 @@ export default function Archivos() {
     setArchivoSeleccionado(event.target.files?.[0] ?? null);
     setError(null);
     setExito(null);
-    setAdvertencia(null);
     setResultado(null);
   };
 
@@ -77,7 +75,6 @@ export default function Archivos() {
     event.preventDefault();
     setError(null);
     setExito(null);
-    setAdvertencia(null);
 
     if (!puedeSubir) {
       setError('No tienes permiso para subir archivos.');
@@ -115,17 +112,19 @@ export default function Archivos() {
         setError(problema?.detail || 'No se pudo subir el archivo.');
         return;
       }
-      if (!result.data || typeof result.data !== 'object' || !('archivo' in result.data)) {
+      const dto = result.data as FileResponseDto | null;
+      if (
+        !dto ||
+        typeof dto !== 'object' ||
+        typeof dto.id !== 'string' ||
+        typeof dto.nombreOriginal !== 'string'
+      ) {
         setError('El servicio no devolvió los metadatos del archivo.');
         return;
       }
 
-      const dto = result.data as SubirArchivoResponseDto;
-      setResultado(dto.archivo);
-      setExito(`Archivo "${dto.archivo.nombreOriginal}" subido correctamente.`);
-      if (dto.advertencia) {
-        setAdvertencia(dto.advertencia);
-      }
+      setResultado(dto);
+      setExito(`Archivo "${dto.nombreOriginal}" subido correctamente.`);
       setArchivoSeleccionado(null);
       setIdempotencyKey('');
       const input = document.getElementById('archivo-input') as HTMLInputElement | null;
@@ -173,12 +172,6 @@ export default function Archivos() {
               {exito}
             </Alert>
           )}
-          {advertencia && (
-            <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setAdvertencia(null)}>
-              {advertencia}
-            </Alert>
-          )}
-
           <SectionCard title="Subir archivo" subtitle="PDF, PNG, JPG, DOCX o XLSX · Máximo 10 MB">
             <Box component="form" noValidate onSubmit={(event) => void manejarSubida(event)}>
               <input

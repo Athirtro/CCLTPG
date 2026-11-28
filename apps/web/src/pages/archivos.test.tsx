@@ -20,15 +20,13 @@ const usuarioConPermiso: User = {
 };
 
 const ARCHIVO_RESPUESTA = {
-  archivo: {
-    id: 'cccccccc-0000-4000-8000-000000000001',
-    nombreOriginal: 'bases.pdf',
-    mime: 'application/pdf',
-    tamano: 1024,
-    hashSha256: 'abc123',
-    estadoEscaneo: 'limpio',
-    creadoEn: '2026-01-15T10:00:00.000Z',
-  },
+  id: 'cccccccc-0000-4000-8000-000000000001',
+  nombreOriginal: 'bases.pdf',
+  mime: 'application/pdf',
+  tamano: 1024,
+  hashSha256: 'abc123',
+  estadoEscaneo: 'limpio',
+  creadoEn: '2026-01-15T10:00:00.000Z',
 };
 
 function renderArchivos() {
@@ -115,5 +113,17 @@ describe('Subida de archivos', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Subir archivo' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo subir el archivo.');
+  });
+
+  it('rechaza el wrapper obsoleto con la clave "archivo"', async () => {
+    mockPost({ archivo: ARCHIVO_RESPUESTA }, undefined, 201);
+
+    const { container } = renderArchivos();
+    seleccionarArchivo(container);
+    fireEvent.click(screen.getByRole('button', { name: 'Subir archivo' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'El servicio no devolvió los metadatos del archivo.',
+    );
   });
 });

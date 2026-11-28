@@ -28,6 +28,7 @@ import { apiClient, useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../api/errors';
 import type {
   ActualizarEstudianteDto,
+  AdminUserDto,
   CrearEstudianteDto,
   EstudianteSummaryDto,
 } from '../api/client';
@@ -50,11 +51,14 @@ type Formulario = {
   apellidos: string;
   municipio: string;
   barrio: string;
+  usuarioId: string;
   consentimiento: boolean;
 };
 
 /** Versión del aviso de privacidad vigente en la interfaz. */
 const VERSION_AVISO = 'v1';
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
 const FORMULARIO_VACIO: Formulario = {
   tipoDocumento: '',
@@ -63,14 +67,20 @@ const FORMULARIO_VACIO: Formulario = {
   apellidos: '',
   municipio: '',
   barrio: '',
+  usuarioId: '',
   consentimiento: false,
 };
 
 export default function Estudiantes() {
   const { hasPermission } = useAuth();
   const puedeGestionar = hasPermission('academic:student:manage');
+  const puedeListarUsuarios = hasPermission('identity:user:manage');
 
   const [estudiantes, setEstudiantes] = useState<EstudianteSummaryDto[]>([]);
+  const [usuarios, setUsuarios] = useState<AdminUserDto[]>([]);
+  const [busquedaUsuarios, setBusquedaUsuarios] = useState('');
+  const [cargandoUsuarios, setCargandoUsuarios] = useState(false);
+  const [errorUsuarios, setErrorUsuarios] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
@@ -107,6 +117,48 @@ export default function Estudiantes() {
   useEffect(() => {
     void cargarEstudiantes();
   }, [cargarEstudiantes]);
+
+  const cargarUsuarios = useCallback(async () => {
+    if (!puedeListarUsuarios) return;
+    setCargandoUsuarios(true);
+    setErrorUsuarios(null);
+    try {
+      const { data, error: apiError } = await apiClient.GET('/identity/users', {
+        params: { query: { limit: 200 } },
+      });
+      if (apiError || !data) {
+        setErrorUsuarios(getErrorMessage(apiError) || 'No se pudieron cargar los usuarios.');
+        return;
+      }
+      setUsuarios(data.items);
+    } catch (err) {
+      setErrorUsuarios(getErrorMessage(err) || 'No se pudieron cargar los usuarios.');
+    } finally {
+      setCargandoUsuarios(false);
+    }
+  }, [puedeListarUsuarios]);
+
+  useEffect(() => {
+    void cargarUsuarios();
+  }, [cargarUsuarios]);
+
+  const usuariosFiltrados = useMemo(() => {
+    const texto = busquedaUsuarios.trim().toLocaleLowerCase('es');
+    const seleccionado = formulario.usuarioId.trim();
+    const encontrados = usuarios.filter((usuario) => {
+      return (
+        !texto ||
+        `${usuario.email} ${usuario.nombre} ${usuario.id}`.toLocaleLowerCase('es').includes(texto)
+      );
+    });
+    if (seleccionado && !encontrados.some((usuario) => usuario.id === seleccionado)) {
+      return [
+        { id: seleccionado, email: 'Usuario seleccionado', nombre: seleccionado },
+        ...encontrados,
+      ];
+    }
+    return encontrados;
+  }, [busquedaUsuarios, formulario.usuarioId, usuarios]);
 
   const filtrados = useMemo(() => {
     const texto = busqueda.trim().toLocaleLowerCase('es');
@@ -149,6 +201,18 @@ export default function Estudiantes() {
       nuevosErrores.numeroDocumento = 'Ingresa el número de documento.';
     if (!formulario.nombres.trim()) nuevosErrores.nombres = 'Ingresa los nombres.';
     if (!formulario.apellidos.trim()) nuevosErrores.apellidos = 'Ingresa los apellidos.';
+    const usuarioId = formulario.usuarioId.trim();
+    if (usuarioId && !UUID.test(usuarioId)) {
+      nuevosErrores.usuarioId = 'Ingresa un UUID válido.';
+    } else if (
+      usuarioId &&
+      estudiantes.some(
+        (estudiante) =>
+          estudiante.usuarioId === usuarioId && estudiante.id !== estudianteEditando?.id,
+      )
+    ) {
+      nuevosErrores.usuarioId = 'Ese usuario ya está vinculado a otra ficha de estudiante.';
+    }
     setErrores(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
   };
@@ -169,6 +233,7 @@ export default function Estudiantes() {
       apellidos: estudiante.apellidos,
       municipio: estudiante.municipio ?? '',
       barrio: estudiante.barrio ?? '',
+      usuarioId: estudiante.usuarioId ?? '',
       consentimiento: estudiante.consentimientoAceptado,
     });
     setErrores({});
@@ -198,7 +263,7 @@ export default function Estudiantes() {
         const cambioConsentimiento =
           formulario.consentimiento !== estudianteEditando.consentimientoAceptado;
         const body: ActualizarEstudianteDto = {
-          usuarioId: estudianteEditando.usuarioId,
+          usuarioId: formulario.usuarioId.trim() || null,
           tipoDocumento: formulario.tipoDocumento.trim(),
           ...(numeroDocumento ? { numeroDocumento } : {}),
           nombres: formulario.nombres.trim(),
@@ -231,6 +296,7 @@ export default function Estudiantes() {
         setExito(`Ficha de "${data.nombres} ${data.apellidos}" actualizada correctamente.`);
       } else {
         const payload: CrearEstudianteDto = {
+          usuarioId: formulario.usuarioId.trim() || null,
           tipoDocumento: formulario.tipoDocumento.trim(),
           numeroDocumento: formulario.numeroDocumento.trim(),
           nombres: formulario.nombres.trim(),
@@ -293,6 +359,16 @@ export default function Estudiantes() {
     },
     { id: 'nombres', label: 'Nombres', render: (e) => e.nombres, minWidth: 160 },
     { id: 'apellidos', label: 'Apellidos', render: (e) => e.apellidos, minWidth: 160 },
+    {
+      id: 'usuario',
+      label: 'Usuario vinculado',
+      minWidth: 220,
+      render: (estudiante) => (
+        <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
+          {estudiante.usuarioId ?? 'Sin vincular'}
+        </Typography>
+      ),
+    },
     {
       id: 'consentimiento',
       label: 'Consentimiento',
@@ -550,6 +626,53 @@ export default function Estudiantes() {
             onChange={(event) => actualizarCampo('barrio', event.target.value)}
             fullWidth
           />
+          <Divider />
+          <Typography variant="h3">Vinculación con usuario</Typography>
+          {puedeListarUsuarios ? (
+            <>
+              <TextField
+                id="buscar-usuario-estudiante"
+                label="Buscar usuario"
+                placeholder="Correo, nombre o UID"
+                value={busquedaUsuarios}
+                onChange={(event) => setBusquedaUsuarios(event.target.value)}
+                fullWidth
+              />
+              <FormControl fullWidth error={Boolean(errores.usuarioId || errorUsuarios)}>
+                <InputLabel id="usuario-estudiante-label">Usuario asociado (opcional)</InputLabel>
+                <Select
+                  labelId="usuario-estudiante-label"
+                  label="Usuario asociado (opcional)"
+                  value={formulario.usuarioId}
+                  onChange={(event) => actualizarCampo('usuarioId', event.target.value)}
+                  disabled={cargandoUsuarios}
+                >
+                  <MenuItem value="">Sin vincular</MenuItem>
+                  {usuariosFiltrados.map((usuario) => (
+                    <MenuItem key={usuario.id} value={usuario.id}>
+                      {usuario.email} — {usuario.nombre}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {cargandoUsuarios && <FormHelperText>Cargando usuarios…</FormHelperText>}
+                {errorUsuarios && <FormHelperText>{errorUsuarios}</FormHelperText>}
+                {errores.usuarioId && <FormHelperText>{errores.usuarioId}</FormHelperText>}
+              </FormControl>
+            </>
+          ) : (
+            <TextField
+              id="usuario-estudiante"
+              label="UID del usuario (opcional)"
+              value={formulario.usuarioId}
+              onChange={(event) => actualizarCampo('usuarioId', event.target.value)}
+              error={Boolean(errores.usuarioId)}
+              helperText={
+                errores.usuarioId ??
+                'Copia el UID desde Administración > Usuarios. Sin este vínculo no habrá ficha para /me/student.'
+              }
+              fullWidth
+            />
+          )}
           <Divider />
           <Typography variant="h3">Protección de datos</Typography>
           <FormControl error={Boolean(errores.consentimiento)}>

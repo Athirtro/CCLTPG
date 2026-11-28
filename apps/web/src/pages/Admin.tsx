@@ -679,6 +679,13 @@ export default function Admin() {
                 slotProps={{ inputLabel: { shrink: true } }}
                 fullWidth
               />
+              {dialogo === 'crear' && formulario.perfil === 'estudiante' && (
+                <Typography variant="caption" color="text.secondary" sx={{ gridColumn: '1 / -1' }}>
+                  Para matricularlo, crea también su ficha en Gestión académica › Estudiantes y
+                  selecciona este UID como usuario asociado. El perfil por sí solo no crea ficha
+                  académica.
+                </Typography>
+              )}
             </Box>
           )}
         </DialogContent>
