@@ -299,6 +299,12 @@ export default function Home() {
           ]
         : [
             {
+              label: 'Mis matrículas',
+              to: '/matriculas',
+              icon: <AssignmentIcon />,
+              perms: 'academic:enrollment:read_own',
+            },
+            {
               label: 'Mi horario',
               to: '/mi-horario',
               icon: <ScheduleIcon />,

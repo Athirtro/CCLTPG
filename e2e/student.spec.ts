@@ -18,6 +18,20 @@ test('el estudiante consulta horario, evaluaciones y notificaciones', async ({ p
   await expect(page.getByRole('heading', { name: 'Mis notificaciones' })).toBeVisible();
 });
 
+test('el estudiante consulta sus matrículas desde el inicio', async ({ page }) => {
+  await loginAs(page, 'estudiante');
+
+  await page.goto('/');
+  const acceso = page.getByRole('link', { name: 'Mis matrículas' });
+  await expect(acceso).toBeVisible();
+  await acceso.click();
+
+  await expect(page.getByRole('heading', { name: 'Matrículas', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Mis matrículas' })).toBeVisible();
+  await expect(page.getByText('Programa E2E Estudiante')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Nueva matrícula' })).toHaveCount(0);
+});
+
 test('el estudiante consulta y guarda sus preferencias de notificación', async ({ page }) => {
   await loginAs(page, 'estudiante');
   await page.goto('/preferencias');

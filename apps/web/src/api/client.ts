@@ -2112,7 +2112,7 @@ export type Paths = {
       requestBody: {
         content: {
           'application/json': {
-            to: 'confirmada' | 'cancelada';
+            to: 'preinscrita' | 'confirmada' | 'activa' | 'finalizada' | 'cancelada' | 'retirada';
           };
         };
       };

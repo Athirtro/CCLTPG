@@ -41,7 +41,12 @@ import ErrorState from '../components/common/ErrorState';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
 type EstadoFiltro = 'todos' | MatriculaDto['estado'];
-type Transicion = { matricula: MatriculaDto; to: 'confirmada' | 'cancelada' };
+type OpcionTransicion = {
+  to: MatriculaDto['estado'];
+  etiqueta: string;
+  destructiva?: boolean;
+};
+type Transicion = { matricula: MatriculaDto } & OpcionTransicion;
 type Formulario = {
   estudianteId: string;
   grupoId: string;
@@ -54,14 +59,35 @@ const FORMULARIO_VACIO: Formulario = {
   periodo: '',
 };
 
+/** Transiciones canónicas del backend (`academic-states.ts`). */
+const TRANSICIONES_POR_ESTADO: Partial<
+  Record<MatriculaDto['estado'], readonly OpcionTransicion[]>
+> = {
+  preinscrita: [
+    { to: 'confirmada', etiqueta: 'Confirmar' },
+    { to: 'cancelada', etiqueta: 'Cancelar', destructiva: true },
+  ],
+  confirmada: [
+    { to: 'activa', etiqueta: 'Activar' },
+    { to: 'retirada', etiqueta: 'Retirar', destructiva: true },
+    { to: 'cancelada', etiqueta: 'Cancelar', destructiva: true },
+  ],
+  activa: [
+    { to: 'finalizada', etiqueta: 'Finalizar' },
+    { to: 'retirada', etiqueta: 'Retirar', destructiva: true },
+    { to: 'cancelada', etiqueta: 'Cancelar', destructiva: true },
+  ],
+};
+
 export default function Matriculas() {
   const { hasPermission, hasProfile } = useAuth();
   const esEstudiante = hasProfile('estudiante');
-  const puedeGestionar = hasPermission('academic:enrollment:read');
+  const puedeLeerTodo = hasPermission('academic:enrollment:read');
   const puedeLeerPropia = hasPermission('academic:enrollment:read_own');
   // El backend exige `academic:enrollment:create` para registrar matrículas;
   // `read` solo habilita el listado global, no el alta.
   const puedeCrear = hasPermission('academic:enrollment:create');
+  const puedeActualizar = hasPermission('academic:enrollment:update');
 
   const [matriculas, setMatriculas] = useState<MatriculaDto[]>([]);
   const [gruposDisponibles, setGruposDisponibles] = useState<GrupoDto[]>([]);
@@ -87,11 +113,11 @@ export default function Matriculas() {
   const [procesandoTransicion, setProcesandoTransicion] = useState(false);
 
   const cargarMatriculas = useCallback(async () => {
-    if (!puedeCrear) return;
+    if (!puedeLeerTodo && !puedeLeerPropia) return;
     setCargando(true);
     setError(null);
     try {
-      const respuesta = puedeGestionar
+      const respuesta = puedeLeerTodo
         ? await apiClient.GET('/academic/enrollments')
         : await apiClient.GET('/me/enrollments');
       if (respuesta.error || !respuesta.data) {
@@ -104,7 +130,7 @@ export default function Matriculas() {
     } finally {
       setCargando(false);
     }
-  }, [puedeCrear, puedeGestionar]);
+  }, [puedeLeerTodo, puedeLeerPropia]);
 
   const cargarAuxiliares = useCallback(async () => {
     if (!puedeCrear) return;
@@ -119,7 +145,7 @@ export default function Matriculas() {
         setGruposDisponibles(resGrupos.data.data.filter((grupo) => grupo.estado === 'abierto'));
       }
 
-      if (puedeGestionar) {
+      if (puedeLeerTodo) {
         const resEstudiantes = await apiClient.GET('/academic/students');
         if (resEstudiantes.error || !resEstudiantes.data) {
           setErrorAuxiliares('No se pudo cargar el listado de estudiantes.');
@@ -128,13 +154,13 @@ export default function Matriculas() {
         }
       }
 
-      if (puedeCrear && (!puedeGestionar || esEstudiante)) {
+      if (!puedeLeerTodo || esEstudiante) {
         try {
           const resMiEstudiante = await apiClient.GET('/me/student');
           if (resMiEstudiante.error || !resMiEstudiante.data) {
             setMiEstudiante(null);
             setMiEstudianteError(
-              puedeGestionar
+              puedeLeerTodo
                 ? 'No se pudo resolver tu ficha de estudiante. Puedes seleccionar otro estudiante.'
                 : 'No se pudo resolver tu ficha de estudiante. No puedes crear matrículas.',
             );
@@ -147,7 +173,7 @@ export default function Matriculas() {
         } catch (err) {
           setMiEstudiante(null);
           setMiEstudianteError(
-            puedeGestionar
+            puedeLeerTodo
               ? 'No se pudo resolver tu ficha de estudiante. Puedes seleccionar otro estudiante.'
               : getErrorMessage(err) ||
                   'No se pudo resolver tu ficha de estudiante. No puedes crear matrículas.',
@@ -161,7 +187,7 @@ export default function Matriculas() {
     } finally {
       setCargandoAuxiliares(false);
     }
-  }, [esEstudiante, puedeCrear, puedeGestionar]);
+  }, [esEstudiante, puedeCrear, puedeLeerTodo]);
 
   useEffect(() => {
     void cargarMatriculas();
@@ -210,7 +236,7 @@ export default function Matriculas() {
     !enviando &&
     !cargandoAuxiliares &&
     !errorAuxiliares &&
-    (!miEstudianteError || puedeGestionar),
+    (!miEstudianteError || puedeLeerTodo),
   );
 
   const actualizarCampo = (campo: keyof Formulario, valor: string) => {
@@ -221,7 +247,7 @@ export default function Matriculas() {
   const validar = (): boolean => {
     const nuevosErrores: Partial<Record<keyof Formulario, string>> = {};
     if (!estudianteId) {
-      nuevosErrores.estudianteId = puedeGestionar
+      nuevosErrores.estudianteId = puedeLeerTodo
         ? 'Selecciona un estudiante.'
         : 'No hay un estudiante asociado a tu usuario.';
     }
@@ -311,7 +337,7 @@ export default function Matriculas() {
     }
   };
 
-  if (!puedeLeerPropia && !puedeGestionar) {
+  if (!puedeLeerPropia && !puedeLeerTodo) {
     return (
       <Box>
         <PageHeader
@@ -368,32 +394,24 @@ export default function Matriculas() {
       id: 'acciones',
       label: 'Acciones',
       align: 'right',
-      minWidth: 190,
+      minWidth: 300,
       render: (matricula) => {
-        if (!puedeGestionar) return null;
+        if (!puedeActualizar) return null;
+        const opciones = TRANSICIONES_POR_ESTADO[matricula.estado] ?? [];
+        if (opciones.length === 0) return null;
         return (
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-            {matricula.estado === 'preinscrita' && (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, flexWrap: 'wrap' }}>
+            {opciones.map((opcion) => (
               <Button
+                key={opcion.to}
                 size="small"
-                onClick={() => setTransicion({ matricula, to: 'confirmada' })}
+                color={opcion.destructiva ? 'error' : 'primary'}
+                onClick={() => setTransicion({ matricula, ...opcion })}
                 disabled={procesandoTransicion || cargando}
               >
-                Confirmar
+                {opcion.etiqueta}
               </Button>
-            )}
-            {(matricula.estado === 'preinscrita' ||
-              matricula.estado === 'confirmada' ||
-              matricula.estado === 'activa') && (
-              <Button
-                size="small"
-                color="error"
-                onClick={() => setTransicion({ matricula, to: 'cancelada' })}
-                disabled={procesandoTransicion || cargando}
-              >
-                Cancelar
-              </Button>
-            )}
+            ))}
           </Box>
         );
       },
@@ -405,7 +423,7 @@ export default function Matriculas() {
       <PageHeader
         title="Matrículas"
         description={
-          puedeGestionar
+          puedeLeerTodo
             ? 'Gestión de las matrículas del centro cultural y sus cambios de estado.'
             : 'Consulta de tus matrículas y su estado actual.'
         }
@@ -498,7 +516,7 @@ export default function Matriculas() {
       </Box>
 
       <SectionCard
-        title={puedeGestionar ? 'Todas las matrículas' : 'Mis matrículas'}
+        title={puedeLeerTodo ? 'Todas las matrículas' : 'Mis matrículas'}
         subtitle="Consulta, filtra y actualiza el estado de las matrículas"
       >
         {error && matriculas.length === 0 ? (
@@ -538,7 +556,9 @@ export default function Matriculas() {
                 title={matriculas.length === 0 ? 'Sin matrículas registradas' : 'Sin coincidencias'}
                 description={
                   matriculas.length === 0
-                    ? 'Cuando registres una matrícula aparecerá en este listado.'
+                    ? puedeCrear
+                      ? 'Cuando registres una matrícula aparecerá en este listado.'
+                      : 'Las matrículas disponibles para tu perfil aparecerán en este listado.'
                     : 'Prueba con otro estudiante, programa o estado.'
                 }
                 minHeight={180}
@@ -572,11 +592,11 @@ export default function Matriculas() {
         <DialogTitle id="titulo-crear-matricula">Nueva matrícula</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <DialogContentText>
-            {puedeGestionar
+            {puedeLeerTodo
               ? 'Selecciona el estudiante y el grupo abierto para la nueva matrícula.'
               : 'Se matriculará el estudiante asociado a tu usuario.'}
           </DialogContentText>
-          {puedeGestionar ? (
+          {puedeLeerTodo ? (
             <>
               <FormControl fullWidth error={Boolean(errores.estudianteId)}>
                 <InputLabel id="estudiante-matricula-label">Estudiante</InputLabel>
@@ -663,16 +683,14 @@ export default function Matriculas() {
 
       <ConfirmDialog
         open={Boolean(transicion)}
-        title={transicion?.to === 'confirmada' ? 'Confirmar matrícula' : 'Cancelar matrícula'}
+        title={`${transicion?.etiqueta ?? ''} matrícula`.trim()}
         description={
           transicion
-            ? transicion.to === 'confirmada'
-              ? `¿Confirmar la matrícula de ${transicion.matricula.estudianteNombres} ${transicion.matricula.estudianteApellidos} en el grupo ${transicion.matricula.grupoCodigo}?`
-              : `¿Cancelar la matrícula de ${transicion.matricula.estudianteNombres} ${transicion.matricula.estudianteApellidos} en el grupo ${transicion.matricula.grupoCodigo}?`
+            ? `¿${transicion.etiqueta.toLowerCase()} la matrícula de ${transicion.matricula.estudianteNombres} ${transicion.matricula.estudianteApellidos} en el grupo ${transicion.matricula.grupoCodigo}?`
             : ''
         }
-        confirmLabel={transicion?.to === 'confirmada' ? 'Confirmar' : 'Cancelar matrícula'}
-        destructive={transicion?.to === 'cancelada'}
+        confirmLabel={`${transicion?.etiqueta ?? ''} matrícula`.trim()}
+        destructive={transicion?.destructiva ?? false}
         loading={procesandoTransicion}
         onConfirm={() => void ejecutarTransicion()}
         onCancel={() => {

@@ -66,7 +66,7 @@ const SECCIONES: NavSection[] = [
         path: '/matriculas',
         label: 'Matrículas',
         icon: <AssignmentIcon />,
-        requires: 'academic:enrollment:manage',
+        requires: 'academic:enrollment:read_own',
       },
     ],
   },

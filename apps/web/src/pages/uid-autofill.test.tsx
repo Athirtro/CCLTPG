@@ -28,7 +28,12 @@ const estudianteGestor: User = {
   fullName: 'Gestor Estudiante',
   role: 'Gestor',
   profiles: ['estudiante', 'administrador'],
-  permissions: ['academic:enrollment:read', 'academic:enrollment:create'],
+  permissions: [
+    'academic:enrollment:read',
+    'academic:enrollment:read_own',
+    'academic:enrollment:create',
+    'academic:enrollment:update',
+  ],
   mfaEnabled: false,
   mustChangePassword: false,
 };
